@@ -11,7 +11,7 @@ For more information, checkout [Agno](https://agno.link/gh) and give it a ⭐️
 
 Follow these steps to get your Agent API up and running:
 
-> Please ensure you have [Docker Desktop](https://www.docker.com/products/docker-desktop) installed and running.
+> Prerequisites: [docker desktop](https://www.docker.com/products/docker-desktop) should be installed and running.
 
 ### Clone the repo
 
