@@ -123,7 +123,7 @@ async def load_agent_knowledge(agent_id: AgentType):
         )
 
     try:
-        agent_knowledge.load(upsert=True)
+        await agent_knowledge.aload(upsert=True)
     except Exception as e:
         logger.error(f"Error loading knowledge base for {agent_id}: {e}")
         raise HTTPException(
