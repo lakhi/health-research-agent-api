@@ -5,7 +5,7 @@ Welcome to the Simple Agent API: a robust, production-ready application for serv
   * A **PostgreSQL database** for storing Agent sessions, knowledge, and memories.
   * A set of **pre-built Agents** to use as a starting point.
 
-For more information, please checkout [Agno](https://agno.link/gh) and give it a ⭐️
+For more information, checkout [Agno](https://agno.link/gh) and give it a ⭐️
 
 ## Quickstart
 
