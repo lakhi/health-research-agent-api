@@ -1,8 +1,6 @@
 # Simple Agent API
 
-Welcome to the Simple Agent API: a robust, production-ready application for serving Agents as an API.
-
-**Core Components:**
+Welcome to the Simple Agent API: a robust, production-ready application for serving Agents as an API. It includes:
   * A **FastAPI server** for handling API requests.
   * A **PostgreSQL database** for storing Agent sessions, knowledge, and memories.
   * A set of **pre-built Agents** to use as a starting point.
