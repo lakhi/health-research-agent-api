@@ -53,6 +53,8 @@ Once started, you can:
 * Add `http://localhost:8000` as a new endpoint. You can name it `Agent API` (or any name you prefer).
 * Select your newly added endpoint and start chatting with your Agents.
 
+https://github.com/user-attachments/assets/a0078ade-9fb7-4a03-a124-d5abcca6b562
+
 ### Stop the application
 
 When you're done, stop the application using:
