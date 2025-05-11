@@ -61,6 +61,14 @@ When you're done, stop the application using:
 docker compose down
 ```
 
+## Prebuilt Agents
+
+The `/agents` folder contains pre-built agents that you can use as a starting point.
+- Web Search Agent: A simple agent that can search the web.
+- Agno Assist: An Agent that can help answer questions about Agno.
+  - Important: Make sure to load the `agno_assist` [knowledge base](http://localhost:8000/docs#/Agents/load_agent_knowledge_v1_agents__agent_id__knowledge_load_post) before using this agent.
+- Finance Agent: An agent that uses the YFinance API to get stock prices and financial data.
+
 ## Development Setup
 
 To setup your local virtual environment:
