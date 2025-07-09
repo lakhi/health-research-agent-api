@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings
 class ApiSettings(BaseSettings):
     """Api settings that are set using environment variables."""
 
-    title: str = "agent-api"
+    title: str = "health-research-agent-api"
     version: str = "1.0"
 
     # Set to False to disable docs at /docs and /redoc

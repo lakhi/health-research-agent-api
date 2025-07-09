@@ -18,7 +18,7 @@ set -e
 CURR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WS_ROOT="$(dirname ${CURR_DIR})"
 DOCKER_FILE="Dockerfile"
-IMAGE_NAME="agent-api"
+IMAGE_NAME="health-research-agent-api"
 IMAGE_TAG="latest"
 
 echo "Running: docker buildx build --platform=linux/amd64,linux/arm64 -t $IMAGE_NAME:$IMAGE_TAG -f $DOCKER_FILE $WS_ROOT --push"
