@@ -16,8 +16,8 @@ Follow these steps to get your Agent API up and running:
 ### Clone the repo
 
 ```sh
-git clone https://github.com/agno-agi/agent-api.git
-cd agent-api
+git clone https://github.com/agno-agi/health-research-agent-api.git
+cd health-research-agent-api
 ```
 
 ### Configure API keys
@@ -60,14 +60,6 @@ When you're done, stop the application using:
 ```sh
 docker compose down
 ```
-
-## Prebuilt Agents
-
-The `/agents` folder contains pre-built agents that you can use as a starting point.
-- Web Search Agent: A simple agent that can search the web.
-- Agno Assist: An Agent that can help answer questions about Agno.
-  - Important: Make sure to load the `agno_assist` [knowledge base](http://localhost:8000/docs#/Agents/load_agent_knowledge_v1_agents__agent_id__knowledge_load_post) before using this agent.
-- Finance Agent: An agent that uses the YFinance API to get stock prices and financial data.
 
 ## Development Setup
 
@@ -136,7 +128,7 @@ Need help, have a question, or want to connect with the community?
 * 📚 **[Read the Agno Docs](https://docs.agno.com)** for more in-depth information.
 * 💬 **Chat with us on [Discord](https://agno.link/discord)** for live discussions.
 * ❓ **Ask a question on [Discourse](https://agno.link/community)** for community support.
-* 🐛 **[Report an Issue](https://github.com/agno-agi/agent-api/issues)** on GitHub if you find a bug or have a feature request.
+* 🐛 **[Report an Issue](https://github.com/agno-agi/health-research-agent-api/issues)** on GitHub if you find a bug or have a feature request.
 
 ## Running in Production
 
@@ -159,7 +151,7 @@ The general process to run in production is:
   * Review the agent configurations in the `/agents` directory and ensure they are set up for your production needs (e.g., correct model versions, any production-specific settings).
 
 2. **Build Your Production Docker Image**
-  * Update the `scripts/build_image.sh` script to set your desired `IMAGE_NAME` and `IMAGE_TAG` (e.g., `your-repo/agent-api:v1.0.0`).
+  * Update the `scripts/build_image.sh` script to set your desired `IMAGE_NAME` and `IMAGE_TAG` (e.g., `your-repo/health-research-agent-api:v1.0.0`).
   * Run the script to build and push the image:
 
     ```sh

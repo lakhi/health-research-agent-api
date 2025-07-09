@@ -1,19 +1,19 @@
 [project]
-name = "agent-api"
+name = "health-research-agent-api"
 version = "0.1.0"
 requires-python = ">=3.11"
 readme = "README.md"
-authors = [{ name = "Agno", email = "hello@agno.com" }]
+authors = [{ name = "Akshay (cloned from Agno)", email = "akshay.lakhi@mindfort.tech" }]
 
 dependencies = [
-  "agno==1.4.6",
-  "duckduckgo-search",
+  "agno",
   "fastapi[standard]",
-  "openai",
+  "google-genai",
   "pgvector",
   "psycopg[binary]",
+  "pypdf",
+  "sentence-transformers",
   "sqlalchemy",
-  "yfinance",
 ]
 
 [project.optional-dependencies]

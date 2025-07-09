@@ -11,13 +11,13 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-ai}
       POSTGRES_DB: ${DB_NAME:-ai}
     networks:
-      - agent-api
+      - health-research-agent-api
 
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ${IMAGE_NAME:-agent-api}:${IMAGE_TAG:-latest}
+    image: ${IMAGE_NAME:-health-research-agent-api}:${IMAGE_TAG:-latest}
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
     restart: unless-stopped
     ports:
@@ -25,9 +25,9 @@ services:
     volumes:
       - .:/app
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      # AGNO_MONITOR: "True"
-      # AGNO_API_KEY: ${AGNO_API_KEY}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      AGNO_MONITOR: "True"
+      AGNO_API_KEY: ${AGNO_API_KEY}
       DB_HOST: pgvector
       DB_PORT: 5432
       DB_USER: ${DB_USER:-ai}
@@ -36,14 +36,14 @@ services:
       WAIT_FOR_DB: "True"
       PRINT_ENV_ON_LOAD: "True"
     networks:
-      - agent-api
+      - health-research-agent-api
     depends_on:
       - pgvector
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
 networks:
-  agent-api:
+  health-research-agent-api:
 
 volumes:
   pgdata:

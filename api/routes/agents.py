@@ -7,8 +7,8 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from agents.agno_assist import get_agno_assist_knowledge
 from agents.selector import AgentType, get_agent, get_available_agents
+from agents.marhonivirus_agent import get_virus_knowledge
 
 logger = getLogger(__name__)
 
@@ -114,8 +114,8 @@ async def load_agent_knowledge(agent_id: AgentType):
     """
     agent_knowledge: Optional[AgentKnowledge] = None
 
-    if agent_id == AgentType.AGNO_ASSIST:
-        agent_knowledge = get_agno_assist_knowledge()
+    if agent_id == AgentType.MARHONIVIRUS_AGENT:
+        agent_knowledge = get_virus_knowledge()
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
