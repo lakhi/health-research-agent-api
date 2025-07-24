@@ -22,6 +22,7 @@
 
 # ignore storage dir
 /storage
+db/sqlite_data.db
 
 # ignore dist dir
 dist

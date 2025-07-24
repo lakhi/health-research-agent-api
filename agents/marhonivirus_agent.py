@@ -10,23 +10,29 @@ from db.session import db_url
 
 logger = getLogger(__name__)
 
+
 def get_virus_knowledge() -> AgentKnowledge:
-    return PDFKnowledgeBase(
-    path="agents/marhonivirus_pdfs",
-    vector_db=PgVector(
+    knowledge_base = PDFKnowledgeBase(
+        path="agents/marhonivirus_pdfs",
+        vector_db=PgVector(
             db_url=db_url,
             table_name="virus_knowledge",
             search_type=SearchType.hybrid,
             embedder=SentenceTransformerEmbedder(),
         ),
-)
+    )
+    knowledge_base.load(recreate=False) # comment out after first run to avoid reloading
 
-def get_marhinovirus_agent(model_id: str = "gemini-2.0-flash",
+    return knowledge_base
+
+
+def get_marhinovirus_agent(
+    model_id: str = "gemini-2.0-flash",
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
     debug_mode: bool = True,
 ) -> Agent:
-    
+
     marhinovirus_agent = Agent(
         name="Marhinovirus Agent",
         agent_id="marhinovirus_agent",
@@ -37,7 +43,7 @@ def get_marhinovirus_agent(model_id: str = "gemini-2.0-flash",
             "Always search the knowledge base if the user's question involves the words 'marhinovirus' or 'marhinitis', or any similar contextual information about infectious diseases, vaccinations, etc.",
             "After each response, suggest relevant followup questions that encourage the user to understand the topic better",
             "The suggested followup questions should have answers in the knowledge base",
-            "In case you do not find the answer to a medical question, please suggest the user to consult a medical health professional."
+            "In case you do not find the answer to a medical question, please suggest the user to consult a medical health professional.",
         ],
         markdown=True,
         monitoring=True,
