@@ -1,4 +1,4 @@
-# Simple Agent API
+# Simple Agent API (TODO: modify as per research network project!)
 
 Welcome to the Simple Agent API: a robust, production-ready application for serving Agents as an API. It includes:
   * A **FastAPI server** for handling API requests.
@@ -22,7 +22,7 @@ cd health-research-agent-api
 
 ### Configure API keys
 
-We use GPT 4.1 as the default model, please export the `OPENAI_API_KEY` environment variable to get started.
+We use GPT 4.1 as the default model, please export the `OPENAI_API_KEY` environment variable to get started.  
 
 ```sh
 export OPENAI_API_KEY="YOUR_API_KEY_HERE"
