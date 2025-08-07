@@ -1,8 +1,8 @@
 from agno.agent import Agent, AgentKnowledge
 from agno.knowledge.pdf import PDFKnowledgeBase
-from agno.embedder.sentence_transformer import SentenceTransformerEmbedder
-from agno.storage.sqlite import SqliteStorage
-from agno.models.google import Gemini
+# from agno.storage.sqlite import SqliteStorage
+from agno.models.azure import AzureOpenAI
+from agno.embedder.azure_openai import AzureOpenAIEmbedder
 from typing import Optional
 from logging import getLogger
 from agno.vectordb.pgvector import PgVector, SearchType
@@ -18,25 +18,25 @@ logger = getLogger(__name__)
 # 3. TODO: implement Document Chunking: https://docs.agno.com/chunking/document-chunking
 
 
-def get_virus_knowledge() -> AgentKnowledge:
+def get_network_knowledge() -> AgentKnowledge:
     knowledge_base = PDFKnowledgeBase(
         path="agents/marhonivirus_pdfs",
         vector_db=PgVector(
             db_url=db_url,
             table_name="virus_knowledge",
             search_type=SearchType.hybrid,
-            embedder=SentenceTransformerEmbedder(),
+            embedder=AzureOpenAIEmbedder(),
         ),
     )
     knowledge_base.load(
         recreate=False
-    )  # comment out after first run to avoid reloading
+    )
 
     return knowledge_base
 
 
 def get_health_research_network_agent(
-    model_id: str = "gemini-2.0-flash",
+    model_id: str = "gpt-4o",
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
     debug_mode: bool = True,
@@ -44,8 +44,8 @@ def get_health_research_network_agent(
 
     health_research_network_agent = Agent(
         name="Health Research Network Agent",
-        agent_id="health_research_network_agent",
-        model=Gemini(id=model_id),
+        agent_id="hrn_agent",
+        model=AzureOpenAI(id=model_id),
         description=dedent(
             """
                 You are a friendly and helpful chatbot that answers queries in a concise manner yet encourages the user gain more information about the topic
@@ -60,10 +60,9 @@ def get_health_research_network_agent(
         ],
         markdown=True,
         monitoring=True,
-        knowledge=get_virus_knowledge(),
+        knowledge=get_network_knowledge(),
         add_references=True,
-        # TRY for #0
-        # storage=SqliteStorage(table_name="agent_sessions", db_file="db/sqlite_data.db"),
+        show_tool_calls=True,
         add_history_to_messages=True,
         num_history_runs=3,
         debug_mode=debug_mode,

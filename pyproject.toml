@@ -7,8 +7,10 @@ authors = [{ name = "Akshay (cloned from Agno)", email = "akshay.lakhi@mindfort.
 
 dependencies = [
   "agno",
+  "aiohttp",
   "fastapi[standard]",
   "google-genai",
+  "openai",
   "pgvector",
   "psycopg[binary]",
   "pypdf",
