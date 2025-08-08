@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from api.routes.v1_router import v1_router
 from api.settings import api_settings
