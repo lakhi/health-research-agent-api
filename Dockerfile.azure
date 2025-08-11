@@ -1,0 +1,61 @@
+# Multi-stage Dockerfile for Azure production deployment
+# Optimized for size and security
+
+# ================================
+# Stage 1: Build stage
+# ================================
+FROM agnohq/python:3.12 AS builder
+
+ARG APP_DIR=/app
+WORKDIR ${APP_DIR}
+
+# Copy requirements and install dependencies
+COPY requirements.txt ./
+RUN uv pip sync requirements.txt --system
+
+# ================================
+# Stage 2: Production stage
+# ================================
+FROM agnohq/python:3.12-slim AS production
+
+ARG USER=app
+ARG APP_DIR=/app
+ARG ENVIRONMENT=production
+
+ENV APP_DIR=${APP_DIR}
+ENV ENVIRONMENT=${ENVIRONMENT}
+ENV PYTHONPATH=${APP_DIR}
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Install runtime dependencies and create user
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -g 61000 ${USER} \
+    && useradd -g 61000 -u 61000 -ms /bin/bash -d ${APP_DIR} ${USER}
+
+WORKDIR ${APP_DIR}
+
+# Copy Python packages from builder stage
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy application code
+COPY --chown=${USER}:${USER} . .
+
+# Create necessary directories and set permissions
+RUN mkdir -p /app/logs && chown -R ${USER}:${USER} /app
+
+# Switch to non-root user
+USER ${USER}
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Production entrypoint
+ENTRYPOINT ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

@@ -18,6 +18,9 @@
 
 # Ignore .env files
 .env
+.env.local
+.env.azure
+.env.production
 .envrc
 
 # ignore storage dir
