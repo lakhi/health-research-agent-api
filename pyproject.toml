@@ -12,7 +12,7 @@ dependencies = [
   "google-genai",
   "openai",
   "pgvector",
-  "psycopg[binary]",
+  "psycopg2-binary",
   "pypdf",
   "sentence-transformers",
   "sqlalchemy",
