@@ -28,11 +28,11 @@ services:
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       AGNO_MONITOR: "True"
       AGNO_API_KEY: ${AGNO_API_KEY}
-      DB_HOST: pgvector
-      DB_PORT: 5432
-      DB_USER: ${DB_USER:-ai}
-      DB_PASS: ${DB_PASSWORD:-ai}
-      DB_DATABASE: ${DB_NAME:-ai}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_NAME}
       WAIT_FOR_DB: "True"
       PRINT_ENV_ON_LOAD: "True"
     networks:

@@ -1,8 +1,9 @@
 from os import getenv
+from urllib.parse import quote_plus
 
 
 def get_db_url() -> str:
-    # Standard connection (for local development)
+    # Standard connection
     db_driver = getenv("DB_DRIVER", "postgresql+psycopg2")
     db_user = getenv("DB_USER")
     db_pass = getenv("DB_PASS")
@@ -10,8 +11,13 @@ def get_db_url() -> str:
     db_port = getenv("DB_PORT")
     db_database = getenv("DB_DATABASE")
 
-    base_url = f"{db_driver}://{db_user}:{db_pass}@{db_host}:{db_port}/{db_database}"
+    # URL-encode the password to handle special characters
+    encoded_pass = quote_plus(db_pass) if db_pass else ""
 
+    # Construct the base URL with the encoded password
+    base_url = f"{db_driver}://{db_user}:{encoded_pass}@{db_host}:{db_port}/{db_database}"
+
+    # Append SSL mode if connecting to Azure
     if db_host and "azure" in db_host:
         ssl_mode = "?sslmode=require"
         base_url += ssl_mode
