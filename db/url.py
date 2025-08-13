@@ -1,5 +1,6 @@
 from os import getenv
 
+
 def get_db_url() -> str:
     # Standard connection (for local development)
     db_driver = getenv("DB_DRIVER", "postgresql+psycopg2")
@@ -11,11 +12,10 @@ def get_db_url() -> str:
 
     base_url = f"{db_driver}://{db_user}:{db_pass}@{db_host}:{db_port}/{db_database}"
 
-    # if "azure" in db_host:
-    #     # Azure PostgreSQL connection
-    #     db_driver = "postgresql+psycopg2"
-    #     ssl_mode = "?sslmode=require"
+    if db_host and "azure" in db_host:
+        ssl_mode = "?sslmode=require"
+        base_url += ssl_mode
 
-    #     base_url
+    print(f"Database URL: {base_url}")  # Debugging output
 
     return base_url
