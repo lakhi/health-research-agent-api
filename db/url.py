@@ -22,6 +22,4 @@ def get_db_url() -> str:
         ssl_mode = "?sslmode=require"
         base_url += ssl_mode
 
-    print(f"Database URL: {base_url}")  # Debugging output
-
     return base_url
