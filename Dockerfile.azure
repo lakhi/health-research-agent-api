@@ -1,5 +1,5 @@
-# Simplified Azure Dockerfile based on original Dockerfile
-# Only adds SSL/TLS support for Azure PostgreSQL connectivity
+# Azure Container Apps Dockerfile
+# Optimized for Azure Container Apps deployment
 
 FROM agnohq/python:3.12
 
@@ -7,11 +7,12 @@ ARG USER=app
 ARG APP_DIR=/app
 ENV APP_DIR=${APP_DIR}
 
-# Add environment variables for Azure production
+# Environment variables for Azure Container Apps
 ENV ENVIRONMENT=production
 ENV PYTHONUNBUFFERED=1
+ENV PORT=8000
 
-# Install ca-certificates for SSL connections to Azure PostgreSQL and create user
+# Install ca-certificates for SSL connections to Azure PostgreSQL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
@@ -35,8 +36,10 @@ RUN chown -R ${USER}:${USER} ${APP_DIR}
 # Switch to non-root user
 USER ${USER}
 
-# Expose port for Azure services
+# Azure Container Apps uses dynamic port assignment
+# But we'll expose 8000 as default
 EXPOSE 8000
 
-# Use uvicorn directly for Azure deployment
-ENTRYPOINT ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Updated entrypoint for Azure Container Apps
+# Uses PORT environment variable if provided, defaults to 8000
+ENTRYPOINT ["sh", "-c", "uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
