@@ -25,6 +25,7 @@ COPY requirements-linux.txt ./
 
 # Install requirements with PyTorch CPU index
 RUN uv pip sync requirements-linux.txt --system \
+    --index-strategy unsafe-best-match \
     --index-url https://download.pytorch.org/whl/cpu \
     --extra-index-url https://pypi.org/simple/
 
