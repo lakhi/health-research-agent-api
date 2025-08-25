@@ -20,11 +20,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR ${APP_DIR}
 
-# Copy requirements.txt
-COPY requirements.txt ./
+# Copy requirements-linux.txt
+COPY requirements-linux.txt ./
 
 # Install requirements
-RUN uv pip sync requirements.txt --system
+RUN uv pip sync requirements-linux.txt --system
 
 # Copy project files
 COPY . .
