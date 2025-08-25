@@ -23,8 +23,10 @@ WORKDIR ${APP_DIR}
 # Copy requirements-linux.txt
 COPY requirements-linux.txt ./
 
-# Install requirements
-RUN uv pip sync requirements-linux.txt --system
+# Install requirements with PyTorch CPU index
+RUN uv pip sync requirements-linux.txt --system \
+    --index-url https://download.pytorch.org/whl/cpu \
+    --extra-index-url https://pypi.org/simple/
 
 # Copy project files
 COPY . .
