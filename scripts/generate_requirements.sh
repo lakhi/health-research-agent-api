@@ -5,6 +5,7 @@
 # Usage:
 # ./scripts/generate_requirements.sh: Generate requirements.txt
 # ./scripts/generate_requirements.sh upgrade: Upgrade requirements.txt
+# ./scripts/generate_requirements.sh linux: Generate for Linux deployment
 ############################################################################
 
 CURR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,6 +19,8 @@ if [[ "$1" = "linux" ]]; then
   UV_CUSTOM_COMPILE_COMMAND="./scripts/generate_requirements.sh linux" \
     uv pip compile ${REPO_ROOT}/pyproject.toml \
     --index-strategy unsafe-best-match \
+    --index-url https://download.pytorch.org/whl/cpu \
+    --extra-index-url https://pypi.org/simple/ \
     --python-platform x86_64-manylinux_2_28 \
     --python-version 3.12 \
     --no-cache --upgrade -o ${REPO_ROOT}/requirements-linux.txt

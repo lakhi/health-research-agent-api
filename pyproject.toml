@@ -50,6 +50,5 @@ ignore_missing_imports = true
 no-annotate = true
 
 [tool.uv]
-index-url = "https://download.pytorch.org/whl/cpu"
-extra-index-url = ["https://pypi.org/simple/"]
 find-links = ["https://download.pytorch.org/whl/cpu"]
+extra-index-url = ["https://pypi.org/simple/"]
