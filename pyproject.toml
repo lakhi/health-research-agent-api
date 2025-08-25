@@ -16,7 +16,7 @@ dependencies = [
   "pypdf",
   "sentence-transformers",
   "sqlalchemy",
-  "torch"
+  "torch==2.8.0+cpu",
 ]
 
 [project.optional-dependencies]
@@ -52,3 +52,4 @@ no-annotate = true
 [tool.uv]
 index-url = "https://download.pytorch.org/whl/cpu"
 extra-index-url = ["https://pypi.org/simple/"]
+find-links = ["https://download.pytorch.org/whl/cpu"]
