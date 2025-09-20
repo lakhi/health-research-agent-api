@@ -31,6 +31,12 @@ class ApiSettings(BaseSettings):
         # Add localhost:3000 to cors to allow requests from local Agent UI.
         valid_cors.append("http://localhost:3000")
 
+        # TODO: replace with environment variable approach
+        # Add Agent UI Container App URL
+        valid_cors.append(
+            "https://hrn-agent-ui.niceground-23078755.westeurope.azurecontainerapps.io"
+        )
+
         return valid_cors
 
 
