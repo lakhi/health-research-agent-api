@@ -1,5 +1,5 @@
 from agno.agent import Agent, AgentKnowledge
-from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
+from agno.knowledge.pdf import PDFKnowledgeBase
 from agno.document.chunking.document import DocumentChunking
 
 # from agno.storage.sqlite import SqliteStorage
@@ -25,17 +25,17 @@ logger = getLogger(__name__)
 
 def get_network_knowledge() -> AgentKnowledge:
     # Azure Blob Storage URLs for your research papers
-    pdf_urls = [
-        "https://hrnstorage.blob.core.windows.net/research-papers/robert_1.pdf",
-        # Add more PDF URLs as you upload them:
-        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_2.pdf",
-        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_3.pdf",
-        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_4.pdf",
-        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_5.pdf",
-    ]
+    # pdf_urls = [
+    #     "https://hrnstorage.blob.core.windows.net/research-papers/robert_1.pdf",
+    #     # Add more PDF URLs as you upload them:
+    #     # "https://hrnstorage.blob.core.windows.net/research-papers/paper_2.pdf",
+    #     # "https://hrnstorage.blob.core.windows.net/research-papers/paper_3.pdf",
+    #     # "https://hrnstorage.blob.core.windows.net/research-papers/paper_4.pdf",
+    #     # "https://hrnstorage.blob.core.windows.net/research-papers/paper_5.pdf",
+    # ]
 
-    knowledge_base = PDFUrlKnowledgeBase(
-        urls=pdf_urls,  # Changed from path to urls
+    knowledge_base = PDFKnowledgeBase(
+        path="knowledge_base/research_papers",
         vector_db=PgVector(
             db_url=db_url,
             table_name="research_papers",

@@ -13,7 +13,7 @@ logger = getLogger(__name__)
 
 def get_virus_knowledge() -> AgentKnowledge:
     knowledge_base = PDFKnowledgeBase(
-        path="agents/marhonivirus_pdfs",
+        path="knowledge_base/marhonivirus",
         vector_db=PgVector(
             db_url=db_url,
             table_name="virus_knowledge",
