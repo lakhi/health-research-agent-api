@@ -17,6 +17,7 @@ logger = getLogger(__name__)
 # 0. TODO: remove storage of sessions for the Agent + Put it into the PPT (make sure it doesn't affect the previous context that the agent has)
 # 1. TODO: add 5 researcher papers each to the knowledge base + metadata for each of them
 # 2. TODO: implement Metrics: https://docs.agno.com/agents/metrics
+# 3. TODO: impl knowledge filters that captures author info metadata: https://docs-v1.agno.com/filters/introduction
 # 4. TODO: upgrade the model to gpt-4i or 5 depending on analysis
 # 5. TODO: add KnowledgeTools if answers are not very good: https://docs-v1.agno.com/tools/reasoning_tools/knowledge-tools
 # 6. TODO: impl async loading of knowledge base if startup time is too long: https://docs-v1.agno.com/vectordb/pgvector
@@ -33,7 +34,7 @@ def get_network_knowledge() -> AgentKnowledge:
         # "https://hrnstorage.blob.core.windows.net/research-papers/paper_5.pdf",
     ]
 
-    knowledge_base = PDFUrlKnowledgeBase(  # Changed from PDFKnowledgeBase
+    knowledge_base = PDFUrlKnowledgeBase(
         urls=pdf_urls,  # Changed from path to urls
         vector_db=PgVector(
             db_url=db_url,
@@ -41,9 +42,10 @@ def get_network_knowledge() -> AgentKnowledge:
             search_type=SearchType.hybrid,
             embedder=AzureOpenAIEmbedder(),
         ),
-        chunking_strategy=DocumentChunking(),
+        # chunking_strategy=DocumentChunking(),
     )
-    knowledge_base.load(recreate=False)
+    # the db issue still persists: need to 1) try another pdf; 2) solve it for good. temp fix is executing the created db script
+    knowledge_base.load(recreate=True)
 
     return knowledge_base
 
