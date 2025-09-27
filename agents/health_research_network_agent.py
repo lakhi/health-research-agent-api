@@ -1,5 +1,7 @@
 from agno.agent import Agent, AgentKnowledge
-from agno.knowledge.pdf import PDFKnowledgeBase
+from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
+from agno.document.chunking.document import DocumentChunking
+
 # from agno.storage.sqlite import SqliteStorage
 from agno.models.azure import AzureOpenAI
 from agno.embedder.azure_openai import AzureOpenAIEmbedder
@@ -15,22 +17,33 @@ logger = getLogger(__name__)
 # 0. TODO: remove storage of sessions for the Agent + Put it into the PPT (make sure it doesn't affect the previous context that the agent has)
 # 1. TODO: add 5 researcher papers each to the knowledge base + metadata for each of them
 # 2. TODO: implement Metrics: https://docs.agno.com/agents/metrics
-# 3. TODO: implement Document Chunking: https://docs.agno.com/chunking/document-chunking
+# 4. TODO: upgrade the model to gpt-4i or 5 depending on analysis
+# 5. TODO: add KnowledgeTools if answers are not very good: https://docs-v1.agno.com/tools/reasoning_tools/knowledge-tools
+# 6. TODO: impl async loading of knowledge base if startup time is too long: https://docs-v1.agno.com/vectordb/pgvector
 
 
 def get_network_knowledge() -> AgentKnowledge:
-    knowledge_base = PDFKnowledgeBase(
-        path="agents/marhonivirus_pdfs",
+    # Azure Blob Storage URLs for your research papers
+    pdf_urls = [
+        "https://hrnstorage.blob.core.windows.net/research-papers/robert_1.pdf",
+        # Add more PDF URLs as you upload them:
+        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_2.pdf",
+        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_3.pdf",
+        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_4.pdf",
+        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_5.pdf",
+    ]
+
+    knowledge_base = PDFUrlKnowledgeBase(  # Changed from PDFKnowledgeBase
+        urls=pdf_urls,  # Changed from path to urls
         vector_db=PgVector(
             db_url=db_url,
-            table_name="virus_knowledge",
+            table_name="research_papers",
             search_type=SearchType.hybrid,
             embedder=AzureOpenAIEmbedder(),
         ),
+        chunking_strategy=DocumentChunking(),
     )
-    knowledge_base.load(
-        recreate=False
-    )
+    knowledge_base.load(recreate=False)
 
     return knowledge_base
 
