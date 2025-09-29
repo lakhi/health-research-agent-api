@@ -25,7 +25,6 @@ services:
     volumes:
       - .:/app
     environment:
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       AGNO_MONITOR: "True"
       AGNO_API_KEY: ${AGNO_API_KEY}
       DB_HOST: ${DB_HOST}

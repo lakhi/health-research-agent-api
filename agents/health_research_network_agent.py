@@ -1,10 +1,11 @@
+# import asyncio
 from agno.agent import Agent, AgentKnowledge
-from agno.knowledge.pdf import PDFKnowledgeBase
+from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
 from agno.document.chunking.document import DocumentChunking
-
-# from agno.storage.sqlite import SqliteStorage
 from agno.models.azure import AzureOpenAI
-from agno.embedder.azure_openai import AzureOpenAIEmbedder
+
+# from agno.embedder.azure_openai import AzureOpenAIEmbedder
+from agno.embedder.sentence_transformer import SentenceTransformerEmbedder
 from typing import Optional
 from logging import getLogger
 from agno.vectordb.pgvector import PgVector, SearchType
@@ -22,30 +23,34 @@ logger = getLogger(__name__)
 # 5. TODO: add KnowledgeTools if answers are not very good: https://docs-v1.agno.com/tools/reasoning_tools/knowledge-tools
 # 6. TODO: impl async loading of knowledge base if startup time is too long: https://docs-v1.agno.com/vectordb/pgvector
 
+# JAN/FEB 2026 RELEASE
+# 1. TODO: replace the embedder with AzureOpenAIEmbedder()
+# 2. TODO: impl semantic chunking strategy through the embedder: https://docs-v1.agno.com/reference/chunking/semantic
+
 
 def get_network_knowledge() -> AgentKnowledge:
-    # Azure Blob Storage URLs for your research papers
-    # pdf_urls = [
-    #     "https://hrnstorage.blob.core.windows.net/research-papers/robert_1.pdf",
-    #     # Add more PDF URLs as you upload them:
-    #     # "https://hrnstorage.blob.core.windows.net/research-papers/paper_2.pdf",
-    #     # "https://hrnstorage.blob.core.windows.net/research-papers/paper_3.pdf",
-    #     # "https://hrnstorage.blob.core.windows.net/research-papers/paper_4.pdf",
-    #     # "https://hrnstorage.blob.core.windows.net/research-papers/paper_5.pdf",
-    # ]
+    pdf_urls = [
+        "https://hrnstorage.blob.core.windows.net/research-papers/robert_1.pdf",
+        # Add more PDF URLs as you upload them:
+        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_2.pdf",
+        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_3.pdf",
+        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_4.pdf",
+        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_5.pdf",
+    ]
 
-    knowledge_base = PDFKnowledgeBase(
-        path="knowledge_base/research_papers",
+    knowledge_base = PDFUrlKnowledgeBase(
+        urls=pdf_urls,
         vector_db=PgVector(
             db_url=db_url,
             table_name="research_papers",
             search_type=SearchType.hybrid,
-            embedder=AzureOpenAIEmbedder(),
+            # embedder=AzureOpenAIEmbedder(),
+            embedder=SentenceTransformerEmbedder(),
         ),
-        # chunking_strategy=DocumentChunking(),
+        chunking_strategy=DocumentChunking(),
     )
-    # the db issue still persists: need to 1) try another pdf; 2) solve it for good. temp fix is executing the created db script
-    knowledge_base.load(recreate=True)
+    # asyncio.run(knowledge_base.aload(recreate=True))
+    knowledge_base.load(recreate=False) 
 
     return knowledge_base
 
@@ -76,7 +81,8 @@ def get_health_research_network_agent(
         markdown=True,
         monitoring=True,
         knowledge=get_network_knowledge(),
-        add_references=True,
+        # below adds references to the Agent's prmompt (and is the traditional 2023 RAG approach)
+        # add_references=True,
         show_tool_calls=True,
         add_history_to_messages=True,
         num_history_runs=3,
