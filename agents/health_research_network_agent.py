@@ -1,6 +1,6 @@
 from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
-from knowledge_base.hrn_knowledge_base import get_hrn_kb
+from knowledge_base.hrn_knowledge_base import get_hrn_knowledge_base
 
 from typing import Optional
 from logging import getLogger
@@ -12,7 +12,6 @@ logger = getLogger(__name__)
 # 0. TODO: remove storage of sessions for the Agent + Put it into the PPT (make sure it doesn't affect the previous context that the agent has)
 # 1. TODO: add 5 researcher papers each to the knowledge base + metadata for each of them
 # 2. TODO: implement Metrics: https://docs.agno.com/agents/metrics
-# 3. TODO: impl knowledge filters that captures author info metadata: https://docs-v1.agno.com/filters/introduction
 # 4. TODO: upgrade the model to gpt-4i or 5 depending on analysis
 # 5. TODO: add KnowledgeTools if answers are not very good: https://docs-v1.agno.com/tools/reasoning_tools/knowledge-tools
 # 6. TODO: impl async loading of knowledge base if startup time is too long: https://docs-v1.agno.com/vectordb/pgvector
@@ -47,14 +46,14 @@ def get_health_research_network_agent(
         ],
         markdown=True,
         monitoring=True,
-        knowledge=get_hrn_kb(),
+        knowledge=get_hrn_knowledge_base(),
         # below adds references to the Agent's prmompt (and is the traditional 2023 RAG approach)
         add_references=True,
         show_tool_calls=True,
         enable_agentic_knowledge_filters=True,
         add_history_to_messages=True,
         num_history_runs=3,
-        debug_mode=debug_mode,
+        # debug_mode=debug_mode,
     )
 
     return health_research_network_agent
