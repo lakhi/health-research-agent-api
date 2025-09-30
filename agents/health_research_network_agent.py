@@ -1,15 +1,9 @@
-# import asyncio
-from agno.agent import Agent, AgentKnowledge
-from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
-from agno.document.chunking.document import DocumentChunking
+from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
+from knowledge_base.hrn_knowledge_base import get_hrn_kb
 
-# from agno.embedder.azure_openai import AzureOpenAIEmbedder
-from agno.embedder.sentence_transformer import SentenceTransformerEmbedder
 from typing import Optional
 from logging import getLogger
-from agno.vectordb.pgvector import PgVector, SearchType
-from db.session import db_url
 
 from textwrap import dedent
 
@@ -26,33 +20,6 @@ logger = getLogger(__name__)
 # JAN/FEB 2026 RELEASE
 # 1. TODO: replace the embedder with AzureOpenAIEmbedder()
 # 2. TODO: impl semantic chunking strategy through the embedder: https://docs-v1.agno.com/reference/chunking/semantic
-
-
-def get_network_knowledge() -> AgentKnowledge:
-    pdf_urls = [
-        "https://hrnstorage.blob.core.windows.net/research-papers/robert_1.pdf",
-        # Add more PDF URLs as you upload them:
-        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_2.pdf",
-        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_3.pdf",
-        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_4.pdf",
-        # "https://hrnstorage.blob.core.windows.net/research-papers/paper_5.pdf",
-    ]
-
-    knowledge_base = PDFUrlKnowledgeBase(
-        urls=pdf_urls,
-        vector_db=PgVector(
-            db_url=db_url,
-            table_name="research_papers",
-            search_type=SearchType.hybrid,
-            # embedder=AzureOpenAIEmbedder(),
-            embedder=SentenceTransformerEmbedder(),
-        ),
-        chunking_strategy=DocumentChunking(),
-    )
-    # asyncio.run(knowledge_base.aload(recreate=True))
-    knowledge_base.load(recreate=False) 
-
-    return knowledge_base
 
 
 def get_health_research_network_agent(
@@ -80,10 +47,11 @@ def get_health_research_network_agent(
         ],
         markdown=True,
         monitoring=True,
-        knowledge=get_network_knowledge(),
+        knowledge=get_hrn_kb(),
         # below adds references to the Agent's prmompt (and is the traditional 2023 RAG approach)
-        # add_references=True,
+        add_references=True,
         show_tool_calls=True,
+        enable_agentic_knowledge_filters=True,
         add_history_to_messages=True,
         num_history_runs=3,
         debug_mode=debug_mode,
