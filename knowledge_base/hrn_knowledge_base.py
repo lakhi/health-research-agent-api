@@ -21,9 +21,7 @@ def get_hrn_knowledge_base() -> AgentKnowledge:
         chunking_strategy=DocumentChunking(),
     )
     # asyncio.run(knowledge_base.aload(recreate=True))
-
-    # Comment out after first run to avoid reloading the knowledge base on every startup
-    # knowledge_base.load(recreate=False)
+    knowledge_base.load(recreate=False)
 
     return knowledge_base
 
