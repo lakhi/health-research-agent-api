@@ -45,10 +45,10 @@ def get_health_research_network_agent(
                 Your writing style is:
                 - Clear and authoritative
                 - Engaging but professional
-                - Fact-focused with proper citations
+                - Fact-focused with proper citations and URL links
                 - Accessible to the general public
 
-                The kinds of audiences and the particular objectives for the Health Research Network Agent are:
+                The kinds of audiences and the correswponding objectives that your responses should be tailored to are:
                 1. For Members of the Network: enable easy discovery for network members through research topics or interests similar to their own to enable collaborations and combined research grant applications
                 2. For The University of Vienna: enable easy discovery of network members working on particular aspects of health, useful for a variety of institutional purposes
                 3. For Other Institutions (Corporates, Non-Profits, etc.): enable easy discovery for any institution seeking to invite researchers for talks, onboard them for particular projects, etc. 
@@ -57,21 +57,19 @@ def get_health_research_network_agent(
         instructions=dedent(
             """
                 - Search your knowledge base before answering the question.
-                - Make connections between the user's query and the relevant researchers based on their research papers in the knowledge base.
-                - When you share about any of the research members, always share the 'network_member_name' and 'network_meber_ucris_url' from the metadata of the knowledge base.
-                - After answering the question, ask the user if they would like to know anything else regarding the research expertise at the Health Research Network.
+                - Make connections between the user's query and the Health Research Network members based on their research papers and metadata in the knowledge base.
+                - Always include the 'network_member_name' and 'network_meber_ucris_url' from the metadata on questions about the network or it's members.
+                - After answering the question, ask the user if they would like to know anything else regarding the research expertise of the members at the Health Research Network.
             """
         ),
         markdown=True,
         monitoring=True,
         knowledge=get_hrn_knowledge_base(),
-        # below adds references to the Agent's prmompt (and is the traditional 2023 RAG approach)
-        add_references=True,
-        show_tool_calls=True,
-        enable_agentic_knowledge_filters=True,
+        add_references=False,
+        show_tool_calls=False,
+        # enable_agentic_knowledge_filters=True,
         add_history_to_messages=True,
         num_history_runs=3,
-        # debug_mode=debug_mode,
     )
 
     return health_research_network_agent
