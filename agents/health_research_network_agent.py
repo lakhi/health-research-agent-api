@@ -65,12 +65,10 @@ def get_health_research_network_agent(
         markdown=True,
         monitoring=True,
         knowledge=get_hrn_knowledge_base(),
-        add_references=False,
-
-        search_knowledge=True,
+        add_references=True,
+        search_knowledge=False,
         read_chat_history=True,
-        show_tool_calls=True,
-
+        show_tool_calls=False,
         enable_agentic_knowledge_filters=True,
         add_history_to_messages=True,
         num_history_runs=3,
