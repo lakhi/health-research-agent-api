@@ -67,7 +67,7 @@ def get_health_research_network_agent(
         knowledge=get_hrn_knowledge_base(),
         add_references=False,
         show_tool_calls=False,
-        # enable_agentic_knowledge_filters=True,
+        enable_agentic_knowledge_filters=True,
         add_history_to_messages=True,
         num_history_runs=3,
     )
