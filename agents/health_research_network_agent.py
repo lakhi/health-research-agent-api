@@ -9,6 +9,7 @@ from textwrap import dedent
 
 logger = getLogger(__name__)
 
+# 0. TODO: new branch for Agno 2.0 migration (github actions workflow should not run on this branch)
 # 1. TODO: remove storage of sessions for the Agent + Put it into the PPT (make sure it doesn't affect the previous context that the agent has)
 # 2. TODO: implement Metrics: https://docs.agno.com/agents/metrics
 # 3. TODO: upgrade the model to gpt-4i or 5 depending on analysis
