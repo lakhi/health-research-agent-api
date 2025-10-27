@@ -4,6 +4,7 @@ name: Build and Push to Azure Container Registry
 on:
   push:
     branches: [ main ]  # Runs when you push to main branch
+  workflow_dispatch: # enables manual trigger through GitHub UI
 
 # Environment variables available to all jobs
 env:
