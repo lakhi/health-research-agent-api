@@ -67,7 +67,7 @@ def get_health_research_network_agent(
         markdown=True,
         monitoring=True,
         knowledge=get_hrn_knowledge_base(),
-        add_references=True,
+        add_knowledge_to_context=True,
         search_knowledge=False,
         read_chat_history=True,
         show_tool_calls=False,

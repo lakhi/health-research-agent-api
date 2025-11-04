@@ -1,6 +1,6 @@
 [project]
 name = "health-research-agent-api"
-version = "0.1.0"
+version = "2.0"
 requires-python = ">=3.11"
 readme = "README.md"
 authors = [{ name = "Akshay (cloned from Agno)", email = "akshay.lakhi@mindfort.tech" }]
@@ -16,7 +16,6 @@ dependencies = [
   "pypdf",
   "sentence-transformers",
   "sqlalchemy",
-  "torch==2.8.0+cpu",
 ]
 
 [project.optional-dependencies]
