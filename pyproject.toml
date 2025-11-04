@@ -16,6 +16,7 @@ dependencies = [
   "pypdf",
   "sentence-transformers",
   "sqlalchemy",
+  "torch==2.8.0+cpu",
 ]
 
 [project.optional-dependencies]
