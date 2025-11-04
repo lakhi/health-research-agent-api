@@ -2,7 +2,8 @@ from enum import Enum
 from logging import getLogger
 from typing import AsyncGenerator, List, Optional
 
-from agno.agent import Agent, AgentKnowledge
+from agno.agent import Agent
+from agno.knowledge import Knowledge
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -112,7 +113,7 @@ async def load_agent_knowledge(agent_id: AgentType):
     Returns:
         A success message if the knowledge base is loaded.
     """
-    agent_knowledge: Optional[AgentKnowledge] = None
+    agent_knowledge: Optional[Knowledge] = None
 
     if agent_id == AgentType.MARHONIVIRUS_AGENT:
         agent_knowledge = get_virus_knowledge()

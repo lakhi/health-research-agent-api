@@ -1,5 +1,5 @@
-from agno.agent import Agent, AgentKnowledge
-from agno.knowledge.pdf import PDFKnowledgeBase
+from agno.agent import Agent
+from agno.knowledge import Knowledge
 from agno.embedder.sentence_transformer import SentenceTransformerEmbedder
 from agno.storage.sqlite import SqliteStorage
 from agno.models.google import Gemini
@@ -11,8 +11,8 @@ from db.session import db_url
 logger = getLogger(__name__)
 
 
-def get_virus_knowledge() -> AgentKnowledge:
-    knowledge_base = PDFKnowledgeBase(
+def get_virus_knowledge() -> Knowledge:
+    knowledge_base = Knowledge(
         path="knowledge_base/marhonivirus",
         vector_db=PgVector(
             db_url=db_url,
@@ -48,7 +48,7 @@ def get_marhinovirus_agent(
         markdown=True,
         monitoring=True,
         knowledge=get_virus_knowledge(),
-        add_references=True,
+        add_knowledge_to_context=True,
         storage=SqliteStorage(table_name="agent_sessions", db_file="db/sqlite_data.db"),
         add_history_to_messages=True,
         num_history_runs=3,
