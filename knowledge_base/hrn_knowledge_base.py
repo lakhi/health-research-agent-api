@@ -1,7 +1,5 @@
 # import asyncio
 from agno.knowledge.knowledge import Knowledge
-from agno.knowledge.reader.pdf_reader import PDFReader
-from agno.knowledge.chunking.semantic import SemanticChunking
 from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
 from agno.vectordb.pgvector import PgVector, SearchType
 from db.session import db_url
@@ -12,9 +10,9 @@ from knowledge_base.hrn_members import HrnMembers
 # 2. TODO: impl async loading of knowledge base if startup time is too long: https://docs-v1.agno.com/vectordb/pgvector
 
 
-def get_hrn_knowledge_base() -> Knowledge:
-    knowledge_base = Knowledge(
-        urls=__get_knoweldge_base_data(),
+def get_hrn_knowledge() -> Knowledge:
+    hrn_knowledge = Knowledge(
+        name="Health Research Network Research Papers",
         vector_db=PgVector(
             db_url=db_url,
             table_name="research_papers",
@@ -23,18 +21,18 @@ def get_hrn_knowledge_base() -> Knowledge:
         ),
     )
 
-    knowledge_base.add_content(
-        __get_knoweldge_base_data(),
-        reader=PDFReader(
-            chunking_strategy=SemanticChunking(),
-            read_images=True,
-        ),
-    )
+    # hrn_knowledge.add_content(
+    #     __get_knoweldge_base_data(),
+    #     reader=PDFReader(
+    #         chunking_strategy=SemanticChunking(),
+    #         read_images=True,
+    #     ),
+    # )
 
-    return knowledge_base
+    return hrn_knowledge
 
 
-def __get_knoweldge_base_data() -> list:
+def get_hrn_knoweldge_data() -> list:
 
     kb_data = [
         # 1. ROBERT BÖHM'S PAPERS
