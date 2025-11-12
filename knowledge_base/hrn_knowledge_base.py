@@ -1,9 +1,12 @@
-# import asyncio
+import asyncio
 from agno.knowledge.knowledge import Knowledge
 from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
 from agno.vectordb.pgvector import PgVector, SearchType
 from db.session import db_url
 from knowledge_base.hrn_members import HrnMembers
+from agno.knowledge.reader.pdf_reader import PDFReader
+from agno.knowledge.chunking.semantic import SemanticChunking
+
 
 # 0. TODO: add DOI-style citations referencing to every file in the knowledge base
 # 1. TODO: replace Veronika's book chapter with a research article
@@ -21,12 +24,14 @@ def get_hrn_knowledge() -> Knowledge:
         ),
     )
 
-    # hrn_knowledge.add_content(
-    #     __get_knoweldge_base_data(),
-    #     reader=PDFReader(
-    #         chunking_strategy=SemanticChunking(),
-    #         read_images=True,
-    #     ),
+    # asyncio.run(
+    #     hrn_knowledge.add_content_async(
+    #         get_hrn_knoweldge_data(),
+    #         reader=PDFReader(
+    #             chunking_strategy=SemanticChunking(),
+    #             read_images=True,
+    #         ),
+    #     )
     # )
 
     return hrn_knowledge

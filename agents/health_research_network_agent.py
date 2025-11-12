@@ -31,8 +31,8 @@ def get_health_research_network_agent(
 ) -> Agent:
 
     health_research_network_agent = Agent(
+        id="hrn_agent",
         name="Health Research Network Agent",
-        agent_id="hrn_agent",
         model=AzureOpenAI(id=model_id),
         description=dedent(
             """
@@ -65,14 +65,11 @@ def get_health_research_network_agent(
             """
         ),
         markdown=True,
-        monitoring=True,
         knowledge=get_hrn_knowledge(),
         add_knowledge_to_context=True,
-        search_knowledge=False,
         read_chat_history=True,
-        show_tool_calls=False,
         enable_agentic_knowledge_filters=True,
-        add_history_to_messages=True,
+        add_history_to_context=True,
         num_history_runs=3,
     )
 
