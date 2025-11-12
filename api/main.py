@@ -1,3 +1,4 @@
+import asyncio
 from agno.os import AgentOS
 from dotenv import load_dotenv
 from agents.health_research_network_agent import get_health_research_network_agent
@@ -18,12 +19,14 @@ agent_os = AgentOS(
 app = agent_os.get_app()
 
 if __name__ == "__main__":
-    hrn_agent.knowledge.add_content(
-        get_hrn_knoweldge_data(),
-        reader=PDFReader(
-            chunking_strategy=SemanticChunking(),
-            read_images=True,
-        ),
+    asyncio.run(
+        hrn_agent.knowledge.add_content_async(
+            get_hrn_knoweldge_data(),
+            reader=PDFReader(
+                chunking_strategy=SemanticChunking(),
+                read_images=True,
+            ),
+        )
     )
 
     agent_os.serve(app="main:app", reload=True)
