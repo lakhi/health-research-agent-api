@@ -1,6 +1,6 @@
 from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
-from knowledge_base.hrn_knowledge_base import get_hrn_knowledge_base
+from knowledge_base.hrn_knowledge_base import get_hrn_knowledge
 
 from typing import Optional
 from logging import getLogger
@@ -66,7 +66,7 @@ def get_health_research_network_agent(
         ),
         markdown=True,
         monitoring=True,
-        knowledge=get_hrn_knowledge_base(),
+        knowledge=get_hrn_knowledge(),
         add_knowledge_to_context=True,
         search_knowledge=False,
         read_chat_history=True,

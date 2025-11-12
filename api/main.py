@@ -1,40 +1,29 @@
-from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
+from agno.os import AgentOS
 from dotenv import load_dotenv
+from agents.health_research_network_agent import get_health_research_network_agent
+from agno.knowledge.reader.pdf_reader import PDFReader
+from agno.knowledge.chunking.semantic import SemanticChunking
 
-# Load environment variables from .env file
+from knowledge_base.hrn_knowledge_base import get_hrn_knoweldge_data
+
+
 load_dotenv()
 
-from api.routes.v1_router import v1_router
-from api.settings import api_settings
+hrn_agent = get_health_research_network_agent()
 
+agent_os = AgentOS(
+    os_id="agentos-trial",
+    agents=[hrn_agent],
+)
+app = agent_os.get_app()
 
-def create_app() -> FastAPI:
-    """Create a FastAPI App"""
-
-    # Create FastAPI App
-    app: FastAPI = FastAPI(
-        title=api_settings.title,
-        version=api_settings.version,
-        docs_url="/docs" if api_settings.docs_enabled else None,
-        redoc_url="/redoc" if api_settings.docs_enabled else None,
-        openapi_url="/openapi.json" if api_settings.docs_enabled else None,
+if __name__ == "__main__":
+    hrn_agent.knowledge.add_content(
+        get_hrn_knoweldge_data(),
+        reader=PDFReader(
+            chunking_strategy=SemanticChunking(),
+            read_images=True,
+        ),
     )
 
-    # Add v1 router
-    app.include_router(v1_router)
-
-    # Add Middlewares
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=api_settings.cors_origin_list,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
-    return app
-
-
-# Create a FastAPI app
-app = create_app()
+    agent_os.serve(app="main:app", reload=True)
