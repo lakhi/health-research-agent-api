@@ -1,6 +1,7 @@
 from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
 from knowledge_base.hrn_knowledge_base import get_hrn_knowledge
+from agents.llm_models import LLMModel
 
 from typing import Optional
 from logging import getLogger
@@ -24,7 +25,7 @@ logger = getLogger(__name__)
 
 
 def get_health_research_network_agent(
-    model_id: str = "gpt-4o",
+    model_id: str = LLMModel.GPT_4O,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
     debug_mode: bool = True,
