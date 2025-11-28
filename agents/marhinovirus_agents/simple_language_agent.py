@@ -1,6 +1,10 @@
 from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
-from knowledge_base.marhinovirus_knowledge_base import SIMPLE_DESCRIPTION, SIMPLE_INSTRUCTIONS, get_normal_catalog_knowledge
+from knowledge_base.marhinovirus_knowledge_base import (
+    SIMPLE_DESCRIPTION,
+    SIMPLE_INSTRUCTIONS,
+    get_normal_catalog_knowledge,
+)
 from agents.llm_models import LLMModel
 
 from typing import Optional
