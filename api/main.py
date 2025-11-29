@@ -37,35 +37,53 @@ app = agent_os.get_app()
 
 if __name__ == "__main__":
     # Load normal catalog knowledge for control and simple language agents
+    # control_agent.knowledge.add_content(
+    #     url=get_normal_catalog_url(),
+    #     reader=PDFReader(
+    #         chunking_strategy=SemanticChunking(),
+    #         # read_images=True,
+    #     ),
+    # )
+
     asyncio.run(
         control_agent.knowledge.add_content_async(
-            get_normal_catalog_url(),
+            url=get_normal_catalog_url(),
             reader=PDFReader(
                 chunking_strategy=SemanticChunking(),
-                read_images=True,
-            ),
-        )
-    )
-    asyncio.run(
-        simple_lg_agent.knowledge.add_content_async(
-            get_normal_catalog_url(),
-            reader=PDFReader(
-                chunking_strategy=SemanticChunking(),
-                read_images=True,
+                # read_images=True,
             ),
         )
     )
 
-    # Load simple catalog knowledge for simple catalog language agent
-    asyncio.run(
-        simple_catalog_lg_agent.knowledge.add_content_async(
-            get_simple_catalog_url(),
-            reader=PDFReader(
-                chunking_strategy=SemanticChunking(),
-                read_images=True,
-            ),
-        )
-    )
+    # asyncio.run(
+    #     control_agent.knowledge.add_content_async(
+    #         get_normal_catalog_url(),
+    #         reader=PDFReader(
+    #             chunking_strategy=SemanticChunking(),
+    #             read_images=True,
+    #         ),
+    #     )
+    # )
+    # asyncio.run(
+    #     simple_lg_agent.knowledge.add_content_async(
+    #         get_normal_catalog_url(),
+    #         reader=PDFReader(
+    #             chunking_strategy=SemanticChunking(),
+    #             read_images=True,
+    #         ),
+    #     )
+    # )
+
+    # # Load simple catalog knowledge for simple catalog language agent
+    # asyncio.run(
+    #     simple_catalog_lg_agent.knowledge.add_content_async(
+    #         get_simple_catalog_url(),
+    #         reader=PDFReader(
+    #             chunking_strategy=SemanticChunking(),
+    #             read_images=True,
+    #         ),
+    #     )
+    # )
 
     # asyncio.run(
     #     hrn_agent.knowledge.add_content_async(
