@@ -1,6 +1,11 @@
 from agno.knowledge import Knowledge
 from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
 from agno.vectordb.pgvector import PgVector, SearchType
+import asyncio
+
+# from agno.knowledge.reranker.cohere import CohereReranker
+from agno.knowledge.reader.pdf_reader import PDFReader
+from agno.knowledge.chunking.semantic import SemanticChunking
 from db.session import db_url
 from textwrap import dedent
 
@@ -93,21 +98,47 @@ SIMPLE_INSTRUCTIONS = dedent(
     """
 )
 
+# TODO 0: implement Search Retrieval best practices: https://docs.agno.com/basics/knowledge/search-and-retrieval/overview
+# TODO 1: implement a contents db and see how it can be used effectively
+# TODO 3: implement a reranker and see if results are better
+
 
 def get_normal_catalog_knowledge() -> Knowledge:
     """
     Creates and returns the Knowledge object for the normal Marhinovirus catalog.
     Uses separate PgVector table: virus_knowledge_normal
     """
+    # virus_normal_catalog = (
+    #     PgVector(
+    #         db_url=db_url,
+    #         table_name="virus_normal_catalog",
+    #         search_type=SearchType.hybrid,
+    #         embedder=SentenceTransformerEmbedder(),
+    #         # reranker=CohereReranker(),
+    #     ),
+    # )
+
     normal_catalog_knowledge = Knowledge(
         name="Marhinovirus Normal Catalog",
         vector_db=PgVector(
             db_url=db_url,
-            table_name="virus_knowledge_normal",
+            table_name="virus_normal_catalog",
             search_type=SearchType.hybrid,
             embedder=SentenceTransformerEmbedder(),
+            # reranker=CohereReranker(),
         ),
     )
+
+    # asyncio.run(
+    #     normal_catalog_knowledge.add_content_async(
+    #         url=get_normal_catalog_url(),
+    #         reader=PDFReader(
+    #             chunking_strategy=SemanticChunking(chunk_size=1000),
+    #             # read_images=True,
+    #         ),
+    #     )
+    # )
+    
     return normal_catalog_knowledge
 
 
@@ -120,7 +151,7 @@ def get_simple_catalog_knowledge() -> Knowledge:
         name="Marhinovirus Simple Language Catalog",
         vector_db=PgVector(
             db_url=db_url,
-            table_name="virus_knowledge_simple",
+            table_name="virus_simple_catalog",
             search_type=SearchType.hybrid,
             embedder=SentenceTransformerEmbedder(),
         ),
