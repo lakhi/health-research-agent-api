@@ -26,6 +26,19 @@ load_dotenv()
 
 # Instantiate the three Marhinovirus agents
 control_agent = get_control_marhinovirus_agent()
+print("Control Agent's KNowledge:", control_agent.knowledge)
+
+# Load normal catalog knowledge for control and simple language agents
+# control_agent.knowledge.add_content(
+#     name='Marhinovirus Normal Catalog',
+#     path='marhinovirus-normal-catalog.pdf',
+#     # url=get_normal_catalog_url(),
+#     reader=PDFReader(
+#         chunking_strategy=SemanticChunking(),
+#         # read_images=True,
+#     ),
+# )
+
 simple_lg_agent = get_simple_language_marhinovirus_agent()
 simple_catalog_lg_agent = get_simple_catalog_language_marhinovirus_agent()
 
@@ -33,20 +46,18 @@ agent_os = AgentOS(
     os_id="agentos-trial",
     agents=[control_agent, simple_lg_agent, simple_catalog_lg_agent],
 )
+
+# control_agent.knowledge.add_content(
+#     path="marhinovirus-normal-catalog.pdf",
+# )
+
 app = agent_os.get_app()
 
 if __name__ == "__main__":
-    # Load normal catalog knowledge for control and simple language agents
-    # control_agent.knowledge.add_content(
-    #     url=get_normal_catalog_url(),
-    #     reader=PDFReader(
-    #         chunking_strategy=SemanticChunking(),
-    #         # read_images=True,
-    #     ),
-    # )
-
     asyncio.run(
         control_agent.knowledge.add_content_async(
+            name="Marhinovirus Normal Catalog",
+            # path='marhinovirus-normal-catalog.pdf',
             url=get_normal_catalog_url(),
             reader=PDFReader(
                 chunking_strategy=SemanticChunking(),
@@ -55,44 +66,6 @@ if __name__ == "__main__":
         )
     )
 
-    # asyncio.run(
-    #     control_agent.knowledge.add_content_async(
-    #         get_normal_catalog_url(),
-    #         reader=PDFReader(
-    #             chunking_strategy=SemanticChunking(),
-    #             read_images=True,
-    #         ),
-    #     )
-    # )
-    # asyncio.run(
-    #     simple_lg_agent.knowledge.add_content_async(
-    #         get_normal_catalog_url(),
-    #         reader=PDFReader(
-    #             chunking_strategy=SemanticChunking(),
-    #             read_images=True,
-    #         ),
-    #     )
-    # )
-
-    # # Load simple catalog knowledge for simple catalog language agent
-    # asyncio.run(
-    #     simple_catalog_lg_agent.knowledge.add_content_async(
-    #         get_simple_catalog_url(),
-    #         reader=PDFReader(
-    #             chunking_strategy=SemanticChunking(),
-    #             read_images=True,
-    #         ),
-    #     )
-    # )
-
-    # asyncio.run(
-    #     hrn_agent.knowledge.add_content_async(
-    #         get_hrn_knoweldge_data(),
-    #         reader=PDFReader(
-    #             chunking_strategy=SemanticChunking(),
-    #             read_images=True,
-    #         ),
-    #     )
-    # )
-
+    print("Control Agent's Knowledge:", control_agent.knowledge)
     agent_os.serve(app="main:app", reload=True)
+

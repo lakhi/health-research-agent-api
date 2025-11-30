@@ -2,6 +2,7 @@ from agno.knowledge import Knowledge
 from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
 from agno.vectordb.pgvector import PgVector, SearchType
 import asyncio
+from agno.db.postgres import PostgresDb
 
 # from agno.knowledge.reranker.cohere import CohereReranker
 from agno.knowledge.reader.pdf_reader import PDFReader
@@ -118,6 +119,12 @@ def get_normal_catalog_knowledge() -> Knowledge:
     #     ),
     # )
 
+    normal_catalog_contents = PostgresDb(
+        db_url,
+        id="normal_catalog_contents",
+        knowledge_table="normal_catalog_contents",
+    )
+
     normal_catalog_knowledge = Knowledge(
         name="Marhinovirus Normal Catalog",
         vector_db=PgVector(
@@ -127,6 +134,7 @@ def get_normal_catalog_knowledge() -> Knowledge:
             embedder=SentenceTransformerEmbedder(),
             # reranker=CohereReranker(),
         ),
+        contents_db=normal_catalog_contents,
     )
 
     # asyncio.run(
@@ -138,7 +146,7 @@ def get_normal_catalog_knowledge() -> Knowledge:
     #         ),
     #     )
     # )
-    
+
     return normal_catalog_knowledge
 
 
