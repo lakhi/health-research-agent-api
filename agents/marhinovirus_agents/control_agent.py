@@ -86,5 +86,3 @@ if __name__ == "__main__":
             # read_images=True,
         ),
     )
-
-    logger.info("Control Agent's Knowledge:", normal_catalog_knowledge)
