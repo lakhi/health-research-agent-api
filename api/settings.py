@@ -4,7 +4,7 @@ from pydantic import Field, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 from pydantic_settings import BaseSettings
 
-
+# TODO: ask Agno team if this file is required (since it was needed in the 1.0 approach and appears in the agent-api project, but does not appear in the 2.0 agent-awes-infra project)
 class ApiSettings(BaseSettings):
     """Api settings that are set using environment variables."""
 
