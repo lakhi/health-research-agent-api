@@ -54,18 +54,26 @@ agent_os = AgentOS(
 app = agent_os.get_app()
 
 if __name__ == "__main__":
-    asyncio.run(
-        control_agent.knowledge.add_content_async(
-            name="Marhinovirus Normal Catalog",
-            # path='marhinovirus-normal-catalog.pdf',
-            url=get_normal_catalog_url(),
-            reader=PDFReader(
-                chunking_strategy=SemanticChunking(),
-                # read_images=True,
-            ),
-        )
+    # asyncio.run(
+    #     control_agent.knowledge.add_content_async(
+    #         name="Marhinovirus Normal Catalog",
+    #         # path='marhinovirus-normal-catalog.pdf',
+    #         url=get_normal_catalog_url(),
+    #         reader=PDFReader(
+    #             chunking_strategy=SemanticChunking(),
+    #             # read_images=True,
+    #         ),
+    #     )
+    # )
+
+    control_agent.knowledge.add_content(
+        name="Marhinovirus Normal Catalog",
+        url="https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/Marhinovirus-information-catalog_normal.pdf",
+        reader=PDFReader(
+            chunking_strategy=SemanticChunking(),
+            # read_images=True,
+        ),
     )
 
-    print("Control Agent's Knowledge:", control_agent.knowledge)
-    agent_os.serve(app="main:app", reload=True)
-
+    # agent_os.serve(app="main:app", reload=True)
+    agent_os.serve(app="main:app")
