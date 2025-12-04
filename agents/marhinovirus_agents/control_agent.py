@@ -75,14 +75,14 @@ def get_control_marhinovirus_agent(
     return control_agent
 
 
-if __name__ == "__main__":
-    logger.info("Adding normal catalog content to control agent's knowledge...")
+# if __name__ == "__main__":
+# #     # logger.info("Adding normal catalog content to control agent's knowledge...")
 
-    normal_catalog_knowledge.add_content(
-        name="Marhinovirus Normal Catalog",
-        url="https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/Marhinovirus-information-catalog_normal.pdf",
-        reader=PDFReader(
-            chunking_strategy=SemanticChunking(),
-            # read_images=True,
-        ),
-    )
+#     normal_catalog_knowledge.add_content(
+#         name="Marhinovirus Normal Catalog",
+#         url="https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/Marhinovirus-information-catalog_normal.pdf",
+#         reader=PDFReader(
+#             chunking_strategy=SemanticChunking(),
+#             # read_images=True,
+#         ),
+#     )
