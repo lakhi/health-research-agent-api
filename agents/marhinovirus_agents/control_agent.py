@@ -70,13 +70,14 @@ def get_control_marhinovirus_agent(
         # read_chat_history=True, # Agent decides when to look up
         add_history_to_context=True,
         num_history_runs=3,
+        debug_mode=True,
     )
 
     return control_agent
 
 
 # if __name__ == "__main__":
-# #     # logger.info("Adding normal catalog content to control agent's knowledge...")
+#     # logger.info("Adding normal catalog content to control agent's knowledge...")
 
 #     normal_catalog_knowledge.add_content(
 #         name="Marhinovirus Normal Catalog",

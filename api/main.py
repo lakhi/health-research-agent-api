@@ -66,14 +66,17 @@ if __name__ == "__main__":
     #     )
     # )
 
+    print("Adding normal catalog content to control agent's knowledge...")
+
     control_agent.knowledge.add_content(
         name="Marhinovirus Normal Catalog",
         url="https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/Marhinovirus-information-catalog_normal.pdf",
-        reader=PDFReader(
-            chunking_strategy=SemanticChunking(),
-            # read_images=True,
-        ),
+        # reader=PDFReader(
+        #     chunking_strategy=SemanticChunking(),
+        #     # read_images=True,
+        # ),
     )
 
+    print("Starting AgentOS server...")
     # agent_os.serve(app="main:app", reload=True)
     agent_os.serve(app="main:app")
