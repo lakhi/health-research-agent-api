@@ -1,4 +1,4 @@
-import asyncio
+from contextlib import asynccontextmanager
 from agno.os import AgentOS
 from dotenv import load_dotenv
 
@@ -26,57 +26,50 @@ load_dotenv()
 
 # Instantiate the three Marhinovirus agents
 control_agent = get_control_marhinovirus_agent()
-print("Control Agent's KNowledge:", control_agent.knowledge)
-
-# Load normal catalog knowledge for control and simple language agents
-# control_agent.knowledge.add_content(
-#     name='Marhinovirus Normal Catalog',
-#     path='marhinovirus-normal-catalog.pdf',
-#     # url=get_normal_catalog_url(),
-#     reader=PDFReader(
-#         chunking_strategy=SemanticChunking(),
-#         # read_images=True,
-#     ),
-# )
+print("Control Agent's Knowledge:", control_agent.knowledge)
 
 simple_lg_agent = get_simple_language_marhinovirus_agent()
 simple_catalog_lg_agent = get_simple_catalog_language_marhinovirus_agent()
 
+
+@asynccontextmanager
+async def lifespan(app):
+    """
+    Lifespan context manager to handle startup and shutdown events.
+    Loads knowledge into agents when the application starts.
+    """
+    # Startup: Load knowledge into agents
+    print("🚀 Loading knowledge into agents...")
+
+    try:
+        # Load normal catalog for control agent
+        await control_agent.knowledge.add_content_async(
+            name="Marhinovirus Normal Catalog",
+            url=get_normal_catalog_url(),
+            # reader=PDFReader(
+            #     chunking_strategy=SemanticChunking(),
+            # ),
+        )
+        print("✅ Control agent knowledge loaded successfully")
+
+        # Add similar loading for other agents if needed
+        # await simple_lg_agent.knowledge.add_content_async(...)
+        # await simple_catalog_lg_agent.knowledge.add_content_async(...)
+
+    except Exception as e:
+        print(f"❌ Error loading knowledge: {e}")
+        raise
+
+    yield
+
+    # Shutdown: cleanup if needed
+    print("👋 Shutting down...")
+
+
 agent_os = AgentOS(
     os_id="agentos-trial",
     agents=[control_agent, simple_lg_agent, simple_catalog_lg_agent],
+    lifespan=lifespan,
 )
 
-# control_agent.knowledge.add_content(
-#     path="marhinovirus-normal-catalog.pdf",
-# )
-
 app = agent_os.get_app()
-
-if __name__ == "__main__":
-    # asyncio.run(
-    #     control_agent.knowledge.add_content_async(
-    #         name="Marhinovirus Normal Catalog",
-    #         # path='marhinovirus-normal-catalog.pdf',
-    #         url=get_normal_catalog_url(),
-    #         reader=PDFReader(
-    #             chunking_strategy=SemanticChunking(),
-    #             # read_images=True,
-    #         ),
-    #     )
-    # )
-
-    print("Adding normal catalog content to control agent's knowledge...")
-
-    control_agent.knowledge.add_content(
-        name="Marhinovirus Normal Catalog",
-        url="https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/Marhinovirus-information-catalog_normal.pdf",
-        # reader=PDFReader(
-        #     chunking_strategy=SemanticChunking(),
-        #     # read_images=True,
-        # ),
-    )
-
-    print("Starting AgentOS server...")
-    # agent_os.serve(app="main:app", reload=True)
-    agent_os.serve(app="main:app")
