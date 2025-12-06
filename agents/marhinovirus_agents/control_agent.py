@@ -24,6 +24,8 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
+# TODO 1: remove google etc. dependencies from requirements.txt and linux (basically all that don't feature in pyproject.toml)
+
 normal_catalog_contents = PostgresDb(
     db_url,
     id="normal_catalog_contents",
@@ -75,15 +77,3 @@ def get_control_marhinovirus_agent(
 
     return control_agent
 
-
-# if __name__ == "__main__":
-#     # logger.info("Adding normal catalog content to control agent's knowledge...")
-
-#     normal_catalog_knowledge.add_content(
-#         name="Marhinovirus Normal Catalog",
-#         url="https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/Marhinovirus-information-catalog_normal.pdf",
-#         reader=PDFReader(
-#             chunking_strategy=SemanticChunking(),
-#             # read_images=True,
-#         ),
-#     )
