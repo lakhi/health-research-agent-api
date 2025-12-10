@@ -1,12 +1,9 @@
 from agno.knowledge import Knowledge
 from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
 from agno.vectordb.pgvector import PgVector, SearchType
-import asyncio
 from agno.db.postgres import PostgresDb
 
 # from agno.knowledge.reranker.cohere import CohereReranker
-from agno.knowledge.reader.pdf_reader import PDFReader
-from agno.knowledge.chunking.semantic import SemanticChunking
 from db.session import db_url
 from textwrap import dedent
 
@@ -110,45 +107,29 @@ def get_normal_catalog_knowledge() -> Knowledge:
     Creates and returns the Knowledge object for the normal Marhinovirus catalog.
     Uses separate PgVector table: virus_knowledge_normal
     """
-    # virus_normal_catalog = (
-    #     PgVector(
-    #         db_url=db_url,
-    #         table_name="virus_normal_catalog",
-    #         search_type=SearchType.hybrid,
-    #         embedder=SentenceTransformerEmbedder(),
-    #         # reranker=CohereReranker(),
-    #     ),
-    # )
-
-    normal_catalog_contents = PostgresDb(
-        db_url,
-        id="normal_catalog_contents",
-        knowledge_table="normal_catalog_contents",
-    )
-
     normal_catalog_knowledge = Knowledge(
         name="Marhinovirus Normal Catalog",
         vector_db=PgVector(
             db_url=db_url,
-            table_name="virus_normal_catalog",
+            table_name="marhino_normal_catalog",
             search_type=SearchType.hybrid,
             embedder=SentenceTransformerEmbedder(),
             # reranker=CohereReranker(),
         ),
-        contents_db=normal_catalog_contents,
+        max_results=5,
+        contents_db=get_contents_db(),
     )
 
-    # asyncio.run(
-    #     normal_catalog_knowledge.add_content_async(
-    #         url=get_normal_catalog_url(),
-    #         reader=PDFReader(
-    #             chunking_strategy=SemanticChunking(chunk_size=1000),
-    #             # read_images=True,
-    #         ),
-    #     )
-    # )
-
     return normal_catalog_knowledge
+
+def get_contents_db():
+    marhino_catalog_contents = PostgresDb(
+        db_url,
+        id="marhino_normal_contents",
+        knowledge_table="marhino_catalog_contents",
+    )
+    
+    return marhino_catalog_contents
 
 
 def get_simple_catalog_knowledge() -> Knowledge:
@@ -160,10 +141,12 @@ def get_simple_catalog_knowledge() -> Knowledge:
         name="Marhinovirus Simple Language Catalog",
         vector_db=PgVector(
             db_url=db_url,
-            table_name="virus_simple_catalog",
+            table_name="marhino_simple_catalog",
             search_type=SearchType.hybrid,
             embedder=SentenceTransformerEmbedder(),
         ),
+        max_results=5,
+        contents_db=get_contents_db(),
     )
     return simple_catalog_knowledge
 

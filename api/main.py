@@ -15,8 +15,6 @@ from knowledge_base.marhinovirus_knowledge_base import (
     get_simple_catalog_url,
 )
 from agno.knowledge.reader.pdf_reader import PDFReader
-from agno.knowledge.chunking.semantic import SemanticChunking
-from agno.knowledge.chunking.agentic import AgenticChunking
 from agno.knowledge.chunking.document import DocumentChunking
 
 # from knowledge_base.hrn_knowledge_base import get_hrn_knoweldge_data
@@ -28,8 +26,6 @@ load_dotenv()
 
 # Instantiate the three Marhinovirus agents
 control_agent = get_control_marhinovirus_agent()
-print("Control Agent's Knowledge:", control_agent.knowledge)
-
 simple_lg_agent = get_simple_language_marhinovirus_agent()
 simple_catalog_lg_agent = get_simple_catalog_language_marhinovirus_agent()
 
@@ -51,13 +47,25 @@ async def app_lifecycle(app):
             reader=PDFReader(
                 chunking_strategy=DocumentChunking(),
             ),
-            skip_if_exists=False
+            skip_if_exists=False,
+        )
+        await simple_lg_agent.knowledge.add_content_async(
+            name="Marhinovirus Normal Catalog",
+            url=get_normal_catalog_url(),
+            reader=PDFReader(
+                chunking_strategy=DocumentChunking(),
+            ),
+            skip_if_exists=False,
+        )
+        await simple_catalog_lg_agent.knowledge.add_content_async(
+            name="Marhinovirus Simple Catalog",
+            url=get_simple_catalog_url(),
+            reader=PDFReader(
+                chunking_strategy=DocumentChunking(),
+            ),
+            skip_if_exists=False,
         )
         print("✅ Control agent knowledge loaded successfully")
-
-        # Add similar loading for other agents if needed
-        # await simple_lg_agent.knowledge.add_content_async(...)
-        # await simple_catalog_lg_agent.knowledge.add_content_async(...)
 
     except Exception as e:
         print(f"❌ Error loading knowledge: {e}")

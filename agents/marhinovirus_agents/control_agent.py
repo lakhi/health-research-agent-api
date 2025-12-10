@@ -3,23 +3,10 @@ from agno.models.azure import AzureOpenAI
 from knowledge_base.marhinovirus_knowledge_base import (
     NORMAL_DESCRIPTION,
     NORMAL_INSTRUCTIONS,
-    # get_normal_catalog_knowledge,
+    get_normal_catalog_knowledge,
 )
 from agents.llm_models import LLMModel
 from db import agent_db
-from agno.knowledge import Knowledge
-from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
-from agno.vectordb.pgvector import PgVector, SearchType
-from agno.db.postgres import PostgresDb
-from knowledge_base.marhinovirus_knowledge_base import (
-    get_normal_catalog_url,
-)
-from agno.knowledge.reader.pdf_reader import PDFReader
-from agno.knowledge.chunking.semantic import SemanticChunking
-from agno.knowledge.embedder.openai import OpenAIEmbedder
-
-from db.session import db_url
-
 from typing import Optional
 from logging import getLogger
 
@@ -28,26 +15,6 @@ logger = getLogger(__name__)
 # TODO NOW: contents db proper implementation
 # TODO #0: figure out SESSIONS for chat storage: https://docs.agno.com/basics/sessions/overview https://docs.agno.com/basics/state/overview
 # TODO #1: impl the search and retrieval best practices: https://docs.agno.com/basics/knowledge/search-and-retrieval/overview
-
-
-normal_catalog_contents = PostgresDb(
-    db_url,
-    id="normal_catalog_contents",
-    knowledge_table="normal_catalog_contents",
-)
-
-normal_catalog_knowledge = Knowledge(
-    name="Marhinovirus Normal Catalog",
-    vector_db=PgVector(
-        db_url=db_url,
-        table_name="virus_normal_catalog",
-        search_type=SearchType.hybrid,
-        embedder=SentenceTransformerEmbedder(),
-        # reranker=CohereReranker(),
-    ),
-    max_results=5,
-    contents_db=normal_catalog_contents,
-)
 
 
 def get_control_marhinovirus_agent(
@@ -70,14 +37,12 @@ def get_control_marhinovirus_agent(
         description=NORMAL_DESCRIPTION,
         instructions=NORMAL_INSTRUCTIONS,
         markdown=True,
-        # knowledge=get_normal_catalog_knowledge(),
-        knowledge=normal_catalog_knowledge,
+        knowledge=get_normal_catalog_knowledge(),
         search_knowledge=True,
-        read_chat_history=True, # Agent decides when to look up
+        read_chat_history=True,  # Agent decides when to look up
         add_history_to_context=True,
         num_history_runs=3,
         debug_mode=True,
     )
 
     return control_agent
-

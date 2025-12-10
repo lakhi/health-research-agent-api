@@ -31,10 +31,11 @@ def get_simple_language_marhinovirus_agent(
         instructions=SIMPLE_INSTRUCTIONS,
         markdown=True,
         knowledge=get_normal_catalog_knowledge(),
-        add_knowledge_to_context=True,
-        read_chat_history=True,
+        search_knowledge=True,
+        read_chat_history=True,  # Agent decides when to look up
         add_history_to_context=True,
         num_history_runs=3,
+        debug_mode=True,
     )
 
     return simple_language_agent
