@@ -10,6 +10,7 @@ from textwrap import dedent
 
 logger = getLogger(__name__)
 
+# 0. TODO: implement TDD-based approach for the HRN agent: https://docs.agno.com/basics/agents/usage/scenario-testing
 # 1. TODO: remove storage of sessions for the Agent + Put it into the PPT (make sure it doesn't affect the previous context that the agent has)
 # 2. TODO: implement Metrics: https://docs.agno.com/agents/metrics
 # 3. TODO: upgrade the model to gpt-4i or 5 depending on analysis

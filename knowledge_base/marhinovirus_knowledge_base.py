@@ -99,8 +99,9 @@ SIMPLE_INSTRUCTIONS = dedent(
     """
 )
 
-# TODO 0: implement Search Retrieval best practices: https://docs.agno.com/basics/knowledge/search-and-retrieval/overview
+
 # TODO 1: implement a contents db and see how it can be used effectively
+# TODO 2: implement Search Retrieval best practices: https://docs.agno.com/basics/knowledge/search-and-retrieval/overview
 # TODO 3: implement a reranker and see if results are better
 
 

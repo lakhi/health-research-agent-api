@@ -16,6 +16,8 @@ from knowledge_base.marhinovirus_knowledge_base import (
 )
 from agno.knowledge.reader.pdf_reader import PDFReader
 from agno.knowledge.chunking.semantic import SemanticChunking
+from agno.knowledge.chunking.agentic import AgenticChunking
+from agno.knowledge.chunking.document import DocumentChunking
 
 # from knowledge_base.hrn_knowledge_base import get_hrn_knoweldge_data
 
@@ -33,7 +35,7 @@ simple_catalog_lg_agent = get_simple_catalog_language_marhinovirus_agent()
 
 
 @asynccontextmanager
-async def lifespan(app):
+async def app_lifecycle(app):
     """
     Lifespan context manager to handle startup and shutdown events.
     Loads knowledge into agents when the application starts.
@@ -46,9 +48,10 @@ async def lifespan(app):
         await control_agent.knowledge.add_content_async(
             name="Marhinovirus Normal Catalog",
             url=get_normal_catalog_url(),
-            # reader=PDFReader(
-            #     chunking_strategy=SemanticChunking(),
-            # ),
+            reader=PDFReader(
+                chunking_strategy=DocumentChunking(),
+            ),
+            skip_if_exists=False
         )
         print("✅ Control agent knowledge loaded successfully")
 
@@ -67,9 +70,9 @@ async def lifespan(app):
 
 
 agent_os = AgentOS(
-    os_id="agentos-trial",
+    name="Research Studies OS",
     agents=[control_agent, simple_lg_agent, simple_catalog_lg_agent],
-    lifespan=lifespan,
+    lifespan=app_lifecycle,
 )
 
 app = agent_os.get_app()
