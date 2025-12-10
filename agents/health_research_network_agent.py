@@ -1,6 +1,7 @@
 from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
-from knowledge_base.hrn_knowledge_base import get_hrn_knowledge_base
+from knowledge_base.hrn_knowledge_base import get_hrn_knowledge
+from agents.llm_models import LLMModel
 
 from typing import Optional
 from logging import getLogger
@@ -9,7 +10,7 @@ from textwrap import dedent
 
 logger = getLogger(__name__)
 
-# 0. TODO: new branch for Agno 2.0 migration (github actions workflow should not run on this branch)
+# 0. TODO: implement TDD-based approach for the HRN agent: https://docs.agno.com/basics/agents/usage/scenario-testing
 # 1. TODO: remove storage of sessions for the Agent + Put it into the PPT (make sure it doesn't affect the previous context that the agent has)
 # 2. TODO: implement Metrics: https://docs.agno.com/agents/metrics
 # 3. TODO: upgrade the model to gpt-4i or 5 depending on analysis
@@ -24,15 +25,15 @@ logger = getLogger(__name__)
 
 
 def get_health_research_network_agent(
-    model_id: str = "gpt-4o",
+    model_id: str = LLMModel.GPT_4O,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
     debug_mode: bool = True,
 ) -> Agent:
 
     health_research_network_agent = Agent(
+        id="hrn_agent",
         name="Health Research Network Agent",
-        agent_id="hrn_agent",
         model=AzureOpenAI(id=model_id),
         description=dedent(
             """
@@ -65,14 +66,11 @@ def get_health_research_network_agent(
             """
         ),
         markdown=True,
-        monitoring=True,
-        knowledge=get_hrn_knowledge_base(),
-        add_references=True,
-        search_knowledge=False,
+        knowledge=get_hrn_knowledge(),
+        add_knowledge_to_context=True,
         read_chat_history=True,
-        show_tool_calls=False,
         enable_agentic_knowledge_filters=True,
-        add_history_to_messages=True,
+        add_history_to_context=True,
         num_history_runs=3,
     )
 

@@ -1,34 +1,30 @@
-# import asyncio
-from agno.agent import AgentKnowledge
-from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
-from agno.document.chunking.document import DocumentChunking
-from agno.embedder.sentence_transformer import SentenceTransformerEmbedder
+from agno.knowledge.knowledge import Knowledge
+from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
 from agno.vectordb.pgvector import PgVector, SearchType
 from db.session import db_url
 from knowledge_base.hrn_members import HrnMembers
+
 
 # 0. TODO: add DOI-style citations referencing to every file in the knowledge base
 # 1. TODO: replace Veronika's book chapter with a research article
 # 2. TODO: impl async loading of knowledge base if startup time is too long: https://docs-v1.agno.com/vectordb/pgvector
 
-def get_hrn_knowledge_base() -> AgentKnowledge:
-    knowledge_base = PDFUrlKnowledgeBase(
-        urls=__get_knoweldge_base_data(),
+
+def get_hrn_knowledge() -> Knowledge:
+    hrn_knowledge = Knowledge(
+        name="Health in Society Research Network Research Papers",
         vector_db=PgVector(
             db_url=db_url,
-            table_name="research_papers",
+            table_name="health_in_soc_papers",
             search_type=SearchType.hybrid,
             embedder=SentenceTransformerEmbedder(),
         ),
-        chunking_strategy=DocumentChunking(),
     )
-    # asyncio.run(knowledge_base.aload(recreate=True))
-    knowledge_base.load(recreate=False)
 
-    return knowledge_base
+    return hrn_knowledge
 
 
-def __get_knoweldge_base_data() -> list:
+def get_hrn_knoweldge_data() -> list:
 
     kb_data = [
         # 1. ROBERT BÖHM'S PAPERS

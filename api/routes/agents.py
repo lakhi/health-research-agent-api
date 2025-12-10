@@ -2,13 +2,17 @@ from enum import Enum
 from logging import getLogger
 from typing import AsyncGenerator, List, Optional
 
-from agno.agent import Agent, AgentKnowledge
+from agno.agent import Agent
+from agno.knowledge import Knowledge
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from agents.selector import AgentType, get_agent, get_available_agents
-from agents.marhonivirus_agent import get_virus_knowledge
+from knowledge_base.marhinovirus_knowledge_base import (
+    get_normal_catalog_knowledge,
+    get_simple_catalog_knowledge,
+)
 
 logger = getLogger(__name__)
 
@@ -112,10 +116,14 @@ async def load_agent_knowledge(agent_id: AgentType):
     Returns:
         A success message if the knowledge base is loaded.
     """
-    agent_knowledge: Optional[AgentKnowledge] = None
+    agent_knowledge: Optional[Knowledge] = None
 
-    if agent_id == AgentType.MARHONIVIRUS_AGENT:
-        agent_knowledge = get_virus_knowledge()
+    if agent_id == AgentType.CONTROL_MARHINOVIRUS:
+        agent_knowledge = get_normal_catalog_knowledge()
+    elif agent_id == AgentType.SIMPLE_LANGUAGE_MARHINOVIRUS:
+        agent_knowledge = get_normal_catalog_knowledge()
+    elif agent_id == AgentType.SIMPLE_CATALOG_LANGUAGE_MARHINOVIRUS:
+        agent_knowledge = get_simple_catalog_knowledge()
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

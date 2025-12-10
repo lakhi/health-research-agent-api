@@ -25,7 +25,7 @@ if [[ "$1" = "linux" ]]; then
     --python-version 3.12 \
     --no-cache --upgrade -o ${REPO_ROOT}/requirements-linux.txt
 elif [[ "$1" = "upgrade" ]]; then
-  print_heading "Generating requirements.txt for local development..."
+  print_heading "Generating requirements.txt for upgrade..."
   UV_CUSTOM_COMPILE_COMMAND="./scripts/generate_requirements.sh upgrade" \
     uv pip compile ${REPO_ROOT}/pyproject.toml \
     --no-cache --upgrade -o ${REPO_ROOT}/requirements.txt
