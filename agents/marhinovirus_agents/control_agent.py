@@ -16,6 +16,7 @@ from knowledge_base.marhinovirus_knowledge_base import (
 )
 from agno.knowledge.reader.pdf_reader import PDFReader
 from agno.knowledge.chunking.semantic import SemanticChunking
+from agno.knowledge.embedder.openai import OpenAIEmbedder
 
 from db.session import db_url
 
@@ -24,7 +25,10 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
-# TODO 1: remove google etc. dependencies from requirements.txt and linux (basically all that don't feature in pyproject.toml)
+# TODO NOW: contents db proper implementation
+# TODO #0: figure out SESSIONS for chat storage: https://docs.agno.com/basics/sessions/overview https://docs.agno.com/basics/state/overview
+# TODO #1: impl the search and retrieval best practices: https://docs.agno.com/basics/knowledge/search-and-retrieval/overview
+
 
 normal_catalog_contents = PostgresDb(
     db_url,
@@ -41,6 +45,7 @@ normal_catalog_knowledge = Knowledge(
         embedder=SentenceTransformerEmbedder(),
         # reranker=CohereReranker(),
     ),
+    max_results=5,
     contents_db=normal_catalog_contents,
 )
 
@@ -68,8 +73,7 @@ def get_control_marhinovirus_agent(
         # knowledge=get_normal_catalog_knowledge(),
         knowledge=normal_catalog_knowledge,
         search_knowledge=True,
-        # add_knowledge_to_context=True,
-        # read_chat_history=True, # Agent decides when to look up
+        read_chat_history=True, # Agent decides when to look up
         add_history_to_context=True,
         num_history_runs=3,
         debug_mode=True,
