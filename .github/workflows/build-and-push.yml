@@ -3,8 +3,8 @@ name: Build and Push to Azure Container Registry
 # When to run this workflow
 on:
   # Temporarily disabled - uncomment to re-enable
-  # push:
-  #   branches: [ main ]
+  push:
+    branches: [ main ]
   workflow_dispatch: # Keep manual trigger for testing
 
 # Environment variables available to all jobs
