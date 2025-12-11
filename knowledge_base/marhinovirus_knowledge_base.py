@@ -91,7 +91,7 @@ SIMPLE_INSTRUCTIONS = dedent(
     - Search your knowledge base before answering any question.
     - If you do not find the answer to the question in your knowledge base, admit that you do not know the answer and refer people to healthcare professional
     - After answering the question, ask the user if they have any other questions regarding the virus or it's vaccine
-    - Make sure that your answers are compliant with the simple language regulations
+    - Make sure that your answers are compliant with the simple language regulations defined in your description
     - Where applicable, use the alternatives to medical words listed in the dictionary
     """
 )

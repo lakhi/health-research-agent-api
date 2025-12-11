@@ -15,7 +15,7 @@ from knowledge_base.marhinovirus_knowledge_base import (
     get_simple_catalog_url,
 )
 from agno.knowledge.reader.pdf_reader import PDFReader
-from agno.knowledge.chunking.document import DocumentChunking
+from agno.knowledge.chunking.fixed import FixedSizeChunking
 
 # from knowledge_base.hrn_knowledge_base import get_hrn_knoweldge_data
 
@@ -36,33 +36,25 @@ async def app_lifecycle(app):
     Lifespan context manager to handle startup and shutdown events.
     Loads knowledge into agents when the application starts.
     """
-    # Startup: Load knowledge into agents
     print("🚀 Loading knowledge into agents...")
 
     try:
-        # Load normal catalog for control agent
         await control_agent.knowledge.add_content_async(
             name="Marhinovirus Normal Catalog",
             url=get_normal_catalog_url(),
-            reader=PDFReader(
-                chunking_strategy=DocumentChunking(),
-            ),
+            reader=get_pdf_reader_with_chunking(),
             skip_if_exists=False,
         )
         await simple_lg_agent.knowledge.add_content_async(
             name="Marhinovirus Normal Catalog",
             url=get_normal_catalog_url(),
-            reader=PDFReader(
-                chunking_strategy=DocumentChunking(),
-            ),
+            reader=get_pdf_reader_with_chunking(),
             skip_if_exists=False,
         )
         await simple_catalog_lg_agent.knowledge.add_content_async(
             name="Marhinovirus Simple Catalog",
             url=get_simple_catalog_url(),
-            reader=PDFReader(
-                chunking_strategy=DocumentChunking(),
-            ),
+            reader=get_pdf_reader_with_chunking(),
             skip_if_exists=False,
         )
         print("✅ Control agent knowledge loaded successfully")
@@ -73,8 +65,14 @@ async def app_lifecycle(app):
 
     yield
 
-    # Shutdown: cleanup if needed
     print("👋 Shutting down...")
+
+
+def get_pdf_reader_with_chunking():
+    return PDFReader(
+        chunking_strategy=FixedSizeChunking(chunk_size=1000, overlap=200),
+        read_images=True,
+    )
 
 
 agent_os = AgentOS(
