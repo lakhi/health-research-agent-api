@@ -57,7 +57,7 @@ async def app_lifecycle(app):
             reader=get_pdf_reader_with_chunking(),
             skip_if_exists=False,
         )
-        print("✅ Control agent knowledge loaded successfully")
+        print("✅ Knowledge loaded successfully for 3 agents")
 
     except Exception as e:
         print(f"❌ Error loading knowledge: {e}")

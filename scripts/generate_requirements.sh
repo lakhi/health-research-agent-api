@@ -6,6 +6,7 @@
 # ./scripts/generate_requirements.sh: Generate requirements.txt
 # ./scripts/generate_requirements.sh upgrade: Upgrade requirements.txt
 # ./scripts/generate_requirements.sh linux: Generate for Linux deployment
+# ./scripts/generate_requirements.sh linux-upgrade: Upgrade requirements-linux.txt
 ############################################################################
 
 CURR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,6 +18,16 @@ print_heading "Generating requirements.txt..."
 if [[ "$1" = "linux" ]]; then
   print_heading "Generating requirements.txt for Linux deployment..."
   UV_CUSTOM_COMPILE_COMMAND="./scripts/generate_requirements.sh linux" \
+    uv pip compile ${REPO_ROOT}/pyproject.toml \
+    --index-strategy unsafe-best-match \
+    --index-url https://download.pytorch.org/whl/cpu \
+    --extra-index-url https://pypi.org/simple/ \
+    --python-platform x86_64-manylinux_2_28 \
+    --python-version 3.12 \
+    --no-cache --upgrade -o ${REPO_ROOT}/requirements-linux.txt
+elif [[ "$1" = "linux-upgrade" ]]; then
+  print_heading "Upgrading requirements-linux.txt for Linux deployment..."
+  UV_CUSTOM_COMPILE_COMMAND="./scripts/generate_requirements.sh linux-upgrade" \
     uv pip compile ${REPO_ROOT}/pyproject.toml \
     --index-strategy unsafe-best-match \
     --index-url https://download.pytorch.org/whl/cpu \
