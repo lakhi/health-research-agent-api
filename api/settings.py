@@ -4,20 +4,8 @@ from pydantic import Field, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 from pydantic_settings import BaseSettings
 
-# TODO: ask Agno team if this file is required (since it was needed in the 1.0 approach and appears in the agent-api project, but does not appear in the 2.0 agent-awes-infra project)
+
 class ApiSettings(BaseSettings):
-    """Api settings that are set using environment variables."""
-
-    title: str = "health-research-agent-api"
-    version: str = "1.0"
-
-    # Set to False to disable docs at /docs and /redoc
-    docs_enabled: bool = True
-
-    # Cors origin list to allow requests from.
-    # This list is set using the set_cors_origin_list validator
-    # which uses the runtime_env variable to set the
-    # default cors origin list.
     cors_origin_list: Optional[List[str]] = Field(None, validate_default=True)
 
     @field_validator("cors_origin_list", mode="before")
@@ -31,8 +19,11 @@ class ApiSettings(BaseSettings):
         # Add localhost:3000 to cors to allow requests from local Agent UI.
         valid_cors.append("http://localhost:3000")
 
-        # TODO: replace with environment variable approach
-        # Add Agent UI Container App URL
+        # Add Marhinovirus Study UI Agent
+        valid_cors.append(
+            "https://marhinovirus-study-ui.whitedesert-10483e06.westeurope.azurecontainerapps.io"
+        )
+        # Add HRN Agent UI
         valid_cors.append(
             "https://hrn-agent-ui.niceground-23078755.westeurope.azurecontainerapps.io"
         )
