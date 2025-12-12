@@ -36,12 +36,11 @@ def get_control_marhinovirus_agent(
         db=agent_db,
         description=NORMAL_DESCRIPTION,
         instructions=NORMAL_INSTRUCTIONS,
-        # markdown=True,
         knowledge=get_normal_catalog_knowledge(),
         search_knowledge=True,
         read_chat_history=True,
         add_history_to_context=True,
-        num_history_runs=3,
+        num_history_runs=5,
         # debug_mode=True,
     )
 

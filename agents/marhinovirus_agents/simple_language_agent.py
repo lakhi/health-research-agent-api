@@ -29,12 +29,11 @@ def get_simple_language_marhinovirus_agent(
         model=AzureOpenAI(id=model_id),
         description=SIMPLE_DESCRIPTION,
         instructions=SIMPLE_INSTRUCTIONS,
-        # markdown=True,
         knowledge=get_normal_catalog_knowledge(),
         search_knowledge=True,
         read_chat_history=True,
         add_history_to_context=True,
-        num_history_runs=3,
+        num_history_runs=5,
         # debug_mode=True,
     )
 
