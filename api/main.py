@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
 from agno.os import AgentOS
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
+
+from api.settings import api_settings
 
 # from agents.health_research_network_agent import get_health_research_network_agent
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
@@ -70,7 +73,7 @@ async def app_lifecycle(app):
 
 def get_pdf_reader_with_chunking():
     return PDFReader(
-        chunking_strategy=FixedSizeChunking(chunk_size=1000, overlap=200),
+        chunking_strategy=FixedSizeChunking(chunk_size=1200, overlap=200),
         read_images=True,
     )
 
@@ -82,3 +85,12 @@ agent_os = AgentOS(
 )
 
 app = agent_os.get_app()
+
+# Add CORS middleware (executes first due to reverse order)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=api_settings.cors_origin_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
