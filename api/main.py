@@ -46,19 +46,19 @@ async def app_lifecycle(app):
             name="Marhinovirus Normal Catalog",
             url=get_normal_catalog_url(),
             reader=get_pdf_reader_with_chunking(),
-            skip_if_exists=False,
+            skip_if_exists=True,
         )
         await simple_lg_agent.knowledge.add_content_async(
             name="Marhinovirus Normal Catalog",
             url=get_normal_catalog_url(),
             reader=get_pdf_reader_with_chunking(),
-            skip_if_exists=False,
+            skip_if_exists=True,
         )
         await simple_catalog_lg_agent.knowledge.add_content_async(
             name="Marhinovirus Simple Catalog",
             url=get_simple_catalog_url(),
             reader=get_pdf_reader_with_chunking(),
-            skip_if_exists=False,
+            skip_if_exists=True,
         )
         print("✅ Knowledge loaded successfully for 3 agents")
 
@@ -84,13 +84,16 @@ agent_os = AgentOS(
     lifespan=app_lifecycle,
 )
 
+print(control_agent.get_chat_history(session_id="26056210"))
+
 app = agent_os.get_app()
 
+
 # Add CORS middleware (executes first due to reverse order)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=api_settings.cors_origin_list,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=api_settings.cors_origin_list,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )

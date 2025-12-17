@@ -10,6 +10,8 @@ from textwrap import dedent
 
 logger = getLogger(__name__)
 
+# 0. TODO: try better-agents framework using Antigravity? https://github.com/langwatch/better-agents 
+# 0. TODO: move to the Donain-Driven TDD approach integrating Scenario Testing from the beginning: https://scenario.langwatch.ai/best-practices/domain-driven-tdd
 # 0. TODO: implement TDD-based approach for the HRN agent: https://docs.agno.com/basics/agents/usage/scenario-testing
 # 1. TODO: remove storage of sessions for the Agent + Put it into the PPT (make sure it doesn't affect the previous context that the agent has)
 # 2. TODO: implement Metrics: https://docs.agno.com/agents/metrics
