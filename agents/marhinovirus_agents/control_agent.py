@@ -1,8 +1,7 @@
 from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
+from knowledge_base import marhinovirus_knowledge_base
 from knowledge_base.marhinovirus_knowledge_base import (
-    NORMAL_DESCRIPTION,
-    NORMAL_INSTRUCTIONS,
     get_normal_catalog_knowledge,
 )
 from agents.llm_models import LLMModel
@@ -27,6 +26,14 @@ def get_control_marhinovirus_agent(
     """
     Control condition Marhinovirus agent using normal catalog and standard language instructions.
     """
+    if (
+        marhinovirus_knowledge_base.NORMAL_DESCRIPTION is None
+        or marhinovirus_knowledge_base.NORMAL_INSTRUCTIONS is None
+    ):
+        raise RuntimeError(
+            "Agent configurations not initialized. "
+            "Call initialize_agent_configs() before creating agents."
+        )
 
     control_agent = Agent(
         id="control_agent",
@@ -35,8 +42,8 @@ def get_control_marhinovirus_agent(
         user_id=user_id,
         session_id=session_id,
         db=agent_db,
-        description=NORMAL_DESCRIPTION,
-        instructions=NORMAL_INSTRUCTIONS,
+        description=marhinovirus_knowledge_base.NORMAL_DESCRIPTION,
+        instructions=marhinovirus_knowledge_base.NORMAL_INSTRUCTIONS,
         knowledge=get_normal_catalog_knowledge(),
         search_knowledge=True,
         read_chat_history=True,

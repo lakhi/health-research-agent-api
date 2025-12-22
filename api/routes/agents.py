@@ -1,4 +1,3 @@
-from enum import Enum
 from logging import getLogger
 from typing import AsyncGenerator, List, Optional
 
@@ -8,6 +7,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from agents.llm_models import LLMModel
 from agents.selector import AgentType, get_agent, get_available_agents
 from knowledge_base.marhinovirus_knowledge_base import (
     get_normal_catalog_knowledge,
@@ -21,11 +21,6 @@ logger = getLogger(__name__)
 ######################################################
 
 agents_router = APIRouter(prefix="/agents", tags=["Agents"])
-
-
-class Model(str, Enum):
-    gpt_4_1 = "gpt-4.1"
-    o4_mini = "o4-mini"
 
 
 @agents_router.get("", response_model=List[str])
@@ -63,7 +58,7 @@ class RunRequest(BaseModel):
 
     message: str
     stream: bool = True
-    model: Model = Model.gpt_4_1
+    model: LLMModel = LLMModel.GPT_4O
     user_id: Optional[str] = None
     session_id: Optional[str] = None
 
