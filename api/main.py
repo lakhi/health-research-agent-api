@@ -13,9 +13,13 @@ from agents.marhinovirus_agents.simple_language_agent import (
 from agents.marhinovirus_agents.simple_catalog_language_agent import (
     get_simple_catalog_language_marhinovirus_agent,
 )
+
+# Import the module, not individual variables
+from knowledge_base import marhinovirus_knowledge_base
 from knowledge_base.marhinovirus_knowledge_base import (
     get_normal_catalog_url,
     get_simple_catalog_url,
+    initialize_agent_configs,
 )
 from agno.knowledge.reader.pdf_reader import PDFReader
 from agno.knowledge.chunking.fixed import FixedSizeChunking
@@ -27,10 +31,24 @@ load_dotenv()
 
 # hrn_agent = get_health_research_network_agent()
 
-# Instantiate the three Marhinovirus agents
+# Fetch agent configurations from cloud URLs before creating agents
+print("🚀 Initializing agent configurations from cloud...")
+try:
+    initialize_agent_configs()
+    print("✅ Agent configurations loaded successfully")
+    print(
+        f"\n📝 NORMAL_DESCRIPTION:\n{marhinovirus_knowledge_base.NORMAL_DESCRIPTION}\n"
+    )
+except Exception as e:
+    print(f"❌ Error loading agent configurations: {e}")
+    raise
+
+# Instantiate the three Marhinovirus agents after configs are loaded
+print("🤖 Creating agents...")
 control_agent = get_control_marhinovirus_agent()
 simple_lg_agent = get_simple_language_marhinovirus_agent()
 simple_catalog_lg_agent = get_simple_catalog_language_marhinovirus_agent()
+print("✅ Agents created successfully")
 
 
 @asynccontextmanager
@@ -39,7 +57,7 @@ async def app_lifecycle(app):
     Lifespan context manager to handle startup and shutdown events.
     Loads knowledge into agents when the application starts.
     """
-    print("🚀 Loading knowledge into agents...")
+    print("📚 Loading knowledge into agents...")
 
     try:
         await control_agent.knowledge.add_content_async(
@@ -83,8 +101,6 @@ agent_os = AgentOS(
     agents=[control_agent, simple_lg_agent, simple_catalog_lg_agent],
     lifespan=app_lifecycle,
 )
-
-print(control_agent.get_chat_history(session_id="26056210"))
 
 app = agent_os.get_app()
 
