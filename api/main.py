@@ -14,7 +14,6 @@ from agents.marhinovirus_agents.simple_catalog_language_agent import (
     get_simple_catalog_language_marhinovirus_agent,
 )
 
-# Import the module, not individual variables
 from knowledge_base import marhinovirus_knowledge_base
 from knowledge_base.marhinovirus_knowledge_base import (
     get_normal_catalog_url,
