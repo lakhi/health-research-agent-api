@@ -5,7 +5,6 @@ from agno.db.postgres import PostgresDb
 
 # from agno.knowledge.reranker.cohere import CohereReranker
 from db.session import db_url
-from textwrap import dedent
 import requests
 
 
@@ -45,7 +44,6 @@ def fetch_text_from_url(url: str) -> str:
 def initialize_agent_configs() -> None:
     """
     Initialize all agent configuration variables by fetching from cloud URLs.
-    Must be called during application startup before creating any agents.
 
     Raises:
         Exception: On any fetch failure, causing app startup to fail
