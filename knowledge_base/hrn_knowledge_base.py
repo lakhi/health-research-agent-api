@@ -4,7 +4,8 @@ from agno.vectordb.pgvector import PgVector, SearchType
 from db.session import db_url
 from knowledge_base.hrn_members import HrnMembers
 
-
+# 0. TODO: replace the embedder with AzureOpenAIEmbedder()
+# 0. TODO: implement a contents db and see how it can be used effectively: https://docs.agno.com/basics/knowledge/content-db
 # 0. TODO: add DOI-style citations referencing to every file in the knowledge base
 # 1. TODO: replace Veronika's book chapter with a research article
 # 2. TODO: impl async loading of knowledge base if startup time is too long: https://docs-v1.agno.com/vectordb/pgvector

@@ -21,7 +21,6 @@ logger = getLogger(__name__)
 
 # JAN/FEB 2026 RELEASE
 # 0. TODO: implement application-level monitoring that checks costs via Azure Cost Management   API and stops services immediately when threshold is reached (ref chat)
-# 1. TODO: replace the embedder with AzureOpenAIEmbedder()
 # 2. TODO: impl semantic chunking strategy through the embedder: https://docs-v1.agno.com/reference/chunking/semantic
 # 3. TODO: impl /ready endpoint and add to the readiness probe in health.py the Azure container app
 

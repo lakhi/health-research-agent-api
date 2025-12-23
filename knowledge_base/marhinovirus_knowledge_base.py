@@ -56,7 +56,6 @@ def initialize_agent_configs() -> None:
     SIMPLE_INSTRUCTIONS = fetch_text_from_url(SIMPLE_INSTRUCTIONS_URL)
 
 
-# TODO 1: implement a contents db and see how it can be used effectively
 # TODO 2: implement Search Retrieval best practices: https://docs.agno.com/basics/knowledge/search-and-retrieval/overview
 # TODO 3: implement a reranker and see if results are better
 
