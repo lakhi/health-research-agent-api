@@ -7,7 +7,6 @@ from knowledge_base.hrn_members import HrnMembers
 # 0. TODO: replace the embedder with AzureOpenAIEmbedder()
 # 0. TODO: implement a contents db and see how it can be used effectively: https://docs.agno.com/basics/knowledge/content-db
 # 0. TODO: add DOI-style citations referencing to every file in the knowledge base
-# 1. TODO: replace Veronika's book chapter with a research article
 # 2. TODO: impl async loading of knowledge base if startup time is too long: https://docs-v1.agno.com/vectordb/pgvector
 
 
@@ -100,10 +99,11 @@ def get_hrn_knoweldge_data() -> list:
             "url": "https://hrnstorage.blob.core.windows.net/research-papers/veronika/Veronika_BeginningsEndingsLifeEthonographicResearch_2022.pdf",
             "metadata": HrnMembers.VERONIKA.to_metadata(),
         },
-        {
-            "url": "https://hrnstorage.blob.core.windows.net/research-papers/veronika/Veronika_Intimate-Strangers-Commercial-Surrogacy-In-Russia-And-Ukraine_2023.pdf",
-            "metadata": HrnMembers.VERONIKA.to_metadata(),
-        },
+        # TODO: replace the book chapter with a research article
+        # {
+        #     "url": "https://hrnstorage.blob.core.windows.net/research-papers/veronika/Veronika_Intimate-Strangers-Commercial-Surrogacy-In-Russia-And-Ukraine_2023.pdf",
+        #     "metadata": HrnMembers.VERONIKA.to_metadata(),
+        # },
         {
             "url": "https://hrnstorage.blob.core.windows.net/research-papers/veronika/Veronika_Not-Quite-Dead Ontological Careographies and the Ambiguous Fetal Body in the Context of Disability-PregnancyTerminationAustria_2024.pdf",
             "metadata": HrnMembers.VERONIKA.to_metadata(),
