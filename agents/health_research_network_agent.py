@@ -1,7 +1,8 @@
 from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
-from knowledge_base.hrn_knowledge_base import get_hrn_knowledge
+from knowledge_base.hrn_knowledge_base import get_healthsoc_knowledge
 from agents.llm_models import LLMModel
+from db import healthsoc_agent_db
 
 from typing import Optional
 from logging import getLogger
@@ -10,7 +11,7 @@ from textwrap import dedent
 
 logger = getLogger(__name__)
 
-# 0. TODO: try better-agents framework using Antigravity? https://github.com/langwatch/better-agents 
+# 0. TODO: try better-agents framework using Antigravity? https://github.com/langwatch/better-agents
 # 0. TODO: move to the Donain-Driven TDD approach integrating Scenario Testing from the beginning: https://scenario.langwatch.ai/best-practices/domain-driven-tdd
 # 0. TODO: implement TDD-based approach for the HRN agent: https://docs.agno.com/basics/agents/usage/scenario-testing
 # 1. TODO: remove storage of sessions for the Agent + Put it into the PPT (make sure it doesn't affect the previous context that the agent has)
@@ -25,17 +26,18 @@ logger = getLogger(__name__)
 # 3. TODO: impl /ready endpoint and add to the readiness probe in health.py the Azure container app
 
 
-def get_health_research_network_agent(
+def get_healthsoc_agent(
     model_id: str = LLMModel.GPT_4O,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
-    debug_mode: bool = True,
+    debug_mode: bool = False,
 ) -> Agent:
 
-    health_research_network_agent = Agent(
-        id="hrn_agent",
-        name="Health Research Network Agent",
+    healthsoc_chatbot = Agent(
+        id="healthsoc_chatbot",
+        name="Health Society Chatbot",
         model=AzureOpenAI(id=model_id),
+        db=healthsoc_agent_db,
         description=dedent(
             """
                 You are a helpful AI-agent of the Health Research Network: https://health.univie.ac.at/en/ whose key objective is to make the discovery of the network members easier for the user.
@@ -61,18 +63,19 @@ def get_health_research_network_agent(
         instructions=dedent(
             """
                 - Search your knowledge base before answering the question.
-                - Make connections between the user's query and the Health Research Network members based on their research papers and metadata in the knowledge base.
+                - Make connections between the user's query and the Health in Society Research Network members based on their research papers and metadata in the knowledge base.
                 - Always include the 'network_member_name' and 'network_meber_ucris_url' from the metadata on questions about the network or it's members.
-                - After answering the question, ask the user if they would like to know anything else regarding the research expertise of the members at the Health Research Network.
+                - After answering the question, ask the user if they would like to know anything else regarding the research expertise of the members at the Health in Society Research Network.
             """
         ),
-        markdown=True,
-        knowledge=get_hrn_knowledge(),
-        add_knowledge_to_context=True,
+        knowledge=get_healthsoc_knowledge(),
+        search_knowledge=True,
+        # add_knowledge_to_context=True,
         read_chat_history=True,
         enable_agentic_knowledge_filters=True,
         add_history_to_context=True,
         num_history_runs=3,
+        debug_mode=debug_mode,
     )
 
-    return health_research_network_agent
+    return healthsoc_chatbot

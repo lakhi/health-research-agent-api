@@ -1,9 +1,22 @@
 from agno.db.postgres import PostgresDb
 from db.session import db_url
 
-# PostgresDb instance for agent session storage
-# Sessions are stored in the "control_agent_sessions" table
-agent_db = PostgresDb(
+control_agent_db = PostgresDb(
     db_url=db_url,
     session_table="control_agent_sessions",
+)
+
+simple_language_db = PostgresDb(
+    db_url=db_url,
+    session_table="simple_language_sessions",
+)
+
+simple_cat_lg_db = PostgresDb(
+    db_url=db_url,
+    session_table="simple_cat_lg_sessions",
+)
+
+healthsoc_agent_db = PostgresDb(
+    db_url=db_url,
+    session_table="healthsoc_agent_sessions",
 )

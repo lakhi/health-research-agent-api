@@ -1,10 +1,10 @@
 from agno.knowledge import Knowledge
-from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
 from agno.vectordb.pgvector import PgVector, SearchType
 from agno.db.postgres import PostgresDb
 
 # from agno.knowledge.reranker.cohere import CohereReranker
 from db.session import db_url
+from knowledge_base import sentence_transformer_embedder
 import requests
 
 
@@ -71,7 +71,7 @@ def get_normal_catalog_knowledge() -> Knowledge:
             db_url=db_url,
             table_name="marhino_normal_catalog",
             search_type=SearchType.hybrid,
-            embedder=SentenceTransformerEmbedder(),
+            embedder=sentence_transformer_embedder,
             # reranker=CohereReranker(),
         ),
         max_results=5,
@@ -102,7 +102,7 @@ def get_simple_catalog_knowledge() -> Knowledge:
             db_url=db_url,
             table_name="marhino_simple_catalog",
             search_type=SearchType.hybrid,
-            embedder=SentenceTransformerEmbedder(),
+            embedder=sentence_transformer_embedder,
         ),
         max_results=5,
         contents_db=get_contents_db(),
