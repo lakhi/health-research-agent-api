@@ -5,7 +5,7 @@ from knowledge_base.marhinovirus_knowledge_base import (
     get_simple_catalog_knowledge,
 )
 from agents.llm_models import LLMModel
-from db import agent_db
+from db import simple_cat_lg_db
 
 from typing import Optional
 from logging import getLogger
@@ -35,7 +35,7 @@ def get_simple_catalog_language_marhinovirus_agent(
         id="simple_catalog_lg_agent",
         name="Simple Catalog and Language Marhinovirus Agent",
         model=AzureOpenAI(id=model_id),
-        db=agent_db,
+        db=simple_cat_lg_db,
         description=marhinovirus_knowledge_base.SIMPLE_DESCRIPTION,
         instructions=marhinovirus_knowledge_base.SIMPLE_INSTRUCTIONS,
         knowledge=get_simple_catalog_knowledge(),

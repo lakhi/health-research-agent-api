@@ -1,8 +1,8 @@
 from agno.knowledge.knowledge import Knowledge
-from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
 from agno.vectordb.pgvector import PgVector, SearchType
 from db.session import db_url
 from knowledge_base.hrn_members import HrnMembers
+from knowledge_base import azure_embedder
 
 # 0. TODO: replace the embedder with AzureOpenAIEmbedder()
 # 0. TODO: implement a contents db and see how it can be used effectively: https://docs.agno.com/basics/knowledge/content-db
@@ -10,18 +10,18 @@ from knowledge_base.hrn_members import HrnMembers
 # 2. TODO: impl async loading of knowledge base if startup time is too long: https://docs-v1.agno.com/vectordb/pgvector
 
 
-def get_hrn_knowledge() -> Knowledge:
-    hrn_knowledge = Knowledge(
-        name="Health in Society Research Network Research Papers",
+def get_healthsoc_knowledge() -> Knowledge:
+    healthsoc_knowledge = Knowledge(
+        name="Health in Society Research Network Knowledge",
         vector_db=PgVector(
             db_url=db_url,
-            table_name="health_in_soc_papers",
             search_type=SearchType.hybrid,
-            embedder=SentenceTransformerEmbedder(),
+            table_name="healthsoc_az_openai_embeddings",
+            embedder=azure_embedder,
         ),
     )
 
-    return hrn_knowledge
+    return healthsoc_knowledge
 
 
 def get_hrn_knoweldge_data() -> list:

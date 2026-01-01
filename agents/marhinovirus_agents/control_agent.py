@@ -5,7 +5,7 @@ from knowledge_base.marhinovirus_knowledge_base import (
     get_normal_catalog_knowledge,
 )
 from agents.llm_models import LLMModel
-from db import agent_db
+from db import control_agent_db
 from typing import Optional
 from logging import getLogger
 
@@ -41,7 +41,7 @@ def get_control_marhinovirus_agent(
         model=AzureOpenAI(id=model_id),
         user_id=user_id,
         session_id=session_id,
-        db=agent_db,
+        db=control_agent_db,
         description=marhinovirus_knowledge_base.NORMAL_DESCRIPTION,
         instructions=marhinovirus_knowledge_base.NORMAL_INSTRUCTIONS,
         knowledge=get_normal_catalog_knowledge(),
