@@ -49,11 +49,13 @@ source .venv/bin/activate
 
 ### Local Development
 
-Start the application with Docker (with build if any code changes?):
+Start the application with Docker:
 
 ```sh
 docker compose up -d
 ```
+
+In case of any requirements or Dockerfile changes:
 
 ```sh
 docker compose up -d --build
