@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+import os
+import sys
 from agno.os import AgentOS
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,17 +32,51 @@ from agno.knowledge.chunking.semantic import SemanticChunking
 
 load_dotenv()
 
+
+def validate_embedder_environment():
+    """
+    Validate that required Azure embedder environment variables are set.
+    Provides clear error messages if they're missing.
+    """
+    required_vars = {
+        "AZURE_EMBEDDER_OPENAI_ENDPOINT": "Azure OpenAI endpoint for embeddings",
+        "AZURE_EMBEDDER_OPENAI_API_KEY": "Azure OpenAI API key for embeddings",
+        "AZURE_EMBEDDER_OPENAI_API_VERSION": "Azure OpenAI API version for embeddings",
+        "AZURE_EMBEDDER_DEPLOYMENT": "Azure OpenAI deployment name for embeddings",
+    }
+    
+    missing_vars = []
+    for var_name, description in required_vars.items():
+        if not os.getenv(var_name):
+            missing_vars.append(f"  - {var_name}: {description}")
+    
+    if missing_vars:
+        error_msg = (
+            "\n❌ Missing required Azure embedder environment variables:\n"
+            + "\n".join(missing_vars)
+            + "\n\n💡 Tip: Run './scripts/switch_env.sh local' to load environment variables from .env.local"
+            + "\n   or ensure these variables are set in your .env file.\n"
+        )
+        print(error_msg, file=sys.stderr)
+        raise EnvironmentError(error_msg)
+    
+    print("✅ Azure embedder environment variables validated")
+
+
 # Fetch agent configurations from cloud URLs before creating agents
-print("🚀 Initializing agent configurations from cloud...")
-try:
-    initialize_agent_configs()
-    print("✅ Agent configurations loaded successfully")
-    print(
-        f"\n📝 NORMAL_DESCRIPTION:\n{marhinovirus_knowledge_base.NORMAL_DESCRIPTION}\n"
-    )
-except Exception as e:
-    print(f"❌ Error loading agent configurations: {e}")
-    raise
+# print("🚀 Initializing agent configurations from cloud...")
+# try:
+#     initialize_agent_configs()
+#     print("✅ Agent configurations loaded successfully")
+#     print(
+#         f"\n📝 NORMAL_DESCRIPTION:\n{marhinovirus_knowledge_base.NORMAL_DESCRIPTION}\n"
+#     )
+# except Exception as e:
+#     print(f"❌ Error loading agent configurations: {e}")
+#     raise
+
+# Validate required environment variables for embedders
+validate_embedder_environment()
 
 # Instantiate the three Marhinovirus agents after configs are loaded
 print("🤖 Creating agents...")
@@ -95,7 +131,6 @@ def get_pdf_reader(
 
     return PDFReader(
         chunking_strategy=strategy,
-        read_images=True,
     )
 
 
@@ -134,11 +169,9 @@ async def load_healthsoc_knowledge():
             await healthsoc_agent.knowledge.add_content_async(
                 name=f"HRN Research - {item['metadata'].get('network_member_name', 'Unknown')}",
                 url=item["url"],
-                reader=get_pdf_reader(
-                    ChunkingStrategy.SEMANTIC, embedder=azure_embedder
-                ),
+                reader=get_pdf_reader(),
                 metadata=item["metadata"],
-                skip_if_exists=True,
+                skip_if_exists=False,
             )
         print(
             f"✅ Knowledge loaded successfully for healthsoc agent ({len(kb_data)} documents)"
