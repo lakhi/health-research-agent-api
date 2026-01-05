@@ -6,6 +6,7 @@ class ChunkingStrategy(Enum):
 
     FIXED_SIZE = "fixed_size"
     SEMANTIC = "semantic"
+    RECURSIVE = "recursive"
 
     @property
     def chunk_size(self) -> int:
@@ -14,5 +15,7 @@ class ChunkingStrategy(Enum):
             return 1200
         elif self == ChunkingStrategy.SEMANTIC:
             return 1000
+        elif self == ChunkingStrategy.RECURSIVE:
+            return 4000
         else:
             return 1200  # fallback default
