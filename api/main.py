@@ -17,50 +17,20 @@ from agents.marhinovirus_agents.simple_catalog_language_agent import (
 )
 from agents.chunking_strategies import ChunkingStrategy
 
-from knowledge_base import marhinovirus_knowledge_base
+from knowledge_base import get_azure_embedder, marhinovirus_knowledge_base
 from knowledge_base.marhinovirus_knowledge_base import (
     get_normal_catalog_url,
     get_simple_catalog_url,
     initialize_agent_configs,
 )
 from knowledge_base.hrn_knowledge_base import get_hrn_knoweldge_data
-from knowledge_base import azure_embedder
 from agno.knowledge.reader.pdf_reader import PDFReader
 from agno.knowledge.chunking.fixed import FixedSizeChunking
 from agno.knowledge.chunking.semantic import SemanticChunking
+from agno.knowledge.chunking.recursive import RecursiveChunking
 
 
 load_dotenv()
-
-
-def validate_embedder_environment():
-    """
-    Validate that required Azure embedder environment variables are set.
-    Provides clear error messages if they're missing.
-    """
-    required_vars = {
-        "AZURE_EMBEDDER_OPENAI_ENDPOINT": "Azure OpenAI endpoint for embeddings",
-        "AZURE_EMBEDDER_OPENAI_API_KEY": "Azure OpenAI API key for embeddings",
-        "AZURE_EMBEDDER_OPENAI_API_VERSION": "Azure OpenAI API version for embeddings",
-        "AZURE_EMBEDDER_DEPLOYMENT": "Azure OpenAI deployment name for embeddings",
-    }
-    
-    missing_vars = []
-    for var_name, description in required_vars.items():
-        if not os.getenv(var_name):
-            missing_vars.append(f"  - {var_name}: {description}")
-    
-    if missing_vars:
-        error_msg = (
-            "\n❌ Missing required Azure embedder environment variables:\n"
-            + "\n".join(missing_vars)
-            + "\n\n💡 Tip: Run './scripts/switch_env.sh local' to load environment variables from .env.local"
-            + "\n   or ensure these variables are set in your .env file.\n"
-        )
-        print(error_msg, file=sys.stderr)
-        raise EnvironmentError(error_msg)
-    
-    print("✅ Azure embedder environment variables validated")
 
 
 # Fetch agent configurations from cloud URLs before creating agents
@@ -74,9 +44,6 @@ def validate_embedder_environment():
 # except Exception as e:
 #     print(f"❌ Error loading agent configurations: {e}")
 #     raise
-
-# Validate required environment variables for embedders
-validate_embedder_environment()
 
 # Instantiate the three Marhinovirus agents after configs are loaded
 print("🤖 Creating agents...")
@@ -104,7 +71,7 @@ async def app_lifecycle(app):
 
 
 def get_pdf_reader(
-    chunking_strategy: ChunkingStrategy = ChunkingStrategy.FIXED_SIZE, embedder=None
+    chunking_strategy: ChunkingStrategy = ChunkingStrategy.RECURSIVE, embedder=None
 ) -> PDFReader:
     """
     Get a PDFReader with the specified chunking strategy.
@@ -121,10 +88,14 @@ def get_pdf_reader(
             chunk_size=chunking_strategy.chunk_size, overlap=200
         )
     elif chunking_strategy == ChunkingStrategy.SEMANTIC:
-        if embedder is None:
-            raise ValueError("embedder parameter is required for SEMANTIC chunking")
+        # if embedder is None:
+        #     raise ValueError("embedder parameter is required for SEMANTIC chunking")
         strategy = SemanticChunking(
-            chunk_size=chunking_strategy.chunk_size, embedder=embedder
+            chunk_size=chunking_strategy.chunk_size, embedder=get_azure_embedder()
+        )
+    elif chunking_strategy == ChunkingStrategy.RECURSIVE:
+        strategy = RecursiveChunking(
+            chunk_size=chunking_strategy.chunk_size, overlap=400
         )
     else:
         raise ValueError(f"Unknown chunking strategy: {chunking_strategy}")
@@ -167,6 +138,7 @@ async def load_healthsoc_knowledge():
         kb_data = get_hrn_knoweldge_data()
         for item in kb_data:
             await healthsoc_agent.knowledge.add_content_async(
+                # TODO: think about the metadata name field here and use contents db too
                 name=f"HRN Research - {item['metadata'].get('network_member_name', 'Unknown')}",
                 url=item["url"],
                 reader=get_pdf_reader(),
