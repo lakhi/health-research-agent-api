@@ -23,7 +23,7 @@ from knowledge_base.marhinovirus_knowledge_base import (
     get_simple_catalog_url,
     initialize_agent_configs,
 )
-from knowledge_base.hrn_knowledge_base import get_hrn_knoweldge_data
+from knowledge_base.hrn_knowledge_base import get_research_articles_data
 from agno.knowledge.reader.pdf_reader import PDFReader
 from agno.knowledge.chunking.fixed import FixedSizeChunking
 from agno.knowledge.chunking.semantic import SemanticChunking
@@ -45,13 +45,10 @@ load_dotenv()
 #     print(f"❌ Error loading agent configurations: {e}")
 #     raise
 
-# Instantiate the three Marhinovirus agents after configs are loaded
-print("🤖 Creating agents...")
 # control_agent = get_control_marhinovirus_agent()
 # simple_lg_agent = get_simple_language_marhinovirus_agent()
 # simple_catalog_lg_agent = get_simple_catalog_language_marhinovirus_agent()
 healthsoc_agent = get_healthsoc_agent()
-print("✅ Agents created successfully")
 
 
 @asynccontextmanager
@@ -135,15 +132,14 @@ def get_pdf_reader(
 async def load_healthsoc_knowledge():
     """Load Health in Society Research Network knowledge into healthsoc agent."""
     try:
-        kb_data = get_hrn_knoweldge_data()
+        kb_data = get_research_articles_data()
         for item in kb_data:
             await healthsoc_agent.knowledge.add_content_async(
-                # TODO: think about the metadata name field here and use contents db too
                 name=f"HRN Research - {item['metadata'].get('network_member_name', 'Unknown')}",
                 url=item["url"],
                 reader=get_pdf_reader(),
                 metadata=item["metadata"],
-                skip_if_exists=False,
+                skip_if_exists=True,
             )
         print(
             f"✅ Knowledge loaded successfully for healthsoc agent ({len(kb_data)} documents)"
