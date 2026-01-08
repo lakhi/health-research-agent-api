@@ -34,13 +34,24 @@ def get_healthsoc_agent(
 ) -> Agent:
 
     healthsoc_chatbot = Agent(
+        # Identity & Configuration
         id="healthsoc_chatbot",
-        name="Health Society Chatbot",
+        name="Health in Society Chatbot",
+        # Model & Storage
         model=AzureOpenAI(id=model_id),
         db=healthsoc_agent_db,
+        # Knowledge & Search
+        knowledge=get_healthsoc_knowledge(),
+        search_knowledge=True,
+        enable_agentic_knowledge_filters=True,
+        # Context & Memory
+        read_chat_history=True,
+        add_history_to_context=True,
+        num_history_runs=5,
+        # Behavior & Instructions
         description=dedent(
             """
-                You are a helpful AI-agent of the Health Research Network: https://health.univie.ac.at/en/ whose key objective is to make the discovery of the network members easier for the user.
+                You are a helpful AI-agent of the Health Research Network: https://gig.univie.ac.at/en/ whose key objective is to make the discovery of the network members easier for the user.
 
                 For now, there are four members in the Health Research Network:
                 1. Robert Böhm
@@ -68,13 +79,7 @@ def get_healthsoc_agent(
                 - After answering the question, ask the user if they would like to know anything else regarding the research expertise of the members at the Health in Society Research Network.
             """
         ),
-        knowledge=get_healthsoc_knowledge(),
-        search_knowledge=True,
-        # add_knowledge_to_context=True,
-        read_chat_history=True,
-        enable_agentic_knowledge_filters=True,
-        add_history_to_context=True,
-        num_history_runs=3,
+        # Debug & Development
         debug_mode=debug_mode,
     )
 
