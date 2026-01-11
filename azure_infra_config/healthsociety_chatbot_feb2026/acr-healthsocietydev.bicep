@@ -9,8 +9,8 @@ resource registries_healthsocietydev_name_resource 'Microsoft.ContainerRegistry/
     'Verantwortliche*r': 'Akshay'
   }
   sku: {
-    name: 'Standard'
-    tier: 'Standard'
+    name: 'Basic'
+    tier: 'Basic'
   }
   properties: {
     adminUserEnabled: false
