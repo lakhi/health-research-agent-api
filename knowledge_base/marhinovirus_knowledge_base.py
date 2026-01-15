@@ -20,6 +20,9 @@ NORMAL_INSTRUCTIONS: str | None = None
 SIMPLE_DESCRIPTION: str | None = None
 SIMPLE_INSTRUCTIONS: str | None = None
 
+# Flag to prevent double-initialization
+_configs_initialized: bool = False
+
 
 def fetch_text_from_url(url: str) -> str:
     """
@@ -44,16 +47,23 @@ def fetch_text_from_url(url: str) -> str:
 def initialize_agent_configs() -> None:
     """
     Initialize all agent configuration variables by fetching from cloud URLs.
+    Idempotent - safe to call multiple times (only fetches once).
 
     Raises:
         Exception: On any fetch failure, causing app startup to fail
     """
-    global NORMAL_DESCRIPTION, NORMAL_INSTRUCTIONS, SIMPLE_DESCRIPTION, SIMPLE_INSTRUCTIONS
+    global NORMAL_DESCRIPTION, NORMAL_INSTRUCTIONS, SIMPLE_DESCRIPTION, SIMPLE_INSTRUCTIONS, _configs_initialized
+
+    # Skip if already initialized
+    if _configs_initialized:
+        return
 
     NORMAL_DESCRIPTION = fetch_text_from_url(NORMAL_DESCRIPTION_URL)
     NORMAL_INSTRUCTIONS = fetch_text_from_url(NORMAL_INSTRUCTIONS_URL)
     SIMPLE_DESCRIPTION = fetch_text_from_url(SIMPLE_DESCRIPTION_URL)
     SIMPLE_INSTRUCTIONS = fetch_text_from_url(SIMPLE_INSTRUCTIONS_URL)
+
+    _configs_initialized = True
 
 
 # TODO 2: implement Search Retrieval best practices: https://docs.agno.com/basics/knowledge/search-and-retrieval/overview

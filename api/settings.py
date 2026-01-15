@@ -4,12 +4,16 @@ from pydantic import Field, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 from pydantic_settings import BaseSettings
 
+from api.project_configs import get_project_config, ProjectConfig
+
 
 class ApiSettings(BaseSettings):
     cors_origin_list: Optional[List[str]] = Field(None, validate_default=True)
 
     @field_validator("cors_origin_list", mode="before")
     def set_cors_origin_list(cls, cors_origin_list, info: FieldValidationInfo):
+        # Get project-specific CORS origins
+        project_config = get_project_config()
         valid_cors = cors_origin_list or []
 
         # Add app.agno.com to cors to allow requests from the Agno playground.
@@ -19,16 +23,15 @@ class ApiSettings(BaseSettings):
         # Add localhost:3000 to cors to allow requests from local Agent UI.
         valid_cors.append("http://localhost:3000")
 
-        # Add Marhinovirus Study UI Agent
-        valid_cors.append(
-            "https://marhinovirus-study-ui.whitedesert-10483e06.westeurope.azurecontainerapps.io"
-        )
-        # Add HRN Agent UI
-        valid_cors.append(
-            "https://hrn-agent-ui.niceground-23078755.westeurope.azurecontainerapps.io"
-        )
+        # Add project-specific CORS origins
+        valid_cors.extend(project_config.cors_origins)
 
         return valid_cors
+
+    @property
+    def project_config(self) -> ProjectConfig:
+        """Get the active project configuration."""
+        return get_project_config()
 
 
 # Create ApiSettings object
