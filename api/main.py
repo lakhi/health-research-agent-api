@@ -1,12 +1,9 @@
 from contextlib import asynccontextmanager
 from agno.os import AgentOS
-from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.settings import api_settings
 
-
-load_dotenv()
 
 # Initialize agents based on active project configuration
 agents = api_settings.project_config.get_agents()
