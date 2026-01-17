@@ -13,7 +13,7 @@ def get_azure_embedder() -> AzureOpenAIEmbedder:
     """
     return AzureOpenAIEmbedder(
         id="text-embedding-3-large",
-        # dimensions=3072,
+        # dimensions=3072, # Pgvector does not support 3072 dimension vectors, hence defaulting to 1536
         api_key=os.getenv("AZURE_EMBEDDER_OPENAI_API_KEY"),
         api_version=os.getenv("AZURE_EMBEDDER_OPENAI_API_VERSION"),
         azure_endpoint=os.getenv("AZURE_EMBEDDER_OPENAI_ENDPOINT"),

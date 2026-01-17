@@ -59,10 +59,9 @@ class VaxStudyConfig(ProjectConfig):
         from agno.knowledge.reader.pdf_reader import PDFReader
         from agno.knowledge.chunking.recursive import RecursiveChunking
 
-        # Get PDF reader with project's chunking strategy
         pdf_reader = PDFReader(
             chunking_strategy=RecursiveChunking(
-                chunk_size=self.chunking_strategy.chunk_size, overlap=400
+                chunk_size=1200, overlap=120
             )
         )
 
