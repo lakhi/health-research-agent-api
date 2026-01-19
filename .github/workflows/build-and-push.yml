@@ -10,6 +10,7 @@ on:
 env:
   IMAGE_NAME: health-research-api
   IMAGE_TAG: latest
+  PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
 
 jobs:
   build-and-push:
