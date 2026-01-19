@@ -1,9 +1,13 @@
 from typing import List
 
 from agno.agent import Agent
+from agno.knowledge.chunking.recursive import RecursiveChunking
+from agno.knowledge.reader.pdf_reader import PDFReader
 
 from agents.chunking_strategies import ChunkingStrategy
-from api.project_configs.project_config_base import ProjectConfig, ProjectName
+from agents.health_research_network_agent import get_healthsoc_agent
+from api.project_configs.project_config import ProjectConfig, ProjectName
+from knowledge_base.hrn_knowledge_base import get_research_articles_data
 
 
 class HealthsocConfig(ProjectConfig):
@@ -25,16 +29,10 @@ class HealthsocConfig(ProjectConfig):
 
     def get_agents(self) -> List[Agent]:
         """Initialize healthsoc agent."""
-        from agents.health_research_network_agent import get_healthsoc_agent
-
         return [get_healthsoc_agent()]
 
     async def load_knowledge(self, agents: List[Agent]) -> None:
         """Load Health in Society Research Network knowledge into healthsoc agent."""
-        from knowledge_base.hrn_knowledge_base import get_research_articles_data
-        from agno.knowledge.reader.pdf_reader import PDFReader
-        from agno.knowledge.chunking.recursive import RecursiveChunking
-
         # Get PDF reader with project's chunking strategy
         pdf_reader = PDFReader(
             chunking_strategy=RecursiveChunking(

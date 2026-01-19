@@ -3,7 +3,21 @@ from typing import List
 from agno.agent import Agent
 
 from agents.chunking_strategies import ChunkingStrategy
-from api.project_configs.project_config_base import ProjectConfig, ProjectName
+from api.project_configs.project_config import ProjectConfig, ProjectName
+from agno.knowledge.chunking.recursive import RecursiveChunking
+from agno.knowledge.reader.pdf_reader import PDFReader
+from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
+from agents.marhinovirus_agents.simple_catalog_language_agent import (
+    get_simple_catalog_language_marhinovirus_agent,
+)
+from agents.marhinovirus_agents.simple_language_agent import (
+    get_simple_language_marhinovirus_agent,
+)
+from knowledge_base.marhinovirus_knowledge_base import (
+    get_normal_catalog_url,
+    get_simple_catalog_url,
+    initialize_agent_configs,
+)
 
 
 class VaxStudyConfig(ProjectConfig):
@@ -25,17 +39,6 @@ class VaxStudyConfig(ProjectConfig):
 
     def get_agents(self) -> List[Agent]:
         """Initialize vax-study agents (control, simple_lg, simple_catalog_lg)."""
-        from agents.marhinovirus_agents.control_agent import (
-            get_control_marhinovirus_agent,
-        )
-        from agents.marhinovirus_agents.simple_language_agent import (
-            get_simple_language_marhinovirus_agent,
-        )
-        from agents.marhinovirus_agents.simple_catalog_language_agent import (
-            get_simple_catalog_language_marhinovirus_agent,
-        )
-        from knowledge_base.marhinovirus_knowledge_base import initialize_agent_configs
-
         try:
             print("🚀 Initializing vax-study agent configurations from cloud...")
             initialize_agent_configs()
@@ -52,17 +55,8 @@ class VaxStudyConfig(ProjectConfig):
 
     async def load_knowledge(self, agents: List[Agent]) -> None:
         """Load Marhinovirus research catalogs into all three agents."""
-        from knowledge_base.marhinovirus_knowledge_base import (
-            get_normal_catalog_url,
-            get_simple_catalog_url,
-        )
-        from agno.knowledge.reader.pdf_reader import PDFReader
-        from agno.knowledge.chunking.recursive import RecursiveChunking
-
         pdf_reader = PDFReader(
-            chunking_strategy=RecursiveChunking(
-                chunk_size=1200, overlap=120
-            )
+            chunking_strategy=RecursiveChunking(chunk_size=1200, overlap=120)
         )
 
         try:

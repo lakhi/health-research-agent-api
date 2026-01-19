@@ -6,7 +6,12 @@ from agno.db.postgres import PostgresDb
 from db.session import db_url
 from knowledge_base import sentence_transformer_embedder
 import requests
+import logging
 
+logger = logging.getLogger(__name__)
+
+# TODO 2: implement Search Retrieval best practices: https://docs.agno.com/basics/knowledge/search-and-retrieval/overview
+# TODO 3: implement a reranker and see if results are better
 
 # URLs for fetching agent configurations from cloud storage
 NORMAL_DESCRIPTION_URL = "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/normal-description.txt"
@@ -63,11 +68,10 @@ def initialize_agent_configs() -> None:
     SIMPLE_DESCRIPTION = fetch_text_from_url(SIMPLE_DESCRIPTION_URL)
     SIMPLE_INSTRUCTIONS = fetch_text_from_url(SIMPLE_INSTRUCTIONS_URL)
 
+    logger.info(f"SIMPLE_DESCRIPTION: \n{SIMPLE_DESCRIPTION}")
+    logger.info(f"SIMPLE_INSTRUCTIONS: \n{SIMPLE_INSTRUCTIONS}")
+
     _configs_initialized = True
-
-
-# TODO 2: implement Search Retrieval best practices: https://docs.agno.com/basics/knowledge/search-and-retrieval/overview
-# TODO 3: implement a reranker and see if results are better
 
 
 def get_normal_catalog_knowledge() -> Knowledge:
