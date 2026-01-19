@@ -13,6 +13,7 @@ dependencies = [
   "openai",
   "pgvector",
   "psycopg2-binary",
+  "pyjwt",  # Required by agno v2.4.0+ (missing from their dependencies)
   "pypdf",
   "sentence-transformers",
   "sqlalchemy",
@@ -49,5 +50,5 @@ ignore_missing_imports = true
 no-annotate = true
 
 [tool.uv]
-find-links = ["https://download.pytorch.org/whl/cpu"]
+# find-links = ["https://download.pytorch.org/whl/cpu"] [resume later once pytorch is up]
 extra-index-url = ["https://pypi.org/simple/"]

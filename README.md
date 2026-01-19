@@ -17,6 +17,10 @@ To upgrade all dependencies to their latest compatible versions:
 ./scripts/generate_requirements.sh upgrade
 ```
 
+```sh
+./scripts/generate_requirements.sh linux-upgrade
+```
+
 For Linux deployment:
 ```sh
 ./scripts/generate_requirements.sh linux
@@ -79,5 +83,9 @@ az containerapp logs show --name health-research-api --resource-group health_res
 
 To deploy to Azure:
 
-1. Merge changes to the `main` branch
+1. Linux Upgrade
+```sh
+./scripts/generate_requirements.sh linux-upgrade
+```
 2. Enable the `build-and-push.yml` workflow action for automatic Azure deployment
+3. Commit and deploy (will trigger Github Actions)
