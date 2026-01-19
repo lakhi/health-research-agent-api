@@ -1,8 +1,15 @@
+import logging
 from contextlib import asynccontextmanager
 from agno.os import AgentOS
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.settings import api_settings
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s - %(message)s",
+)
 
 
 # Initialize agents based on active project configuration
