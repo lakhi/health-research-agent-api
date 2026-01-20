@@ -1,6 +1,7 @@
 name: Build and Push to Azure Container Registry
 
-# When to run this workflow
+# TODO: Add Azure deployment pipeline to deploy the image to App Service
+
 on:
   push:
     branches: [ main ]
