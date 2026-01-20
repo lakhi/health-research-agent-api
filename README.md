@@ -81,7 +81,7 @@ az containerapp logs show --name health-research-api --resource-group health_res
 
 ## Deployment to Azure
 
-To deploy to Azure:
+To deploy to ACR:
 
 1. Linux Upgrade
 ```sh
@@ -89,3 +89,22 @@ To deploy to Azure:
 ```
 2. Enable the `build-and-push.yml` workflow action for automatic Azure deployment
 3. Commit and deploy (will trigger Github Actions)
+
+To deploy to Azure Container Apps (Vax study daily deployments):
+
+1. deploy with env variable
+az containerapp update \
+  --name marhinovirus-study-api \
+  --resource-group socialeconpsyresearch \
+  --image socialeconpsy-drdfgfb2g7aadtgk.azurecr.io/health-research-api:latest \
+  --revision-suffix v1-a1 \
+  --set-env-vars PROJECT_NAME=vax-study
+
+2. verify the revisions are healthy
+az containerapp revision list \
+  --name marhinovirus-study-api \
+  --resource-group socialeconpsyresearch \
+  --output table
+
+3. deactivate older revisions
+az containerapp revision deactivate --name marhinovirus-study-api --resource-group socialeconpsyresearch --revision marhinovirus-study-api--v1-a

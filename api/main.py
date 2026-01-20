@@ -46,6 +46,7 @@ app = agent_os.get_app()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=api_settings.cors_origin_list,
+    allow_origin_regex=api_settings.cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

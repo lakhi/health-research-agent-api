@@ -13,6 +13,7 @@ load_dotenv()
 
 class ApiSettings(BaseSettings):
     cors_origin_list: Optional[List[str]] = Field(None, validate_default=True)
+    cors_origin_regex: Optional[str] = Field(None, validate_default=True)
 
     @field_validator("cors_origin_list", mode="before")
     def set_cors_origin_list(cls, cors_origin_list, info: FieldValidationInfo):
@@ -31,6 +32,14 @@ class ApiSettings(BaseSettings):
         valid_cors.extend(project_config.cors_origins)
 
         return valid_cors
+
+    @field_validator("cors_origin_regex", mode="before")
+    def set_cors_origin_regex(cls, cors_origin_regex, info: FieldValidationInfo):
+        # Get project-specific CORS regex pattern
+        project_config = get_project_config()
+        if hasattr(project_config, "cors_origin_regex"):
+            return project_config.cors_origin_regex
+        return cors_origin_regex
 
     @property
     def project_config(self) -> ProjectConfig:
