@@ -43,11 +43,20 @@ app = agent_os.get_app()
 
 
 # Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=api_settings.cors_origin_list,
-    allow_origin_regex=api_settings.cors_origin_regex,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+cors_config = {
+    "allow_credentials": True,
+    "allow_methods": ["*"],
+    "allow_headers": ["*"],
+}
+
+# Add allow_origins if present
+if api_settings.cors_origin_list:
+    cors_config["allow_origins"] = api_settings.cors_origin_list
+    logging.info(f"CORS allow_origins: {api_settings.cors_origin_list}")
+
+# Add allow_origin_regex if present
+if api_settings.cors_origin_regex:
+    cors_config["allow_origin_regex"] = api_settings.cors_origin_regex
+    logging.info(f"CORS allow_origin_regex: {api_settings.cors_origin_regex}")
+
+app.add_middleware(CORSMiddleware, **cors_config)
