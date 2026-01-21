@@ -16,6 +16,7 @@ class ApiSettings(BaseSettings):
     cors_origin_regex: Optional[str] = Field(None, validate_default=True)
 
     @field_validator("cors_origin_list", mode="before")
+    @classmethod
     def set_cors_origin_list(cls, cors_origin_list, info: FieldValidationInfo):
         # Get project-specific CORS origins
         project_config = get_project_config()
@@ -34,11 +35,14 @@ class ApiSettings(BaseSettings):
         return valid_cors
 
     @field_validator("cors_origin_regex", mode="before")
+    @classmethod
     def set_cors_origin_regex(cls, cors_origin_regex, info: FieldValidationInfo):
         # Get project-specific CORS regex pattern
         project_config = get_project_config()
         if hasattr(project_config, "cors_origin_regex"):
-            return project_config.cors_origin_regex
+            regex_value = project_config.cors_origin_regex
+            print(f"📌 CORS origin regex from project config: {regex_value}")
+            return regex_value
         return cors_origin_regex
 
     @property
