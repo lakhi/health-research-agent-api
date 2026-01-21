@@ -30,13 +30,8 @@ class VaxStudyConfig(ProjectConfig):
     @property
     def cors_origins(self) -> List[str]:
         return [
-            "https://marhinovirus-study-ui.whitedesert-10483e06.westeurope.azurecontainerapps.io",
+            "https://marhinovirus-study-ui--v1-a1.whitedesert-10483e06.westeurope.azurecontainerapps.io/",
         ]
-
-    @property
-    def cors_origin_regex(self) -> str:
-        """Regex pattern to match all revision URLs for the UI."""
-        return r"https://marhinovirus-study-ui(-{2,3}[a-z0-9-]+)?\.whitedesert-10483e06\.westeurope\.azurecontainerapps\.io"
 
     @property
     def chunking_strategy(self) -> ChunkingStrategy:
