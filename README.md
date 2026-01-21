@@ -106,5 +106,18 @@ az containerapp revision list \
   --resource-group socialeconpsyresearch \
   --output table
 
-3. deactivate older revisions
+3. remove the label on the older versions
+az containerapp revision label remove \
+  --name marhinovirus-study-api \
+  --resource-group socialeconpsyresearch \
+  --label v1-1
+
+4. add it to the new version
+az containerapp revision label add \
+  --name marhinovirus-study-api \
+  --resource-group socialeconpsyresearch \
+  --revision marhinovirus-study-api--v1-a1 \
+  --label v1-1
+
+5. deactivate older revisions
 az containerapp revision deactivate --name marhinovirus-study-api --resource-group socialeconpsyresearch --revision marhinovirus-study-api--v1-a
