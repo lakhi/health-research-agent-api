@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 
 from dotenv import load_dotenv
@@ -10,6 +11,13 @@ from api.project_configs import get_project_config, ProjectConfig
 # Load environment variables before instantiating settings
 load_dotenv()
 
+# Initialize logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
 
 class ApiSettings(BaseSettings):
     cors_origin_list: Optional[List[str]] = Field(None, validate_default=True)
@@ -18,6 +26,12 @@ class ApiSettings(BaseSettings):
     def set_cors_origin_list(cls, cors_origin_list, info: FieldValidationInfo):
         # Get project-specific CORS origins
         project_config = get_project_config()
+
+        # Log project config properties
+        logger.info(f"Project Name: {project_config.project_name}")
+        logger.info(f"CORS Origins: {project_config.cors_origins}")
+        logger.info(f"Chunking Strategy: {project_config.chunking_strategy}")
+
         valid_cors = cors_origin_list or []
 
         # Add app.agno.com to cors to allow requests from the Agno playground.
@@ -26,6 +40,8 @@ class ApiSettings(BaseSettings):
         valid_cors.append("http://localhost")
         # Add localhost:3000 to cors to allow requests from local Agent UI.
         valid_cors.append("http://localhost:3000")
+
+        valid_cors.append("https://marhinovirus-study-ui--v1-a1.whitedesert-10483e06.westeurope.azurecontainerapps.io")
 
         # Add project-specific CORS origins
         valid_cors.extend(project_config.cors_origins)

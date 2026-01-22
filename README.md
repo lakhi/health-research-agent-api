@@ -119,5 +119,10 @@ az containerapp revision label add \
   --revision marhinovirus-study-api--v1-a1 \
   --label v1-1
 
-5. deactivate older revisions
+5. verify new labels
+az containerapp ingress traffic show \
+  --name marhinovirus-study-api \
+  --resource-group socialeconpsyresearch
+
+6. deactivate older revisions
 az containerapp revision deactivate --name marhinovirus-study-api --resource-group socialeconpsyresearch --revision marhinovirus-study-api--v1-a
