@@ -30,7 +30,7 @@ class VaxStudyConfig(ProjectConfig):
     @property
     def cors_origins(self) -> List[str]:
         return [
-            "https://marhinovirus-study-ui--v1-1e.whitedesert-10483e06.westeurope.azurecontainerapps.io",
+            "https://marhinovirus-study-ui--v1-1g.whitedesert-10483e06.westeurope.azurecontainerapps.io",
         ]
 
     @property
