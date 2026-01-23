@@ -84,7 +84,7 @@ az containerapp logs show --name health-research-api --resource-group health_res
 View logs for a specific revision:
 
 ```sh
-az containerapp logs show --name marhinovirus-study-api --resource-group socialeconpsyresearch --type console --follow --revision marhinovirus-study-api--v1-a1
+az containerapp logs show --name marhinovirus-study-api --resource-group socialeconpsyresearch --type console --revision marhinovirus-study-api--v1-1i --tail 300
 ```
 
 ## Deployment to Azure
@@ -104,11 +104,11 @@ To deploy to Azure Container Apps (Vax study daily deployments):
 
 1. deploy with env variable
    az containerapp update \
-    --name marhinovirus-study-api \
-    --resource-group socialeconpsyresearch \
-    --image socialeconpsy-drdfgfb2g7aadtgk.azurecr.io/health-research-api:latest \
-    --revision-suffix v1-1g \
-    --set-env-vars PROJECT_NAME=vax-study
+  --name marhinovirus-study-api \
+  --resource-group socialeconpsyresearch \
+  --image socialeconpsy-drdfgfb2g7aadtgk.azurecr.io/health-research-api:latest \
+  --set-env-vars PROJECT_NAME=vax-study \
+  --revision-suffix "$(date +%d | tr -d '\n')$(date +%b | tr '[:upper:]' '[:lower:]')"
 
 2. verify the revisions are healthy
    az containerapp revision list \
