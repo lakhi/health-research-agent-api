@@ -107,7 +107,7 @@ To deploy to Azure Container Apps (Vax study daily deployments):
     --name marhinovirus-study-api \
     --resource-group socialeconpsyresearch \
     --image socialeconpsy-drdfgfb2g7aadtgk.azurecr.io/health-research-api:latest \
-    --revision-suffix v1-a1 \
+    --revision-suffix v1-1g \
     --set-env-vars PROJECT_NAME=vax-study
 
 2. verify the revisions are healthy
@@ -126,7 +126,7 @@ To deploy to Azure Container Apps (Vax study daily deployments):
    az containerapp revision label add \
     --name marhinovirus-study-api \
     --resource-group socialeconpsyresearch \
-    --revision marhinovirus-study-api--v1-a1 \
+    --revision marhinovirus-study-api--v1-1g \
     --label v1-1
 
 5. verify new labels
