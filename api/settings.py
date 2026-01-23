@@ -35,6 +35,7 @@ class ApiSettings(BaseSettings):
         valid_cors.append("http://localhost")
         # Add localhost:3000 to cors to allow requests from local Agent UI.
         valid_cors.append("http://localhost:3000")
+        valid_cors.append("https://marhinovirus-study-ui.whitedesert-10483e06.westeurope.azurecontainerapps.io")
 
         # Add project-specific CORS origins
         valid_cors.extend(project_config.cors_origins)
