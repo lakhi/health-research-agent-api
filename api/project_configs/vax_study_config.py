@@ -29,6 +29,7 @@ class VaxStudyConfig(ProjectConfig):
 
     @property
     def cors_origins(self) -> List[str]:
+        # TODO: remove CORS-coupling between FE and BE projects
         return [
             "https://marhinovirus-study-ui.whitedesert-10483e06.westeurope.azurecontainerapps.io"
         ]

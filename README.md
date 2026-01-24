@@ -100,7 +100,14 @@ To deploy to ACR:
 2. Enable the `build-and-push.yml` workflow action for automatic Azure deployment
 3. Commit and deploy (will trigger Github Actions)
 
-To deploy to Azure Container Apps (Vax study daily deployments):
+Useful commands for Azure Container Apps CI/CD:
+
+0. Check the new revision's detailed status
+   az containerapp revision list \
+  --name marhinovirus-study-api \
+  --resource-group socialeconpsyresearch \
+  --query "[0].{revisionName:name,provisioningState:properties.provisioningState,healthState:properties.healthState,runningState:properties.runningState,replicas:properties.replicas,lastActiveTime:properties.lastActiveTime}" \
+  --output table
 
 1. deploy with env variable
    az containerapp update \
