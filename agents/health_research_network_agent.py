@@ -27,10 +27,10 @@ logger = getLogger(__name__)
 
 
 def get_healthsoc_agent(
-    model_id: str = LLMModel.GPT_4O,
-    user_id: Optional[str] = None,
-    session_id: Optional[str] = None,
-    debug_mode: bool = False,
+    model_id: str,
+    user_id: Optional[str],
+    session_id: Optional[str],
+    debug_mode: bool,
 ) -> Agent:
 
     healthsoc_chatbot = Agent(
@@ -38,7 +38,7 @@ def get_healthsoc_agent(
         id="healthsoc_chatbot",
         name="Health in Society Chatbot",
         # Model & Storage
-        model=AzureOpenAI(id=model_id),
+        model=AzureOpenAI(id=LLMModel.GPT_4_1),
         db=healthsoc_agent_db,
         # Knowledge & Search
         knowledge=get_healthsoc_knowledge(),
@@ -80,7 +80,7 @@ def get_healthsoc_agent(
             """
         ),
         # Debug & Development
-        debug_mode=debug_mode,
+        debug_mode=False,
     )
 
     return healthsoc_chatbot
