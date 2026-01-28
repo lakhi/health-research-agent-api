@@ -50,6 +50,7 @@ def get_control_marhinovirus_agent(
         add_history_to_context=True,
         num_history_runs=5,
         debug_mode=debug_mode,
+        enable_tracing=True,  # v2.3.5: Enable Native OpenTelemetry Tracing
     )
 
     return control_agent
