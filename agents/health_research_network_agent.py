@@ -81,6 +81,8 @@ def get_healthsoc_agent(
         ),
         # Debug & Development
         debug_mode=False,
+        # Observability
+        enable_tracing=True,  # v2.3.5: Enable Native OpenTelemetry Tracing
     )
 
     return healthsoc_chatbot

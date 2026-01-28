@@ -1,13 +1,14 @@
 from typing import List
 
 from agno.agent import Agent
-from agno.knowledge.chunking.recursive import RecursiveChunking
+from agno.knowledge.chunking.semantic import SemanticChunking
 from agno.knowledge.reader.pdf_reader import PDFReader
 
 from agents.chunking_strategies import ChunkingStrategy
 from agents.health_research_network_agent import get_healthsoc_agent
 from api.project_configs.project_config import ProjectConfig, ProjectName
 from knowledge_base.hrn_knowledge_base import get_research_articles_data
+from knowledge_base import get_azure_embedder
 
 
 class HealthsocConfig(ProjectConfig):
@@ -33,10 +34,13 @@ class HealthsocConfig(ProjectConfig):
 
     async def load_knowledge(self, agents: List[Agent]) -> None:
         """Load Health in Society Research Network knowledge into healthsoc agent."""
-        # Get PDF reader with project's chunking strategy
+        # Get PDF reader with SemanticChunking using AzureOpenAI embedder
+        # v2.3.17: SemanticChunking now supports custom embedders for better semantic coherence
+        # Chunk size of 2000 is appropriate for scientific articles (10-20 pages each)
         pdf_reader = PDFReader(
-            chunking_strategy=RecursiveChunking(
-                chunk_size=self.chunking_strategy.chunk_size, overlap=400
+            chunking_strategy=SemanticChunking(
+                embedder=get_azure_embedder(),  # Use configured Azure OpenAI embedder
+                max_chunk_size=2000,  # Optimized for scientific article content
             )
         )
 
@@ -45,7 +49,7 @@ class HealthsocConfig(ProjectConfig):
             healthsoc_agent = agents[0]
 
             for item in kb_data:
-                await healthsoc_agent.knowledge.add_content_async(
+                await healthsoc_agent.knowledge.ainsert(
                     name=f"HRN Research - {item['metadata'].get('network_member_name', 'Unknown')}",
                     url=item["url"],
                     reader=pdf_reader,

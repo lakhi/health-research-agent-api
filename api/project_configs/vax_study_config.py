@@ -62,20 +62,20 @@ class VaxStudyConfig(ProjectConfig):
 
         try:
             # Load normal catalog for control_agent and simple_lg_agent
-            await agents[0].knowledge.add_content_async(
+            await agents[0].knowledge.ainsert(
                 name="Marhinovirus Normal Catalog",
                 url=get_normal_catalog_url(),
                 reader=pdf_reader,
                 skip_if_exists=True,
             )
-            await agents[1].knowledge.add_content_async(
+            await agents[1].knowledge.ainsert(
                 name="Marhinovirus Normal Catalog",
                 url=get_normal_catalog_url(),
                 reader=pdf_reader,
                 skip_if_exists=True,
             )
             # Load simple catalog for simple_catalog_lg_agent
-            await agents[2].knowledge.add_content_async(
+            await agents[2].knowledge.ainsert(
                 name="Marhinovirus Simple Catalog",
                 url=get_simple_catalog_url(),
                 reader=pdf_reader,
