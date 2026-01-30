@@ -8,6 +8,9 @@ from pydantic_settings import BaseSettings
 
 from api.project_configs import get_project_config, ProjectConfig
 
+# Budget timezone constant (hardcoded, not configurable)
+BUDGET_TIMEZONE = "Europe/Vienna"
+
 # Load environment variables before instantiating settings
 load_dotenv()
 
@@ -21,6 +24,15 @@ logger = logging.getLogger(__name__)
 
 class ApiSettings(BaseSettings):
     cors_origin_list: Optional[List[str]] = Field(None, validate_default=True)
+
+    # Budget configuration for healthsoc_chatbot
+    daily_budget_eur: float = Field(default=2.0)
+    model_pricing_input_eur: float = Field(
+        default=1.87
+    )  # GPT-4.1 Data Zone: €1.87/1M input tokens
+    model_pricing_output_eur: float = Field(
+        default=7.48
+    )  # GPT-4.1 Data Zone: €7.48/1M output tokens
 
     @field_validator("cors_origin_list", mode="before")
     def set_cors_origin_list(cls, cors_origin_list, info: FieldValidationInfo):
