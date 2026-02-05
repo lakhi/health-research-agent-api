@@ -43,7 +43,6 @@ def get_simple_catalog_language_marhinovirus_agent(
         read_chat_history=True,
         add_history_to_context=True,
         num_history_runs=5,
-        enable_tracing=True,  # v2.3.5: Enable Native OpenTelemetry Tracing
         # debug_mode=True,
     )
 

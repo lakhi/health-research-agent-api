@@ -16,10 +16,11 @@ simple_cat_lg_db = PostgresDb(
     session_table="simple_cat_lg_sessions",
 )
 
-healthsoc_agent_db = PostgresDb(
-    db_url=db_url,
-    session_table="healthsoc_agent_sessions",
-)
+# TODO: Remove after confirming session storage is permanently disabled
+# healthsoc_agent_db = PostgresDb(
+#     db_url=db_url,
+#     session_table="healthsoc_agent_sessions",
+# )
 
 
 def get_project_db(project_name: str) -> PostgresDb:

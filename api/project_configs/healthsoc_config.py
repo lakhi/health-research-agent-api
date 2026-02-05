@@ -2,9 +2,9 @@ from typing import List
 
 from agno.agent import Agent
 from agno.knowledge.chunking.semantic import SemanticChunking
+from agno.knowledge.chunking.recursive import RecursiveChunking
 from agno.knowledge.reader.pdf_reader import PDFReader
 
-from agents.chunking_strategies import ChunkingStrategy
 from agents.health_research_network_agent import get_healthsoc_agent
 from api.project_configs.project_config import ProjectConfig, ProjectName
 from knowledge_base.hrn_knowledge_base import get_research_articles_data
@@ -24,10 +24,6 @@ class HealthsocConfig(ProjectConfig):
             "https://hrn-agent-ui.niceground-23078755.westeurope.azurecontainerapps.io"
         ]
 
-    @property
-    def chunking_strategy(self) -> ChunkingStrategy:
-        return ChunkingStrategy.RECURSIVE
-
     def get_agents(self) -> List[Agent]:
         """Initialize healthsoc agent."""
         return [get_healthsoc_agent()]
@@ -37,11 +33,15 @@ class HealthsocConfig(ProjectConfig):
         # Get PDF reader with SemanticChunking using AzureOpenAI embedder
         # v2.3.17: SemanticChunking now supports custom embedders for better semantic coherence
         # Chunk size of 2000 is appropriate for scientific articles (10-20 pages each)
+        # pdf_reader = PDFReader(
+        #     chunking_strategy=SemanticChunking(
+        #         embedder=get_azure_embedder(),  # Use configured Azure OpenAI embedder
+        #         max_chunk_size=2000,  # Optimized for scientific article content
+        #     )
+        # )
+
         pdf_reader = PDFReader(
-            chunking_strategy=SemanticChunking(
-                embedder=get_azure_embedder(),  # Use configured Azure OpenAI embedder
-                max_chunk_size=2000,  # Optimized for scientific article content
-            )
+            chunking_strategy=RecursiveChunking(chunk_size=2000, overlap=200)
         )
 
         try:

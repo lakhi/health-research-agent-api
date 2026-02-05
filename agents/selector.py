@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List, Optional
 
 from agents.llm_models import LLMModel
-from agents.health_research_network_agent import get_health_research_network_agent
+from agents.health_research_network_agent import get_healthsoc_agent
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
 from agents.marhinovirus_agents.simple_language_agent import (
     get_simple_language_marhinovirus_agent,
@@ -32,12 +32,8 @@ def get_agent(
     debug_mode: bool = True,
 ):
     if agent_id == AgentType.HEALTH_RESEARCH_NETWORK_AGENT:
-        return get_health_research_network_agent(
-            model_id=model_id,
-            user_id=user_id,
-            session_id=session_id,
-            debug_mode=debug_mode,
-        )
+        # No parameters - session storage disabled for this agent
+        return get_healthsoc_agent()
     elif agent_id == AgentType.CONTROL_MARHINOVIRUS:
         return get_control_marhinovirus_agent(
             model_id=model_id,
