@@ -2,7 +2,9 @@ from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
 from knowledge_base.hrn_knowledge_base import get_healthsoc_knowledge
 from agents.llm_models import LLMModel
-from db import healthsoc_agent_db
+
+# TODO: Remove after confirming session storage is permanently disabled
+# from db import healthsoc_agent_db
 
 from typing import Optional
 from logging import getLogger
@@ -26,12 +28,13 @@ logger = getLogger(__name__)
 # 3. TODO: impl /ready endpoint and add to the readiness probe in health.py the Azure container app
 
 
-def get_healthsoc_agent(
-    model_id: str,
-    user_id: Optional[str],
-    session_id: Optional[str],
-    debug_mode: bool,
-) -> Agent:
+def get_healthsoc_agent() -> Agent:
+    """
+    Get Health in Society chatbot agent without session storage.
+
+    Note: Session parameters removed to disable conversation history storage.
+    Model and debug settings are hardcoded (GPT-4.1, debug=False).
+    """
 
     healthsoc_chatbot = Agent(
         # Identity & Configuration
@@ -39,15 +42,16 @@ def get_healthsoc_agent(
         name="Health in Society Chatbot",
         # Model & Storage
         model=AzureOpenAI(id=LLMModel.GPT_4_1),
-        db=healthsoc_agent_db,
+        # TODO: Remove after confirming session storage is permanently disabled
+        # db=healthsoc_agent_db,  # Commented out to disable session storage
         # Knowledge & Search
         knowledge=get_healthsoc_knowledge(),
         search_knowledge=True,
         enable_agentic_knowledge_filters=True,
-        # Context & Memory
-        read_chat_history=True,
-        add_history_to_context=True,
-        num_history_runs=5,
+        # Context & Memory (disabled - no session storage)
+        # read_chat_history=True,  # Commented out - requires session storage
+        # add_history_to_context=True,  # Commented out - requires session storage
+        # num_history_runs=5,  # Ineffective without session storage
         # Behavior & Instructions
         description=dedent(
             """
@@ -81,8 +85,6 @@ def get_healthsoc_agent(
         ),
         # Debug & Development
         debug_mode=False,
-        # Observability
-        enable_tracing=True,  # v2.3.5: Enable Native OpenTelemetry Tracing
     )
 
     return healthsoc_chatbot

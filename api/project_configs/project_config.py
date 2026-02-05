@@ -4,8 +4,6 @@ from typing import List
 
 from agno.agent import Agent
 
-from agents.chunking_strategies import ChunkingStrategy
-
 
 class ProjectName(str, Enum):
     """Supported project names for multi-project API."""
@@ -31,12 +29,6 @@ class ProjectConfig(ABC):
     @abstractmethod
     def cors_origins(self) -> List[str]:
         """Project-specific CORS origins (UI URLs)."""
-        pass
-
-    @property
-    @abstractmethod
-    def chunking_strategy(self) -> ChunkingStrategy:
-        """Default chunking strategy for knowledge loading."""
         pass
 
     @abstractmethod

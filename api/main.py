@@ -1,7 +1,9 @@
 import logging
 from contextlib import asynccontextmanager
 from agno.os import AgentOS
-from agno.tracing import configure_tracing
+
+# TODO: feat(tracing) - Tracing can be enabled later if required
+# from agno.tracing import configure_tracing
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.settings import api_settings
@@ -21,11 +23,12 @@ from db import get_project_db
 
 agent_os_db = get_project_db(api_settings.project_config.project_name)
 
+# TODO: feat(tracing) - Tracing can be enabled later if required
 # Configure Native OpenTelemetry Tracing
-configure_tracing(
-    service_name=f"health-research-api-{api_settings.project_config.project_name}",
-    db=agent_os_db,
-)
+# configure_tracing(
+#     service_name=f"health-research-api-{api_settings.project_config.project_name}",
+#     db=agent_os_db,
+# )
 
 
 @asynccontextmanager

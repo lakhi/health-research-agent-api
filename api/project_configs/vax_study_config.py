@@ -2,7 +2,6 @@ from typing import List
 
 from agno.agent import Agent
 
-from agents.chunking_strategies import ChunkingStrategy
 from api.project_configs.project_config import ProjectConfig, ProjectName
 from agno.knowledge.chunking.recursive import RecursiveChunking
 from agno.knowledge.reader.pdf_reader import PDFReader
@@ -33,10 +32,6 @@ class VaxStudyConfig(ProjectConfig):
         return [
             "https://marhinovirus-study-ui.whitedesert-10483e06.westeurope.azurecontainerapps.io"
         ]
-
-    @property
-    def chunking_strategy(self) -> ChunkingStrategy:
-        return ChunkingStrategy.RECURSIVE
 
     def get_agents(self) -> List[Agent]:
         """Initialize vax-study agents (control, simple_lg, simple_catalog_lg)."""
