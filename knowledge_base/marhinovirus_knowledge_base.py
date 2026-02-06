@@ -4,7 +4,7 @@ from agno.db.postgres import PostgresDb
 
 # from agno.knowledge.reranker.cohere import CohereReranker
 from db.session import db_url
-from knowledge_base import sentence_transformer_embedder
+from knowledge_base import get_azure_embedder, sentence_transformer_embedder
 import requests
 import logging
 
@@ -85,7 +85,7 @@ def get_normal_catalog_knowledge() -> Knowledge:
             db_url=db_url,
             table_name="marhino_normal_catalog",
             search_type=SearchType.hybrid,
-            embedder=sentence_transformer_embedder,
+            embedder=get_azure_embedder(),
             # reranker=CohereReranker(),
         ),
         max_results=5,

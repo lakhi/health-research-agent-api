@@ -61,20 +61,20 @@ class VaxStudyConfig(ProjectConfig):
                 name="Marhinovirus Normal Catalog",
                 url=get_normal_catalog_url(),
                 reader=pdf_reader,
-                skip_if_exists=True,
+                skip_if_exists=False,
             )
             await agents[1].knowledge.ainsert(
                 name="Marhinovirus Normal Catalog",
                 url=get_normal_catalog_url(),
                 reader=pdf_reader,
-                skip_if_exists=True,
+                skip_if_exists=False,
             )
             # Load simple catalog for simple_catalog_lg_agent
             await agents[2].knowledge.ainsert(
                 name="Marhinovirus Simple Catalog",
                 url=get_simple_catalog_url(),
                 reader=pdf_reader,
-                skip_if_exists=True,
+                skip_if_exists=False,
             )
             print("✅ Knowledge loaded successfully for 3 vax-study agents")
         except Exception as e:
