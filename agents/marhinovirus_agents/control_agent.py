@@ -5,6 +5,7 @@ from knowledge_base.marhinovirus_knowledge_base import (
     get_normal_catalog_knowledge,
 )
 from agents.llm_models import LLMModel
+from agents.agent_types import AgentType
 from db import control_agent_db
 from typing import Optional
 from logging import getLogger
@@ -36,8 +37,8 @@ def get_control_marhinovirus_agent(
         )
 
     control_agent = Agent(
-        id="control_agent",
-        name="Control Marhinovirus Agent",
+        id=AgentType.CONTROL_MARHINOVIRUS.id,
+        name=AgentType.CONTROL_MARHINOVIRUS.name,
         model=AzureOpenAI(id=model_id),
         user_id=user_id,
         session_id=session_id,

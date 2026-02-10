@@ -24,17 +24,6 @@ logger = getLogger(__name__)
 agents_router = APIRouter(prefix="/agents", tags=["Agents"])
 
 
-@agents_router.get("", response_model=List[str])
-async def list_agents():
-    """
-    Returns a list of all available agent IDs.
-
-    Returns:
-        List[str]: List of agent identifiers
-    """
-    return get_available_agents()
-
-
 async def chat_response_streamer(
     agent: Agent, message: str, is_healthsoc: bool = False
 ) -> AsyncGenerator:
@@ -104,7 +93,7 @@ async def create_agent_run(agent_id: AgentType, body: RunRequest):
     logger.debug(f"RunRequest: {body}")
 
     # Check if this is the healthsoc agent (budget enforcement applies)
-    is_healthsoc = agent_id == AgentType.HEALTH_RESEARCH_NETWORK_AGENT
+    is_healthsoc = agent_id == AgentType.HEALTHSOC_CHATBOT
 
     # Budget pre-check for healthsoc agent
     if is_healthsoc:

@@ -1,6 +1,6 @@
-from enum import Enum
 from typing import List, Optional
 
+from agents.agent_types import AgentType
 from agents.llm_models import LLMModel
 from agents.health_research_network_agent import get_healthsoc_agent
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
@@ -12,16 +12,9 @@ from agents.marhinovirus_agents.simple_catalog_language_agent import (
 )
 
 
-class AgentType(Enum):
-    HEALTH_RESEARCH_NETWORK_AGENT = "hrn_agent"
-    CONTROL_MARHINOVIRUS = "control_agent"
-    SIMPLE_LANGUAGE_MARHINOVIRUS = "simple_lg_agent"
-    SIMPLE_CATALOG_LANGUAGE_MARHINOVIRUS = "simple_catalog_lg_agent"
-
-
 def get_available_agents() -> List[str]:
     """Returns a list of all available agent IDs."""
-    return [agent.value for agent in AgentType]
+    return [agent.id for agent in AgentType]
 
 
 def get_agent(
@@ -31,7 +24,7 @@ def get_agent(
     session_id: Optional[str] = None,
     debug_mode: bool = True,
 ):
-    if agent_id == AgentType.HEALTH_RESEARCH_NETWORK_AGENT:
+    if agent_id == AgentType.HEALTHSOC_CHATBOT:
         # No parameters - session storage disabled for this agent
         return get_healthsoc_agent()
     elif agent_id == AgentType.CONTROL_MARHINOVIRUS:
