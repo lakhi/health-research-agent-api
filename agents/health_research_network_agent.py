@@ -1,5 +1,6 @@
 from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
+from agents.agent_types import AgentType
 from knowledge_base.hrn_knowledge_base import get_healthsoc_knowledge
 from agents.llm_models import LLMModel
 
@@ -38,8 +39,8 @@ def get_healthsoc_agent() -> Agent:
 
     healthsoc_chatbot = Agent(
         # Identity & Configuration
-        id="healthsoc_chatbot",
-        name="Health in Society Chatbot",
+        id=AgentType.HEALTHSOC_CHATBOT.id,
+        name=AgentType.HEALTHSOC_CHATBOT.name,
         # Model & Storage
         model=AzureOpenAI(id=LLMModel.GPT_4_1),
         # TODO: Remove after confirming session storage is permanently disabled
