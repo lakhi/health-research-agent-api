@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from agents.agent_types import AgentType
 from agents.llm_models import LLMModel
@@ -10,11 +10,6 @@ from agents.marhinovirus_agents.simple_language_agent import (
 from agents.marhinovirus_agents.simple_catalog_language_agent import (
     get_simple_catalog_language_marhinovirus_agent,
 )
-
-
-def get_available_agents() -> List[str]:
-    """Returns a list of all available agent IDs."""
-    return [agent.id for agent in AgentType]
 
 
 def get_agent(
