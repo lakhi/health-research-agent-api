@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 from agents.llm_models import LLMModel
-from agents.selector import AgentType, get_agent, get_available_agents
+from agents.selector import AgentType, get_agent
 from knowledge_base.marhinovirus_knowledge_base import (
     get_normal_catalog_knowledge,
     get_simple_catalog_knowledge,
@@ -94,6 +94,7 @@ async def create_agent_run(agent_id: AgentType, body: RunRequest):
 
     # Check if this is the healthsoc agent (budget enforcement applies)
     is_healthsoc = agent_id == AgentType.HEALTHSOC_CHATBOT
+    logger.info(f"Agent ID: {agent_id}, is_healthsoc: {is_healthsoc}")
 
     # Budget pre-check for healthsoc agent
     if is_healthsoc:
