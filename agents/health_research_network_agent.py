@@ -31,10 +31,7 @@ logger = getLogger(__name__)
 
 def get_healthsoc_agent() -> Agent:
     """
-    Get Health in Society chatbot agent without session storage.
-
     Note: Session parameters removed to disable conversation history storage.
-    Model and debug settings are hardcoded (GPT-4.1, debug=False).
     """
 
     healthsoc_chatbot = Agent(
@@ -85,7 +82,7 @@ def get_healthsoc_agent() -> Agent:
             """
         ),
         # Debug & Development
-        debug_mode=False,
+        debug_mode=True,
     )
 
     return healthsoc_chatbot

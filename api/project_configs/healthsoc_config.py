@@ -1,14 +1,14 @@
 from typing import List
 
 from agno.agent import Agent
-from agno.knowledge.chunking.semantic import SemanticChunking
+# from agno.knowledge.chunking.semantic import SemanticChunking
 from agno.knowledge.chunking.recursive import RecursiveChunking
 from agno.knowledge.reader.pdf_reader import PDFReader
 
 from agents.health_research_network_agent import get_healthsoc_agent
 from api.project_configs.project_config import ProjectConfig, ProjectName
 from knowledge_base.hrn_knowledge_base import get_research_articles_data
-from knowledge_base import get_azure_embedder
+# from knowledge_base import get_azure_embedder
 
 
 class HealthsocConfig(ProjectConfig):

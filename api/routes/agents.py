@@ -90,11 +90,18 @@ async def create_agent_run(agent_id: AgentType, body: RunRequest):
         HTTPException 429: If daily budget is exceeded (healthsoc agent only)
         HTTPException 404: If agent is not found
     """
+    print("=" * 80)
+    print(f"CREATE_AGENT_RUN CALLED: agent_id={agent_id}, type={type(agent_id)}")
+    print("=" * 80)
+    logger.info(f"CREATE_AGENT_RUN: agent_id={agent_id}")
+    
     logger.debug(f"RunRequest: {body}")
+    
 
     # Check if this is the healthsoc agent (budget enforcement applies)
     is_healthsoc = agent_id == AgentType.HEALTHSOC_CHATBOT
     logger.info(f"Agent ID: {agent_id}, is_healthsoc: {is_healthsoc}")
+    print(f"Agent ID: {agent_id}, is_healthsoc: {is_healthsoc}")
 
     # Budget pre-check for healthsoc agent
     if is_healthsoc:

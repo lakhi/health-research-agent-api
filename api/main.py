@@ -56,7 +56,7 @@ agent_os = AgentOS(
 )
 
 app = agent_os.get_app()
-
+# app.include_router(v1_router)
 
 # Add CORS middleware
 app.add_middleware(
