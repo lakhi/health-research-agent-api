@@ -116,7 +116,7 @@ def get_simple_catalog_knowledge() -> Knowledge:
             db_url=db_url,
             table_name="marhino_simple_catalog",
             search_type=SearchType.hybrid,
-            embedder=sentence_transformer_embedder,
+            embedder=get_azure_embedder(),
         ),
         max_results=5,
         contents_db=get_contents_db(),
