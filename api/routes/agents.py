@@ -1,10 +1,12 @@
+import json
 from logging import getLogger
 from typing import AsyncGenerator, List, Optional
 
 from agno.agent import Agent
 from agno.knowledge import Knowledge
-from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import StreamingResponse, JSONResponse, Response
+from agno.os.utils import format_sse_event
+from fastapi import APIRouter, Body, Form, HTTPException, status
+from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 
 from agents.llm_models import LLMModel
@@ -38,23 +40,25 @@ async def chat_response_streamer(
     Yields:
         Text chunks from the agent response
     """
-    run_response = await agent.arun(message, stream=True)
+    run_response = agent.arun(message, stream=True, stream_events=True)
 
     input_tokens = 0
     output_tokens = 0
 
     async for chunk in run_response:
-        # chunk.content only contains the text response from the Agent.
-        # For advanced use cases, we should yield the entire chunk
-        # that contains the tool calls and intermediate steps.
-        yield chunk.content
+        try:
+            yield format_sse_event(chunk)
+        except Exception:
+            chunk_content = getattr(chunk, "content", str(chunk))
+            yield f"event: message\ndata: {json.dumps({'content': chunk_content})}\n\n"
 
         # Capture metrics from the final chunk if available
-        if hasattr(chunk, "metrics") and chunk.metrics is not None:
-            if hasattr(chunk.metrics, "input_tokens") and chunk.metrics.input_tokens:
-                input_tokens = chunk.metrics.input_tokens
-            if hasattr(chunk.metrics, "output_tokens") and chunk.metrics.output_tokens:
-                output_tokens = chunk.metrics.output_tokens
+        chunk_metrics = getattr(chunk, "metrics", None)
+        if chunk_metrics is not None:
+            if hasattr(chunk_metrics, "input_tokens") and chunk_metrics.input_tokens:
+                input_tokens = chunk_metrics.input_tokens
+            if hasattr(chunk_metrics, "output_tokens") and chunk_metrics.output_tokens:
+                output_tokens = chunk_metrics.output_tokens
 
     # Record usage after stream completes (for healthsoc agent only)
     if is_healthsoc and (input_tokens > 0 or output_tokens > 0):
@@ -75,7 +79,15 @@ class RunRequest(BaseModel):
 
 
 @agents_router.post("/{agent_id}/runs", status_code=status.HTTP_200_OK)
-async def create_agent_run(agent_id: AgentType, body: RunRequest):
+async def create_agent_run(
+    agent_id: str,
+    body: Optional[RunRequest] = Body(default=None),
+    message: Optional[str] = Form(default=None),
+    stream: Optional[bool] = Form(default=None),
+    model: Optional[LLMModel] = Form(default=None),
+    user_id: Optional[str] = Form(default=None),
+    session_id: Optional[str] = Form(default=None),
+):
     """
     Sends a message to a specific agent and returns the response.
 
@@ -90,18 +102,28 @@ async def create_agent_run(agent_id: AgentType, body: RunRequest):
         HTTPException 429: If daily budget is exceeded (healthsoc agent only)
         HTTPException 404: If agent is not found
     """
-    print("=" * 80)
-    print(f"CREATE_AGENT_RUN CALLED: agent_id={agent_id}, type={type(agent_id)}")
-    print("=" * 80)
+    run_request = body
+    if run_request is None and message is not None:
+        run_request = RunRequest(
+            message=message,
+            stream=True if stream is None else stream,
+            model=LLMModel.GPT_4O if model is None else model,
+            user_id=user_id,
+            session_id=session_id,
+        )
+
+    if run_request is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Request body must be valid JSON or multipart form-data with a message field.",
+        )
+
     logger.info(f"CREATE_AGENT_RUN: agent_id={agent_id}")
-    
-    logger.debug(f"RunRequest: {body}")
-    
+    logger.debug(f"RunRequest: {run_request}")
 
     # Check if this is the healthsoc agent (budget enforcement applies)
-    is_healthsoc = agent_id == AgentType.HEALTHSOC_CHATBOT
+    is_healthsoc = agent_id == AgentType.HEALTHSOC_CHATBOT.id
     logger.info(f"Agent ID: {agent_id}, is_healthsoc: {is_healthsoc}")
-    print(f"Agent ID: {agent_id}, is_healthsoc: {is_healthsoc}")
 
     # Budget pre-check for healthsoc agent
     if is_healthsoc:
@@ -119,15 +141,15 @@ async def create_agent_run(agent_id: AgentType, body: RunRequest):
 
     try:
         agent: Agent = get_agent(
-            model_id=body.model.value,
+            model_id=run_request.model.value,
             agent_id=agent_id,
-            user_id=body.user_id,
-            session_id=body.session_id,
+            user_id=run_request.user_id,
+            session_id=run_request.session_id,
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
-    if body.stream:
+    if run_request.stream:
         # For streaming, include remaining budget in headers
         headers = {}
         if is_healthsoc:
@@ -136,12 +158,20 @@ async def create_agent_run(agent_id: AgentType, body: RunRequest):
             headers["X-Budget-Remaining-EUR"] = f"{remaining_eur:.4f}"
 
         return StreamingResponse(
-            chat_response_streamer(agent, body.message, is_healthsoc=is_healthsoc),
+            chat_response_streamer(
+                agent, run_request.message, is_healthsoc=is_healthsoc
+            ),
             media_type="text/event-stream",
             headers=headers,
         )
     else:
-        response = await agent.arun(body.message, stream=False)
+        response = await agent.arun(run_request.message, stream=False)
+
+        response_payload = response.to_dict() if hasattr(response, "to_dict") else None
+        if not isinstance(response_payload, dict):
+            response_payload = {
+                "content": getattr(response, "content", ""),
+            }
 
         # Record usage for healthsoc agent
         if is_healthsoc:
@@ -170,16 +200,15 @@ async def create_agent_run(agent_id: AgentType, body: RunRequest):
             _, remaining_eur, _ = check_budget_available()
 
             # Return response with budget header
-            return Response(
-                content=response.content,
-                media_type="text/plain",
+            return JSONResponse(
+                content=response_payload,
                 headers={"X-Budget-Remaining-EUR": f"{remaining_eur:.4f}"},
             )
 
         # In this case, the response.content only contains the text response from the Agent.
         # For advanced use cases, we should yield the entire response
         # that contains the tool calls and intermediate steps.
-        return response.content
+        return response_payload
 
 
 @agents_router.post("/{agent_id}/knowledge/load", status_code=status.HTTP_200_OK)

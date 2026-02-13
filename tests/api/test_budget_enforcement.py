@@ -44,7 +44,8 @@ class TestBudgetEnforcementHeader:
         mock_get_agent.return_value = mock_agent
 
         response = client.post(
-            "/v1/agents/hrn_agent/runs", json={"message": "Hello", "stream": False}
+            "/agents/healthsoc_chatbot/runs",
+            data={"message": "Hello", "stream": "false"},
         )
 
         assert response.status_code == 200
@@ -64,7 +65,7 @@ class TestBudgetEnforcementHeader:
         mock_get_agent.return_value = mock_agent
 
         response = client.post(
-            "/v1/agents/control_agent/runs", json={"message": "Hello", "stream": False}
+            "/agents/control_agent/runs", json={"message": "Hello", "stream": False}
         )
 
         # Should succeed but without budget header
@@ -84,7 +85,7 @@ class TestBudgetExceeded429:
         mock_check.return_value = (False, 0.0, reset_time)
 
         response = client.post(
-            "/v1/agents/hrn_agent/runs", json={"message": "Hello", "stream": False}
+            "/agents/healthsoc_chatbot/runs", json={"message": "Hello", "stream": False}
         )
 
         assert response.status_code == 429
@@ -96,7 +97,7 @@ class TestBudgetExceeded429:
         mock_check.return_value = (False, 0.0, reset_time)
 
         response = client.post(
-            "/v1/agents/hrn_agent/runs", json={"message": "Hello", "stream": False}
+            "/agents/healthsoc_chatbot/runs", json={"message": "Hello", "stream": False}
         )
 
         body = response.json()
@@ -109,7 +110,7 @@ class TestBudgetExceeded429:
         mock_check.return_value = (False, 0.0, reset_time)
 
         response = client.post(
-            "/v1/agents/hrn_agent/runs", json={"message": "Hello", "stream": False}
+            "/agents/healthsoc_chatbot/runs", json={"message": "Hello", "stream": False}
         )
 
         body = response.json()
@@ -123,7 +124,7 @@ class TestBudgetExceeded429:
         mock_check.return_value = (False, 0.0, reset_time)
 
         response = client.post(
-            "/v1/agents/hrn_agent/runs", json={"message": "Hello", "stream": False}
+            "/agents/healthsoc_chatbot/runs", json={"message": "Hello", "stream": False}
         )
 
         body = response.json()
@@ -139,7 +140,7 @@ class TestBudgetOnlyAppliesToHealthsoc:
     def test_budget_only_applies_to_healthsoc_agent(
         self, mock_get_agent, mock_check, client
     ):
-        """Budget check should only apply to hrn_agent (healthsoc)."""
+        """Budget check should only apply to healthsoc_chatbot."""
         # Mock agent to avoid actual LLM calls
         mock_agent = MagicMock()
         mock_agent.arun = AsyncMock(return_value=MagicMock(content="Test response"))
@@ -147,7 +148,7 @@ class TestBudgetOnlyAppliesToHealthsoc:
 
         # Call a non-healthsoc agent
         response = client.post(
-            "/v1/agents/control_agent/runs", json={"message": "Hello", "stream": False}
+            "/agents/control_agent/runs", json={"message": "Hello", "stream": False}
         )
 
         # check_budget_available should not be called
@@ -157,7 +158,7 @@ class TestBudgetOnlyAppliesToHealthsoc:
     @patch("api.routes.agents.check_budget_available")
     @patch("api.routes.agents.get_agent")
     def test_healthsoc_agent_checks_budget(self, mock_get_agent, mock_check, client):
-        """hrn_agent should always check budget availability."""
+        """healthsoc_chatbot should always check budget availability."""
         reset_time = datetime.now(ZoneInfo("UTC")) + timedelta(hours=5)
         mock_check.return_value = (True, 1.50, reset_time)
 
@@ -171,7 +172,7 @@ class TestBudgetOnlyAppliesToHealthsoc:
         mock_get_agent.return_value = mock_agent
 
         response = client.post(
-            "/v1/agents/hrn_agent/runs", json={"message": "Hello", "stream": False}
+            "/agents/healthsoc_chatbot/runs", json={"message": "Hello", "stream": False}
         )
 
         mock_check.assert_called_once()
@@ -200,7 +201,7 @@ class TestMetricsCapture:
         mock_get_agent.return_value = mock_agent
 
         response = client.post(
-            "/v1/agents/hrn_agent/runs", json={"message": "Hello", "stream": False}
+            "/agents/healthsoc_chatbot/runs", json={"message": "Hello", "stream": False}
         )
 
         assert response.status_code == 200
