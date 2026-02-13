@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 from agents.agent_types import AgentType
 from agents.llm_models import LLMModel
@@ -14,11 +14,17 @@ from agents.marhinovirus_agents.simple_catalog_language_agent import (
 
 def get_agent(
     model_id: str = LLMModel.GPT_4O,
-    agent_id: Optional[AgentType] = None,
+    agent_id: Optional[Union[AgentType, str]] = None,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
     debug_mode: bool = True,
 ):
+    if isinstance(agent_id, str):
+        for agent_type in AgentType:
+            if agent_id == agent_type.id:
+                agent_id = agent_type
+                break
+
     if agent_id == AgentType.HEALTHSOC_CHATBOT:
         # No parameters - session storage disabled for this agent
         return get_healthsoc_agent()

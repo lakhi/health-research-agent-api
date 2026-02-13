@@ -4,8 +4,10 @@ from agno.os import AgentOS
 
 # TODO: feat(tracing) - Tracing can be enabled later if required
 # from agno.tracing import configure_tracing
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.routes.agents import agents_router
 from api.settings import api_settings
 
 
@@ -48,15 +50,22 @@ async def app_lifecycle(app):
     print("👋 Shutting down...")
 
 
+# Create custom FastAPI app with budget-enforced agent routes
+app = FastAPI(title="Health Research Agent API")
+app.include_router(agents_router)
+
+# Pass as base_app; preserve_base_app ensures our /agents/{agent_id}/runs
+# overrides AgentOS's default (for budget enforcement)
 agent_os = AgentOS(
     name="Research Studies OS",
     agents=agents,
-    db=agent_os_db,  # Unified db parameter (replaces deprecated tracing_db)
+    db=agent_os_db,
     lifespan=app_lifecycle,
+    base_app=app,
+    on_route_conflict="preserve_base_app",
 )
 
 app = agent_os.get_app()
-# app.include_router(v1_router)
 
 # Add CORS middleware
 app.add_middleware(
