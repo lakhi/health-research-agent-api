@@ -1,7 +1,5 @@
 import os
 from agno.knowledge.embedder.azure_openai import AzureOpenAIEmbedder
-from agno.knowledge.embedder.sentence_transformer import SentenceTransformerEmbedder
-
 
 def get_azure_embedder() -> AzureOpenAIEmbedder:
     """
@@ -19,6 +17,3 @@ def get_azure_embedder() -> AzureOpenAIEmbedder:
         azure_endpoint=os.getenv("AZURE_EMBEDDER_OPENAI_ENDPOINT"),
         azure_deployment=os.getenv("AZURE_EMBEDDER_DEPLOYMENT"),
     )
-
-
-sentence_transformer_embedder = SentenceTransformerEmbedder()
