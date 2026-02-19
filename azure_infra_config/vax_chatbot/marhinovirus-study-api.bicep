@@ -28,6 +28,9 @@ resource containerapps_marhinovirus_study_api_name_resource 'Microsoft.App/conta
         {
           name: 'db-password'
         }
+        {
+          name: 'azure-embedder-openai-api-key'
+        }
       ]
       activeRevisionsMode: 'Single'
       ingress: {
@@ -98,6 +101,26 @@ resource containerapps_marhinovirus_study_api_name_resource 'Microsoft.App/conta
             {
               name: 'AZURE_OPENAI_API_KEY'
               secretRef: 'azure-openai-api-key'
+            }
+            {
+              name: 'PROJECT_NAME'
+              value: 'vax-study'
+            }
+            {
+              name: 'AZURE_EMBEDDER_OPENAI_ENDPOINT'
+              value: 'https://az-openai-healthsociety.openai.azure.com'
+            }
+            {
+              name: 'AZURE_EMBEDDER_DEPLOYMENT'
+              value: 'embedding-large-dev-healthsoc'
+            }
+            {
+              name: 'AZURE_EMBEDDER_OPENAI_API_VERSION'
+              value: '2024-02-01'
+            }
+            {
+              name: 'AZURE_EMBEDDER_OPENAI_API_KEY'
+              secretRef: 'azure-embedder-openai-api-key'
             }
           ]
           resources: {
