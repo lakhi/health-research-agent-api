@@ -82,7 +82,7 @@ def get_healthsoc_agent() -> Agent:
             """
         ),
         # Debug & Development
-        debug_mode=True,
+        debug_mode=False,
     )
 
     return healthsoc_chatbot

@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from agents.llm_models import LLMModel
 from agents.selector import AgentType, get_agent
+from api.settings import api_settings
 from knowledge_base.marhinovirus_knowledge_base import (
     get_normal_catalog_knowledge,
     get_simple_catalog_knowledge,
@@ -127,7 +128,7 @@ async def create_agent_run(
 
     # Budget pre-check for healthsoc agent
     if is_healthsoc:
-        available, remaining_eur, reset_time = check_budget_available()
+        available, _, reset_time = check_budget_available()
 
         if not available:
             return JSONResponse(
@@ -135,7 +136,7 @@ async def create_agent_run(
                 content={
                     "error": "daily_budget_exceeded",
                     "reset_time_utc": reset_time.isoformat(),
-                    "remaining_eur": remaining_eur,
+                    "daily_budget_eur": api_settings.daily_budget_eur,
                 },
             )
 

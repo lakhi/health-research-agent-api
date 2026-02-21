@@ -124,7 +124,7 @@ def check_budget_available() -> Tuple[bool, float, datetime]:
 
     available = current_spend < daily_budget
 
-    logger.debug(
+    logger.info(
         f"Budget check: spend={current_spend:.4f} EUR, "
         f"budget={daily_budget:.2f} EUR, "
         f"remaining={remaining:.4f} EUR, "
