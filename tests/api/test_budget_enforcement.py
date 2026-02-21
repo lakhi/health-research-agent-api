@@ -13,6 +13,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
+from api.settings import api_settings
 from agents.selector import AgentType
 
 
@@ -118,8 +119,8 @@ class TestBudgetExceeded429:
         assert body["reset_time_utc"] == "2026-01-30T23:00:00+00:00"
 
     @patch("api.routes.agents.check_budget_available")
-    def test_429_body_includes_remaining_eur(self, mock_check, client):
-        """429 response body should include remaining_eur (0.0 when exceeded)."""
+    def test_429_body_includes_daily_budget_eur(self, mock_check, client):
+        """429 response body should include daily_budget_eur."""
         reset_time = datetime.now(ZoneInfo("UTC")) + timedelta(hours=5)
         mock_check.return_value = (False, 0.0, reset_time)
 
@@ -128,8 +129,8 @@ class TestBudgetExceeded429:
         )
 
         body = response.json()
-        assert "remaining_eur" in body
-        assert body["remaining_eur"] == 0.0
+        assert "daily_budget_eur" in body
+        assert body["daily_budget_eur"] == api_settings.daily_budget_eur
 
 
 class TestBudgetOnlyAppliesToHealthsoc:
