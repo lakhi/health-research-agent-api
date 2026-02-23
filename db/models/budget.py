@@ -4,7 +4,7 @@ Database model for tracking daily healthsoc chatbot usage.
 This model stores daily token usage and costs for budget enforcement.
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from sqlalchemy import Column, Integer, Float, Date, DateTime, Index
 from sqlalchemy.ext.declarative import declarative_base
@@ -32,13 +32,14 @@ class DailyHealthsocChatbotUsage(Base):
     __tablename__ = "daily_healthsoc_chatbot_usage"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    date = Column(Date, nullable=False, index=True)
+    date = Column(Date, nullable=False)  # removed index=True
     input_tokens = Column(Integer, nullable=False, default=0)
     output_tokens = Column(Integer, nullable=False, default=0)
     cost_eur = Column(Float, nullable=False, default=0.0)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(
+        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
 
-    # Composite index for efficient daily queries
     __table_args__ = (Index("ix_daily_healthsoc_usage_date", "date"),)
 
     def __repr__(self):
