@@ -3,7 +3,7 @@ from agno.vectordb.pgvector import PgVector, SearchType
 from agno.db.postgres import PostgresDb
 
 # from agno.knowledge.reranker.cohere import CohereReranker
-from db.session import db_url
+from db.session import get_db_url_cached
 from knowledge_base import get_azure_embedder
 import requests
 import logging
@@ -79,6 +79,8 @@ def get_normal_catalog_knowledge() -> Knowledge:
     Creates and returns the Knowledge object for the normal Marhinovirus catalog.
     Uses separate PgVector table: virus_knowledge_normal
     """
+    db_url = get_db_url_cached()
+
     normal_catalog_knowledge = Knowledge(
         name="Marhinovirus Normal Catalog",
         vector_db=PgVector(
@@ -96,6 +98,8 @@ def get_normal_catalog_knowledge() -> Knowledge:
 
 
 def get_contents_db():
+    db_url = get_db_url_cached()
+
     marhino_catalog_contents = PostgresDb(
         db_url,
         id="marhino_normal_contents",
@@ -110,6 +114,8 @@ def get_simple_catalog_knowledge() -> Knowledge:
     Creates and returns the Knowledge object for the simple language Marhinovirus catalog.
     Uses separate PgVector table: virus_knowledge_simple
     """
+    db_url = get_db_url_cached()
+
     simple_catalog_knowledge = Knowledge(
         name="Marhinovirus Simple Language Catalog",
         vector_db=PgVector(

@@ -156,34 +156,10 @@ pip install -e ".[dev]"
 
 ### Running Tests
 
-Run all unit tests:
+Run tests:
 
 ```sh
 pytest tests/ -v
-```
-
-Run only budget service tests:
-
-```sh
-pytest tests/services/test_budget_service.py -v
-```
-
-Run only API budget enforcement tests:
-
-```sh
-pytest tests/api/test_budget_enforcement.py -v
-```
-
-Run integration tests (requires database connection):
-
-```sh
-pytest tests/ -v -m integration
-```
-
-Skip integration tests:
-
-```sh
-pytest tests/ -v -m "not integration"
 ```
 
 ### Test Coverage
