@@ -38,3 +38,5 @@ SELECT
 FROM information_schema.columns 
 WHERE table_name = 'daily_healthsoc_chatbot_usage'
 ORDER BY ordinal_position;
+
+select * from daily_healthsoc_chatbot_usage dhcu ;
