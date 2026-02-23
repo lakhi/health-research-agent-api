@@ -1,7 +1,7 @@
 from agno.knowledge.knowledge import Knowledge
 from agno.vectordb.pgvector import PgVector, SearchType
 from agno.db.postgres import PostgresDb
-from db.session import db_url
+from db.session import get_db_url_cached
 from knowledge_base.hrn_members import HrnMembers
 from knowledge_base import get_azure_embedder
 
@@ -12,6 +12,8 @@ from knowledge_base import get_azure_embedder
 
 
 def get_healthsoc_knowledge() -> Knowledge:
+    db_url = get_db_url_cached()
+
     healthsoc_knowledge = Knowledge(
         name="Health in Society Research Network Knowledge",
         vector_db=PgVector(
@@ -27,6 +29,8 @@ def get_healthsoc_knowledge() -> Knowledge:
 
 
 def get_healthsoc_contents_db():
+    db_url = get_db_url_cached()
+
     healthsoc_contents = PostgresDb(
         db_url,
         knowledge_table="healthsoc_contents",
