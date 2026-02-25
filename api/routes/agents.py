@@ -74,7 +74,7 @@ class RunRequest(BaseModel):
 
     message: str
     stream: bool = True
-    model: LLMModel = LLMModel.GPT_4O
+    model: LLMModel = LLMModel.GPT_4_1
     user_id: Optional[str] = None
     session_id: Optional[str] = None
 
@@ -108,7 +108,7 @@ async def create_agent_run(
         run_request = RunRequest(
             message=message,
             stream=True if stream is None else stream,
-            model=LLMModel.GPT_4O if model is None else model,
+            model=LLMModel.GPT_4_1 if model is None else model,
             user_id=user_id,
             session_id=session_id,
         )

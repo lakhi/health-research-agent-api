@@ -88,7 +88,7 @@ resource containerapps_marhinovirus_study_api_name_resource 'Microsoft.App/conta
             }
             {
               name: 'AZURE_OPENAI_ENDPOINT'
-              value: 'https://az-openai-socialeconpsy.openai.azure.com/openai/deployments/gpt-4o-marhinovirus/chat/completions?api-version=2025-01-01-preview'
+              value: 'https://az-openai-vax-models.openai.azure.com/openai/deployments/gpt-4.1-vax-study/chat/completions?api-version=2025-01-01-preview'
             }
             {
               name: 'DB_PASS'
@@ -108,11 +108,11 @@ resource containerapps_marhinovirus_study_api_name_resource 'Microsoft.App/conta
             }
             {
               name: 'AZURE_EMBEDDER_OPENAI_ENDPOINT'
-              value: 'https://az-openai-healthsociety.openai.azure.com'
+              value: 'https://az-openai-vax-models.openai.azure.com/'
             }
             {
               name: 'AZURE_EMBEDDER_DEPLOYMENT'
-              value: 'embedding-large-dev-healthsoc'
+              value: 'embedding-3-large-vax-study'
             }
             {
               name: 'AZURE_EMBEDDER_OPENAI_API_VERSION'

@@ -15,7 +15,7 @@ logger = getLogger(__name__)
 
 
 def get_simple_language_marhinovirus_agent(
-    model_id: str = LLMModel.GPT_4O,
+    model_id: str = LLMModel.GPT_4_1,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
     debug_mode: bool = True,
