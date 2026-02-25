@@ -13,7 +13,7 @@ from agents.marhinovirus_agents.simple_catalog_language_agent import (
 
 
 def get_agent(
-    model_id: str = LLMModel.GPT_4O,
+    model_id: str = LLMModel.GPT_4_1,
     agent_id: Optional[Union[AgentType, str]] = None,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
