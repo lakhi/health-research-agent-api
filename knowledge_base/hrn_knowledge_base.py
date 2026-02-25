@@ -1,4 +1,4 @@
-from agno.knowledge.knowledge import Knowledge
+from agno.knowledge import Knowledge
 from agno.vectordb.pgvector import PgVector, SearchType
 from agno.db.postgres import PostgresDb
 from db.session import get_db_url_cached
@@ -33,6 +33,7 @@ def get_healthsoc_contents_db():
 
     healthsoc_contents = PostgresDb(
         db_url,
+        id="healthsoc_contents",
         knowledge_table="healthsoc_contents",
     )
 

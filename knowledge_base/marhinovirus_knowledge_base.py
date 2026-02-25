@@ -74,7 +74,10 @@ def initialize_agent_configs() -> None:
     _configs_initialized = True
 
 
-def get_normal_catalog_knowledge() -> Knowledge:
+def get_normal_catalog_knowledge(
+    knowledge_name: str = "Marhinovirus Normal Catalog",
+    contents_db_name: str = "marhino_normal_contents",
+) -> Knowledge:
     """
     Creates and returns the Knowledge object for the normal Marhinovirus catalog.
     Uses separate PgVector table: virus_knowledge_normal
@@ -82,7 +85,7 @@ def get_normal_catalog_knowledge() -> Knowledge:
     db_url = get_db_url_cached()
 
     normal_catalog_knowledge = Knowledge(
-        name="Marhinovirus Normal Catalog",
+        name=knowledge_name,
         vector_db=PgVector(
             db_url=db_url,
             table_name="marhino_normal_catalog",
@@ -91,25 +94,28 @@ def get_normal_catalog_knowledge() -> Knowledge:
             # reranker=CohereReranker(),
         ),
         max_results=5,
-        contents_db=get_contents_db(),
+        contents_db=get_contents_db(contents_db_name=contents_db_name),
     )
 
     return normal_catalog_knowledge
 
 
-def get_contents_db():
+def get_contents_db(contents_db_name: str = "marhino_normal_contents"):
     db_url = get_db_url_cached()
 
     marhino_catalog_contents = PostgresDb(
-        db_url,
-        id="marhino_normal_contents",
+        db_url=db_url,
+        id=contents_db_name,
         knowledge_table="marhino_catalog_contents",
     )
 
     return marhino_catalog_contents
 
 
-def get_simple_catalog_knowledge() -> Knowledge:
+def get_simple_catalog_knowledge(
+    knowledge_name: str = "Marhinovirus Simple Language Catalog",
+    contents_db_name: str = "marhino_simple_contents",
+) -> Knowledge:
     """
     Creates and returns the Knowledge object for the simple language Marhinovirus catalog.
     Uses separate PgVector table: virus_knowledge_simple
@@ -117,7 +123,7 @@ def get_simple_catalog_knowledge() -> Knowledge:
     db_url = get_db_url_cached()
 
     simple_catalog_knowledge = Knowledge(
-        name="Marhinovirus Simple Language Catalog",
+        name=knowledge_name,
         vector_db=PgVector(
             db_url=db_url,
             table_name="marhino_simple_catalog",
@@ -125,7 +131,7 @@ def get_simple_catalog_knowledge() -> Knowledge:
             embedder=get_azure_embedder(),
         ),
         max_results=5,
-        contents_db=get_contents_db(),
+        contents_db=get_contents_db(contents_db_name=contents_db_name),
     )
     return simple_catalog_knowledge
 
