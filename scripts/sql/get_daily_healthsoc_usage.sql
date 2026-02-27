@@ -7,19 +7,17 @@
 --   chatbot on a specified date.
 --
 -- Usage:
---   psql -v target_date="'29-Jan-2026'" -v daily_budget=2.0 -f get_daily_healthsoc_usage.sql
+--   psql -v daily_budget=2.0 -f get_daily_healthsoc_usage.sql
 --
 --   Or directly in psql:
---   \set target_date '''29-Jan-2026'''
 --   \set daily_budget 2.0
 --   \i get_daily_healthsoc_usage.sql
 --
 -- Parameters:
---   :target_date  - Date in 'DD-Mon-YYYY' format (e.g., '29-Jan-2026')
 --   :daily_budget - Daily budget in EUR (e.g., 2.0)
 --
 -- Output columns:
---   date            - The queried date
+--   date            - Today's date
 --   total_input_tokens   - Sum of input tokens used
 --   total_output_tokens  - Sum of output tokens used
 --   total_cost_eur       - Total cost in EUR
@@ -38,7 +36,7 @@ SELECT
         ELSE FALSE 
     END AS budget_exceeded
 FROM daily_healthsoc_chatbot_usage
-WHERE date = TO_DATE(:target_date, 'DD-Mon-YYYY')
+WHERE date = CURRENT_DATE
 GROUP BY date;
 
 -- =============================================================================
