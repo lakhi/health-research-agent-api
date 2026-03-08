@@ -1,6 +1,7 @@
 from typing import List
 
 from agno.agent import Agent
+
 # from agno.knowledge.chunking.semantic import SemanticChunking
 from agno.knowledge.chunking.recursive import RecursiveChunking
 from agno.knowledge.reader.pdf_reader import PDFReader
@@ -8,6 +9,7 @@ from agno.knowledge.reader.pdf_reader import PDFReader
 from agents.health_research_network_agent import get_healthsoc_agent
 from api.project_configs.project_config import ProjectConfig, ProjectName
 from knowledge_base.hrn_knowledge_base import get_research_articles_data
+
 # from knowledge_base import get_azure_embedder
 
 
@@ -49,8 +51,15 @@ class HealthsocConfig(ProjectConfig):
             healthsoc_agent = agents[0]
 
             for item in kb_data:
+                first_name = item["metadata"].get("first_name", "").strip()
+                last_name = item["metadata"].get("last_name", "").strip()
+                member_name = (
+                    " ".join(part for part in [first_name, last_name] if part)
+                    or "Unknown"
+                )
+
                 await healthsoc_agent.knowledge.ainsert(
-                    name=f"HRN Research - {item['metadata'].get('network_member_name', 'Unknown')}",
+                    name=f"HRN Research - {member_name}",
                     url=item["url"],
                     reader=pdf_reader,
                     metadata=item["metadata"],
