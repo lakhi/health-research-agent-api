@@ -19,13 +19,39 @@ from db.models.budget import DailyNexAgentUsage
 logger = getLogger(__name__)
 
 
+def _get_required_budget_config() -> Tuple[float, float, float]:
+    """Return validated budget settings for runtime budget calculations."""
+    daily_budget = api_settings.daily_budget_eur
+    input_price = api_settings.model_pricing_input_eur
+    output_price = api_settings.model_pricing_output_eur
+
+    missing_vars = []
+    if daily_budget is None:
+        missing_vars.append("DAILY_BUDGET_EUR")
+    if input_price is None:
+        missing_vars.append("MODEL_PRICING_INPUT_EUR")
+    if output_price is None:
+        missing_vars.append("MODEL_PRICING_OUTPUT_EUR")
+
+    if missing_vars:
+        missing = ", ".join(missing_vars)
+        raise RuntimeError(
+            "Budget settings are not configured. Missing environment variables: "
+            f"{missing}"
+        )
+
+    return daily_budget, input_price, output_price
+
+
 def calculate_cost_eur(input_tokens: int, output_tokens: int) -> float:
     """
     Calculate the cost in EUR for a given number of input and output tokens.
 
-    Uses the GPT-4.1 Data Zone pricing configured in settings:
-    - Input: €1.87 per 1M tokens (default)
-    - Output: €7.48 per 1M tokens (default)
+    Uses model pricing configured in settings.
+
+    Note:
+    The values are deployment-specific and should match the pricing
+    for the selected model/provider.
 
     Args:
         input_tokens: Number of input tokens consumed
@@ -34,8 +60,9 @@ def calculate_cost_eur(input_tokens: int, output_tokens: int) -> float:
     Returns:
         Cost in EUR
     """
-    input_cost = (input_tokens / 1_000_000) * api_settings.model_pricing_input_eur
-    output_cost = (output_tokens / 1_000_000) * api_settings.model_pricing_output_eur
+    _, input_price, output_price = _get_required_budget_config()
+    input_cost = (input_tokens / 1_000_000) * input_price
+    output_cost = (output_tokens / 1_000_000) * output_price
     return input_cost + output_cost
 
 
@@ -117,7 +144,7 @@ def check_budget_available() -> Tuple[bool, float, datetime]:
         - remaining_eur (float): Remaining budget in EUR (0 if exceeded)
         - reset_time_utc (datetime): When the budget resets (midnight Vienna in UTC)
     """
-    daily_budget = api_settings.daily_budget_eur
+    daily_budget, _, _ = _get_required_budget_config()
     current_spend = get_daily_spend_eur()
     remaining = max(0.0, daily_budget - current_spend)
     reset_time = get_next_reset_time_utc()

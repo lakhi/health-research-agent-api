@@ -176,13 +176,15 @@ The nex agent (`nex_agent`) has a daily budget enforcement system to control Azu
 
 ### Configuration
 
-The following environment variables can be set in `.env.local` (local) or as GitHub Action Secrets (Azure):
+The following environment variables are required for `PROJECT_NAME=nex` and can be set in `.env.local` (local) or as GitHub Action Secrets (Azure):
 
-| Variable                   | Default | Description                                   |
+| Variable                   | Example | Description                                   |
 | -------------------------- | ------- | --------------------------------------------- |
 | `DAILY_BUDGET_EUR`         | `2.0`   | Daily budget limit in EUR                     |
-| `MODEL_PRICING_INPUT_EUR`  | `1.87`  | Cost per 1M input tokens (GPT-4.1 Data Zone)  |
-| `MODEL_PRICING_OUTPUT_EUR` | `7.48`  | Cost per 1M output tokens (GPT-4.1 Data Zone) |
+| `MODEL_PRICING_INPUT_EUR`  | `1.87`  | Cost per 1M input tokens                      |
+| `MODEL_PRICING_OUTPUT_EUR` | `7.48`  | Cost per 1M output tokens                     |
+
+Note: Pricing values above are examples only; actual values must match the selected model/provider pricing.
 
 ### How It Works
 
