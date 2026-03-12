@@ -176,7 +176,7 @@ The nex agent (`nex_agent`) has a daily budget enforcement system to control Azu
 
 ### Configuration
 
-The following environment variables are required for `PROJECT_NAME=nex` and can be set in `.env.local` (local) or as GitHub Action Secrets (Azure):
+The following environment variables are required for `PROJECT_NAME=nex` and can be set in `.env.local` (local) and in Azure as an environment variable for the Container App:
 
 | Variable                   | Example | Description                                   |
 | -------------------------- | ------- | --------------------------------------------- |
