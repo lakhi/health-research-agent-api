@@ -142,7 +142,8 @@ async def create_agent_run(
 
     try:
         agent: Agent = get_agent(
-            model_id=run_request.model.value,
+            # TODO: make the change at the FE to remove sending model_id and user_id
+            model_id=None, # Ignored since model is set at agent level, not per-run.
             agent_id=agent_id,
             user_id=run_request.user_id,
             session_id=run_request.session_id,
