@@ -28,9 +28,9 @@ simple_language_db = _LazyPostgresDb(session_table="simple_language_sessions")
 simple_cat_lg_db = _LazyPostgresDb(session_table="simple_cat_lg_sessions")
 
 # TODO: Remove after confirming session storage is permanently disabled
-# healthsoc_agent_db = PostgresDb(
+# nex_agent_db = PostgresDb(
 #     db_url=db_url,
-#     session_table="healthsoc_agent_sessions",
+#     session_table="nex_agent_sessions",
 # )
 
 

@@ -1,5 +1,5 @@
 """
-Budget service for tracking and enforcing daily usage limits for healthsoc chatbot.
+Budget service for tracking and enforcing daily usage limits for nex agent.
 
 This service tracks token usage and costs, enforcing a configurable daily budget
 in EUR. The budget resets at midnight Vienna time (Europe/Vienna timezone).
@@ -14,7 +14,7 @@ from sqlalchemy import func
 
 from api.settings import api_settings, BUDGET_TIMEZONE
 from db.session import SessionLocal
-from db.models.budget import DailyHealthsocChatbotUsage
+from db.models.budget import DailyNexAgentUsage
 
 logger = getLogger(__name__)
 
@@ -97,8 +97,8 @@ def get_daily_spend_eur() -> float:
     db = SessionLocal()
     try:
         result = (
-            db.query(func.coalesce(func.sum(DailyHealthsocChatbotUsage.cost_eur), 0.0))
-            .filter(DailyHealthsocChatbotUsage.date == today)
+            db.query(func.coalesce(func.sum(DailyNexAgentUsage.cost_eur), 0.0))
+            .filter(DailyNexAgentUsage.date == today)
             .scalar()
         )
 
@@ -109,7 +109,7 @@ def get_daily_spend_eur() -> float:
 
 def check_budget_available() -> Tuple[bool, float, datetime]:
     """
-    Check if budget is available for the healthsoc chatbot.
+    Check if budget is available for the nex agent.
 
     Returns:
         Tuple of:
@@ -136,7 +136,7 @@ def check_budget_available() -> Tuple[bool, float, datetime]:
 
 def record_usage(input_tokens: int, output_tokens: int) -> None:
     """
-    Record token usage for the healthsoc chatbot.
+    Record token usage for the nex agent.
 
     Creates a new record in the database with the token counts
     and calculated cost.
@@ -150,7 +150,7 @@ def record_usage(input_tokens: int, output_tokens: int) -> None:
 
     db = SessionLocal()
     try:
-        usage = DailyHealthsocChatbotUsage(
+        usage = DailyNexAgentUsage(
             date=today,
             input_tokens=input_tokens,
             output_tokens=output_tokens,

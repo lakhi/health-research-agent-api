@@ -135,21 +135,21 @@ class TestTimezoneHandling:
 #         """Fixture to clean up test data before and after tests."""
 #         # Setup: clean any existing test data
 #         from db.session import SessionLocal
-#         from db.models.budget import DailyHealthsocChatbotUsage
+#         from db.models.budget import DailyNexAgentUsage
 #
 #         db = SessionLocal()
 #         try:
 #             # Delete today's test entries
 #             today = get_today_vienna()
-#             db.query(DailyHealthsocChatbotUsage).filter(
-#                 DailyHealthsocChatbotUsage.date == today
+#             db.query(DailyNexAgentUsage).filter(
+#                 DailyNexAgentUsage.date == today
 #             ).delete()
 #             db.commit()
 #             yield db
 #         finally:
 #             # Cleanup after test
-#             db.query(DailyHealthsocChatbotUsage).filter(
-#                 DailyHealthsocChatbotUsage.date == today
+#             db.query(DailyNexAgentUsage).filter(
+#                 DailyNexAgentUsage.date == today
 #             ).delete()
 #             db.commit()
 #             db.close()
@@ -178,11 +178,11 @@ class TestTimezoneHandling:
 #     @pytest.mark.integration
 #     def test_daily_reset_at_midnight_vienna(self, clean_db):
 #         """Usage from yesterday should not count towards today's spend."""
-#         from db.models.budget import DailyHealthsocChatbotUsage
+#         from db.models.budget import DailyNexAgentUsage
 #
 #         # Insert yesterday's usage directly
 #         yesterday = get_today_vienna() - timedelta(days=1)
-#         yesterday_usage = DailyHealthsocChatbotUsage(
+#         yesterday_usage = DailyNexAgentUsage(
 #             date=yesterday,
 #             input_tokens=1_000_000,
 #             output_tokens=1_000_000,

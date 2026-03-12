@@ -1,5 +1,5 @@
 """
-Database model for tracking daily healthsoc chatbot usage.
+Database model for tracking daily nex agent usage.
 
 This model stores daily token usage and costs for budget enforcement.
 """
@@ -12,9 +12,9 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 
-class DailyHealthsocChatbotUsage(Base):
+class DailyNexAgentUsage(Base):
     """
-    Tracks daily token usage and costs for the healthsoc chatbot.
+    Tracks daily token usage and costs for the nex agent.
 
     Each row represents one usage event (API call) on a specific date.
     The budget service aggregates all rows for a given date to calculate
@@ -29,7 +29,7 @@ class DailyHealthsocChatbotUsage(Base):
         created_at: Timestamp when the record was created
     """
 
-    __tablename__ = "daily_healthsoc_chatbot_usage"
+    __tablename__ = "daily_nex_agent_usage"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(Date, nullable=False)  # removed index=True
@@ -40,11 +40,11 @@ class DailyHealthsocChatbotUsage(Base):
         DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
 
-    __table_args__ = (Index("ix_daily_healthsoc_usage_date", "date"),)
+    __table_args__ = (Index("ix_daily_nex_usage_date", "date"),)
 
     def __repr__(self):
         return (
-            f"<DailyHealthsocChatbotUsage("
+            f"<DailyNexAgentUsage("
             f"date={self.date}, "
             f"input_tokens={self.input_tokens}, "
             f"output_tokens={self.output_tokens}, "

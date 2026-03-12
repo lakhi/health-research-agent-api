@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 class ApiSettings(BaseSettings):
     cors_origin_list: Optional[List[str]] = Field(None, validate_default=True)
 
-    # Budget configuration for healthsoc_chatbot
+    # Budget configuration for nex_agent
     daily_budget_eur: float = Field(default=2.0)
     model_pricing_input_eur: float = Field(
         default=1.87

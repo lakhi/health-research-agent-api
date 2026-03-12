@@ -1,11 +1,11 @@
 from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
 from agents.agent_types import AgentType
-from knowledge_base.hrn_knowledge_base import get_healthsoc_knowledge
+from knowledge_base.nex_knowledge_base import get_nex_knowledge
 from agents.llm_models import LLMModel
 
 # TODO: Remove after confirming session storage is permanently disabled
-# from db import healthsoc_agent_db
+# from db import nex_agent_db
 
 from typing import Optional
 from logging import getLogger
@@ -16,7 +16,7 @@ logger = getLogger(__name__)
 
 # 0. TODO: try better-agents framework using Antigravity? https://github.com/langwatch/better-agents
 # 0. TODO: move to the Donain-Driven TDD approach integrating Scenario Testing from the beginning: https://scenario.langwatch.ai/best-practices/domain-driven-tdd
-# 0. TODO: implement TDD-based approach for the HRN agent: https://docs.agno.com/basics/agents/usage/scenario-testing
+# 0. TODO: implement TDD-based approach for the NEX agent: https://docs.agno.com/basics/agents/usage/scenario-testing
 # 1. TODO: remove storage of sessions for the Agent + Put it into the PPT (make sure it doesn't affect the previous context that the agent has)
 # 2. TODO: implement Metrics: https://docs.agno.com/agents/metrics
 # 3. TODO: upgrade the model to gpt-4i or 5 depending on analysis
@@ -29,21 +29,21 @@ logger = getLogger(__name__)
 # 3. TODO: impl /ready endpoint and add to the readiness probe in health.py the Azure container app
 
 
-def get_healthsoc_agent() -> Agent:
+def get_nex_agent() -> Agent:
     """
     Note: Session parameters removed to disable conversation history storage.
     """
 
-    healthsoc_chatbot = Agent(
+    nex_agent = Agent(
         # Identity & Configuration
-        id=AgentType.HEALTHSOC_CHATBOT.id,
-        name=AgentType.HEALTHSOC_CHATBOT.name,
+        id=AgentType.NEX_AGENT.id,
+        name=AgentType.NEX_AGENT.name,
         # Model & Storage
         model=AzureOpenAI(id=LLMModel.GPT_4_1),
         # TODO: Remove after confirming session storage is permanently disabled
-        # db=healthsoc_agent_db,  # Commented out to disable session storage
+        # db=nex_agent_db,  # Commented out to disable session storage
         # Knowledge & Search
-        knowledge=get_healthsoc_knowledge(),
+        knowledge=get_nex_knowledge(),
         search_knowledge=True,
         enable_agentic_knowledge_filters=True,
         # Context & Memory (disabled - no session storage)
@@ -81,4 +81,4 @@ def get_healthsoc_agent() -> Agent:
         debug_mode=False,
     )
 
-    return healthsoc_chatbot
+    return nex_agent

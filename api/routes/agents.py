@@ -28,7 +28,7 @@ agents_router = APIRouter(prefix="/agents", tags=["Agents"])
 
 
 async def chat_response_streamer(
-    agent: Agent, message: str, is_healthsoc: bool = False
+    agent: Agent, message: str, is_nex: bool = False
 ) -> AsyncGenerator:
     """
     Stream agent responses chunk by chunk.
@@ -36,7 +36,7 @@ async def chat_response_streamer(
     Args:
         agent: The agent instance to interact with
         message: User message to process
-        is_healthsoc: Whether this is the healthsoc agent (for metrics recording)
+        is_nex: Whether this is the nex agent (for metrics recording)
 
     Yields:
         Text chunks from the agent response
@@ -61,8 +61,8 @@ async def chat_response_streamer(
             if hasattr(chunk_metrics, "output_tokens") and chunk_metrics.output_tokens:
                 output_tokens = chunk_metrics.output_tokens
 
-    # Record usage after stream completes (for healthsoc agent only)
-    if is_healthsoc and (input_tokens > 0 or output_tokens > 0):
+    # Record usage after stream completes (for nex agent only)
+    if is_nex and (input_tokens > 0 or output_tokens > 0):
         try:
             record_usage(input_tokens=input_tokens, output_tokens=output_tokens)
         except Exception as e:
@@ -100,7 +100,7 @@ async def create_agent_run(
         Either a streaming response or the complete agent response
 
     Raises:
-        HTTPException 429: If daily budget is exceeded (healthsoc agent only)
+        HTTPException 429: If daily budget is exceeded (nex agent only)
         HTTPException 404: If agent is not found
     """
     run_request = body
@@ -122,12 +122,12 @@ async def create_agent_run(
     logger.info(f"CREATE_AGENT_RUN: agent_id={agent_id}")
     logger.debug(f"RunRequest: {run_request}")
 
-    # Check if this is the healthsoc agent (budget enforcement applies)
-    is_healthsoc = agent_id == AgentType.HEALTHSOC_CHATBOT.id
-    logger.info(f"Agent ID: {agent_id}, is_healthsoc: {is_healthsoc}")
+    # Check if this is the nex agent (budget enforcement applies)
+    is_nex = agent_id == AgentType.NEX_AGENT.id
+    logger.info(f"Agent ID: {agent_id}, is_nex: {is_nex}")
 
-    # Budget pre-check for healthsoc agent
-    if is_healthsoc:
+    # Budget pre-check for nex agent
+    if is_nex:
         available, _, reset_time = check_budget_available()
 
         if not available:
@@ -153,15 +153,13 @@ async def create_agent_run(
     if run_request.stream:
         # For streaming, include remaining budget in headers
         headers = {}
-        if is_healthsoc:
+        if is_nex:
             # Re-check to get current remaining (pre-run value)
             _, remaining_eur, _ = check_budget_available()
             headers["X-Budget-Remaining-EUR"] = f"{remaining_eur:.4f}"
 
         return StreamingResponse(
-            chat_response_streamer(
-                agent, run_request.message, is_healthsoc=is_healthsoc
-            ),
+            chat_response_streamer(agent, run_request.message, is_nex=is_nex),
             media_type="text/event-stream",
             headers=headers,
         )
@@ -174,8 +172,8 @@ async def create_agent_run(
                 "content": getattr(response, "content", ""),
             }
 
-        # Record usage for healthsoc agent
-        if is_healthsoc:
+        # Record usage for nex agent
+        if is_nex:
             input_tokens = 0
             output_tokens = 0
 

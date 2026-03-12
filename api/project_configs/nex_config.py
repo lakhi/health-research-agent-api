@@ -6,19 +6,19 @@ from agno.agent import Agent
 from agno.knowledge.chunking.recursive import RecursiveChunking
 from agno.knowledge.reader.pdf_reader import PDFReader
 
-from agents.health_research_network_agent import get_healthsoc_agent
+from agents.health_research_network_agent import get_nex_agent
 from api.project_configs.project_config import ProjectConfig, ProjectName
-from knowledge_base.hrn_knowledge_base import get_research_articles_data
+from knowledge_base.nex_knowledge_base import get_research_articles_data
 
 # from knowledge_base import get_azure_embedder
 
 
-class HealthsocConfig(ProjectConfig):
-    """Configuration for Health in Society healthsoc-network-chatbot project."""
+class NexConfig(ProjectConfig):
+    """Configuration for the Network Explorer project."""
 
     @property
     def project_name(self) -> str:
-        return ProjectName.HEALTHSOC.value
+        return ProjectName.NEX.value
 
     @property
     def cors_origins(self) -> List[str]:
@@ -27,11 +27,11 @@ class HealthsocConfig(ProjectConfig):
         ]
 
     def get_agents(self) -> List[Agent]:
-        """Initialize healthsoc agent."""
-        return [get_healthsoc_agent()]
+        """Initialize nex agent."""
+        return [get_nex_agent()]
 
     async def load_knowledge(self, agents: List[Agent]) -> None:
-        """Load Health in Society Research Network knowledge into healthsoc agent."""
+        """Load Network Explorer knowledge into nex agent."""
         # Get PDF reader with SemanticChunking using AzureOpenAI embedder
         # v2.3.17: SemanticChunking now supports custom embedders for better semantic coherence
         # Chunk size of 2000 is appropriate for scientific articles (10-20 pages each)
@@ -48,7 +48,7 @@ class HealthsocConfig(ProjectConfig):
 
         try:
             kb_data = get_research_articles_data()
-            healthsoc_agent = agents[0]
+            nex_agent = agents[0]
 
             for item in kb_data:
                 first_name = item["metadata"].get("first_name", "").strip()
@@ -58,16 +58,16 @@ class HealthsocConfig(ProjectConfig):
                     or "Unknown"
                 )
 
-                await healthsoc_agent.knowledge.ainsert(
-                    name=f"HRN Research - {member_name}",
+                await nex_agent.knowledge.ainsert(
+                    name=f"NEX Research - {member_name}",
                     url=item["url"],
                     reader=pdf_reader,
                     metadata=item["metadata"],
                     skip_if_exists=True,
                 )
             print(
-                f"✅ Knowledge loaded successfully for healthsoc agent ({len(kb_data)} documents)"
+                f"✅ Knowledge loaded successfully for nex agent ({len(kb_data)} documents)"
             )
         except Exception as e:
-            print(f"❌ Error loading Health in Society knowledge: {e}")
+            print(f"❌ Error loading Network Explorer knowledge: {e}")
             raise

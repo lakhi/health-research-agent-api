@@ -9,7 +9,7 @@ class ProjectName(str, Enum):
     """Supported project names for multi-project API."""
 
     VAX_STUDY = "vax-study"
-    HEALTHSOC = "healthsoc"
+    NEX = "nex"
 
 
 class ProjectConfig(ABC):

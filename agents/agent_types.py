@@ -14,7 +14,7 @@ class AgentType(Enum):
     def name(self) -> str:
         return self._name
 
-    HEALTHSOC_CHATBOT = ("healthsoc_chatbot", "Health in Society Chatbot")
+    NEX_AGENT = ("nex_agent", "Network Explorer")
     CONTROL_MARHINOVIRUS = ("control_agent", "Control Marhinovirus Agent")
     SIMPLE_LANGUAGE_MARHINOVIRUS = (
         "simple_lg_agent",
