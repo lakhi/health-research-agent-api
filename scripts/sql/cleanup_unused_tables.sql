@@ -12,13 +12,13 @@
 --   - simple_language_sessions
 --   - simple_cat_lg_sessions
 --   - vax-study_agentos_sessions
---   - healthsoc_agentos_sessions
+--   - nex_agentos_sessions
 --   - marhino_normal_catalog
 --   - marhino_simple_catalog
 --   - marhino_catalog_contents
---   - healthsoc_embeddings
---   - healthsoc_contents
---   - daily_healthsoc_chatbot_usage
+--   - nex_embeddings
+--   - nex_contents
+--   - daily_nex_agent_usage
 --
 -- UNUSED TABLES (TO BE DELETED):
 --   - virus_knowledge
@@ -29,7 +29,14 @@
 --   - virus_normal_catalog
 --   - agno_schema_versions
 --   - virus_simple_catalog
+--   - nex_agent_sessions
 --   - healthsoc_agent_sessions
+--   - healthsoc_agentos_sessions
+--   - healthsoc_embeddings
+--   - healthsoc_contents
+--   - daily_healthsoc_chatbot_usage
+--   - hrn_embeddings
+--   - hrn_contents
 --   - research_papers
 --   - virus_knowledge_normal
 --   - agno_sessions
@@ -89,11 +96,18 @@ SELECT drop_table_if_exists('normal_catalog_contents');
 
 
 -- =============================================================================
--- PHASE 4: Drop unused research and healthsoc tables
+-- PHASE 4: Drop unused research and nex tables
 -- =============================================================================
 
 SELECT drop_table_if_exists('research_papers');
+SELECT drop_table_if_exists('nex_agent_sessions');
 SELECT drop_table_if_exists('healthsoc_agent_sessions');
+SELECT drop_table_if_exists('healthsoc_agentos_sessions');
+SELECT drop_table_if_exists('healthsoc_embeddings');
+SELECT drop_table_if_exists('healthsoc_contents');
+SELECT drop_table_if_exists('daily_healthsoc_chatbot_usage');
+SELECT drop_table_if_exists('hrn_embeddings');
+SELECT drop_table_if_exists('hrn_contents');
 
 
 -- =============================================================================

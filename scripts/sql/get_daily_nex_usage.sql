@@ -1,17 +1,17 @@
 -- =============================================================================
--- Get Daily Healthsoc Chatbot Usage
+-- Get Daily NEX Agent Usage
 -- =============================================================================
 -- 
 -- Description:
---   Retrieves the total daily usage and remaining budget for the healthsoc
---   chatbot on a specified date.
+--   Retrieves the total daily usage and remaining budget for the nex
+--   agent on a specified date.
 --
 -- Usage:
---   psql -v daily_budget=2.0 -f get_daily_healthsoc_usage.sql
+--   psql -v daily_budget=2.0 -f get_daily_nex_usage.sql
 --
 --   Or directly in psql:
 --   \set daily_budget 2.0
---   \i get_daily_healthsoc_usage.sql
+--   \i get_daily_nex_usage.sql
 --
 -- Parameters:
 --   :daily_budget - Daily budget in EUR (e.g., 2.0)
@@ -35,7 +35,7 @@ SELECT
         WHEN COALESCE(SUM(cost_eur), 0) >= :daily_budget THEN TRUE 
         ELSE FALSE 
     END AS budget_exceeded
-FROM daily_healthsoc_chatbot_usage
+FROM daily_nex_agent_usage
 WHERE date = CURRENT_DATE
 GROUP BY date;
 
@@ -47,7 +47,7 @@ GROUP BY date;
 --     COALESCE(SUM(input_tokens), 0) AS total_input_tokens,
 --     COALESCE(SUM(output_tokens), 0) AS total_output_tokens,
 --     ROUND(COALESCE(SUM(cost_eur), 0)::numeric, 4) AS total_cost_eur
--- FROM daily_healthsoc_chatbot_usage
+-- FROM daily_nex_agent_usage
 -- WHERE date >= CURRENT_DATE - INTERVAL '7 days'
 -- GROUP BY date
 -- ORDER BY date DESC;

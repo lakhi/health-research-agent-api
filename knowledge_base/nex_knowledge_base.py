@@ -32,33 +32,33 @@ MEMBER_REQUIRED_COLUMNS = {
 ARTICLE_REQUIRED_COLUMNS = {"doi", "member_email", "pdf_url"}
 
 
-def get_healthsoc_knowledge() -> Knowledge:
+def get_nex_knowledge() -> Knowledge:
     db_url = get_db_url_cached()
 
-    healthsoc_knowledge = Knowledge(
+    nex_knowledge = Knowledge(
         name="Health in Society Research Network Knowledge",
         vector_db=PgVector(
             db_url=db_url,
             search_type=SearchType.hybrid,
-            table_name="healthsoc_embeddings",
+            table_name="nex_embeddings",
             embedder=get_azure_embedder(),
         ),
-        contents_db=get_healthsoc_contents_db(),
+        contents_db=get_nex_contents_db(),
     )
 
-    return healthsoc_knowledge
+    return nex_knowledge
 
 
-def get_healthsoc_contents_db():
+def get_nex_contents_db():
     db_url = get_db_url_cached()
 
-    healthsoc_contents = PostgresDb(
+    nex_contents = PostgresDb(
         db_url,
-        id="healthsoc_contents",
-        knowledge_table="healthsoc_contents",
+        id="nex_contents",
+        knowledge_table="nex_contents",
     )
 
-    return healthsoc_contents
+    return nex_contents
 
 
 def _normalize_cell(value: str | None) -> str:

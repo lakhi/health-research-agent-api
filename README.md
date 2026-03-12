@@ -172,7 +172,7 @@ pytest tests/ -v --cov=services --cov=api --cov-report=term-missing
 
 ## Daily Budget System
 
-The healthsoc chatbot (`hrn_agent`) has a daily budget enforcement system to control Azure OpenAI costs.
+The nex agent (`nex_agent`) has a daily budget enforcement system to control Azure OpenAI costs.
 
 ### Configuration
 
@@ -186,7 +186,7 @@ The following environment variables can be set in `.env.local` (local) or as Git
 
 ### How It Works
 
-1. **Pre-check**: Before each `hrn_agent` request, the system checks if the daily budget is exceeded
+1. **Pre-check**: Before each `nex_agent` request, the system checks if the daily budget is exceeded
 2. **Record usage**: After successful responses, token usage is recorded to the database
 3. **Reset**: Budget resets at midnight Vienna time (Europe/Vienna timezone)
 
@@ -212,7 +212,7 @@ The following environment variables can be set in `.env.local` (local) or as Git
 Create the usage tracking table:
 
 ```sql
-CREATE TABLE daily_healthsoc_chatbot_usage (
+CREATE TABLE daily_nex_agent_usage (
     id SERIAL PRIMARY KEY,
     date DATE NOT NULL,
     input_tokens INTEGER NOT NULL DEFAULT 0,
@@ -221,7 +221,7 @@ CREATE TABLE daily_healthsoc_chatbot_usage (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX ix_daily_healthsoc_usage_date ON daily_healthsoc_chatbot_usage(date);
+CREATE INDEX ix_daily_nex_usage_date ON daily_nex_agent_usage(date);
 ```
 
 ### Query Daily Usage
@@ -229,5 +229,5 @@ CREATE INDEX ix_daily_healthsoc_usage_date ON daily_healthsoc_chatbot_usage(date
 Use the provided SQL script to check usage for a specific date:
 
 ```sh
-psql -v target_date="'29-Jan-2026'" -v daily_budget=2.0 -f scripts/sql/get_daily_healthsoc_usage.sql
+psql -v target_date="'29-Jan-2026'" -v daily_budget=2.0 -f scripts/sql/get_daily_nex_usage.sql
 ```

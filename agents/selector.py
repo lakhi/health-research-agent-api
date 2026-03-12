@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 from agents.agent_types import AgentType
 from agents.llm_models import LLMModel
-from agents.health_research_network_agent import get_healthsoc_agent
+from agents.health_research_network_agent import get_nex_agent
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
 from agents.marhinovirus_agents.simple_language_agent import (
     get_simple_language_marhinovirus_agent,
@@ -25,9 +25,9 @@ def get_agent(
                 agent_id = agent_type
                 break
 
-    if agent_id == AgentType.HEALTHSOC_CHATBOT:
+    if agent_id == AgentType.NEX_AGENT:
         # No parameters - session storage disabled for this agent
-        return get_healthsoc_agent()
+        return get_nex_agent()
     elif agent_id == AgentType.CONTROL_MARHINOVIRUS:
         return get_control_marhinovirus_agent(
             model_id=model_id,

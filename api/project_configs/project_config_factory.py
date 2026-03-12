@@ -1,7 +1,7 @@
 import os
 
 from api.project_configs.project_config import ProjectConfig, ProjectName
-from api.project_configs.healthsoc_config import HealthsocConfig
+from api.project_configs.nex_config import NexConfig
 from api.project_configs.vax_study_config import VaxStudyConfig
 
 
@@ -25,8 +25,8 @@ def get_project_config() -> ProjectConfig:
 
     if project == ProjectName.VAX_STUDY.value:
         return VaxStudyConfig()
-    elif project == ProjectName.HEALTHSOC.value:
-        return HealthsocConfig()
+    elif project == ProjectName.NEX.value:
+        return NexConfig()
     else:
         raise ValueError(
             f"Invalid PROJECT_NAME: '{project}'. "
