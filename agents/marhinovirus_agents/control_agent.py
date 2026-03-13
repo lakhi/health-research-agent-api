@@ -49,7 +49,9 @@ def get_control_marhinovirus_agent(
             knowledge_name="Marhinovirus Normal Catalog - Control",
             contents_db_name="marhino_normal_contents_control",
         ),
-        search_knowledge=True,
+        add_knowledge_to_context=True,
+        # Set as False because Agents default to `search_knowledge=True`
+        search_knowledge=False,
         read_chat_history=True,
         store_history_messages=True,
         add_history_to_context=True,

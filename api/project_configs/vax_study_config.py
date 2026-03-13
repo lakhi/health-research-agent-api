@@ -52,7 +52,7 @@ class VaxStudyConfig(ProjectConfig):
     async def load_knowledge(self, agents: List[Agent]) -> None:
         """Load Marhinovirus research catalogs into all three agents."""
         pdf_reader = PDFReader(
-            chunking_strategy=RecursiveChunking(chunk_size=2000, overlap=200)
+            chunking_strategy=RecursiveChunking(chunk_size=1200, overlap=120)
         )
 
         try:
