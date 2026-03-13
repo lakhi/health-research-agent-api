@@ -19,7 +19,7 @@ logger = getLogger(__name__)
 
 
 def get_control_marhinovirus_agent(
-    model_id: str = LLMModel.GPT_4O,
+    model_id: str = LLMModel.GPT_5_CHAT,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
     debug_mode: bool = False,
@@ -49,9 +49,7 @@ def get_control_marhinovirus_agent(
             knowledge_name="Marhinovirus Normal Catalog - Control",
             contents_db_name="marhino_normal_contents_control",
         ),
-        add_knowledge_to_context=True,
-        # Set as False because Agents default to `search_knowledge=True`
-        search_knowledge=False,
+        search_knowledge=True,
         read_chat_history=True,
         store_history_messages=True,
         add_history_to_context=True,
