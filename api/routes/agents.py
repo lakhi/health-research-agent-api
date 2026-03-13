@@ -74,7 +74,7 @@ class RunRequest(BaseModel):
     # TODO: make the change at the FE to remove sending model_id and user_id
     message: str
     stream: bool = True
-    model: LLMModel = None
+    model: Optional[LLMModel] = None
     user_id: Optional[str] = None
     session_id: Optional[str] = None
 
