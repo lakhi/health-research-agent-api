@@ -1,6 +1,6 @@
 import json
 from logging import getLogger
-from typing import AsyncGenerator, List, Optional
+from typing import AsyncGenerator, Optional
 
 from agno.agent import Agent
 from agno.knowledge import Knowledge
@@ -71,10 +71,10 @@ async def chat_response_streamer(
 
 class RunRequest(BaseModel):
     """Request model for an running an agent"""
-
+    # TODO: make the change at the FE to remove sending model_id and user_id
     message: str
     stream: bool = True
-    model: LLMModel = LLMModel.GPT_4_1
+    model: LLMModel = None
     user_id: Optional[str] = None
     session_id: Optional[str] = None
 
