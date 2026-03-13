@@ -12,8 +12,6 @@ env:
   IMAGE_NAME: health-research-api
   IMAGE_TAG: latest
   PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
-  # Temporary: force JavaScript actions to run on Node 24 for early validation.
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-and-push:
