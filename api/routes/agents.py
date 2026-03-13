@@ -105,10 +105,11 @@ async def create_agent_run(
     """
     run_request = body
     if run_request is None and message is not None:
+        # TODO: make the change at the FE to remove sending model_id and user_id
         run_request = RunRequest(
             message=message,
             stream=True if stream is None else stream,
-            model=LLMModel.GPT_4_1 if model is None else model,
+            model=None,
             user_id=user_id,
             session_id=session_id,
         )
