@@ -22,7 +22,7 @@ def get_control_marhinovirus_agent(
     model_id: str = LLMModel.GPT_5_CHAT,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
-    debug_mode: bool = False,
+    debug_mode: bool = True,
 ) -> Agent:
     """
     Control condition Marhinovirus agent using normal catalog and standard language instructions.

@@ -4,6 +4,7 @@ from agno.agent import Agent
 
 from api.project_configs.project_config import ProjectConfig, ProjectName
 from agno.knowledge.chunking.recursive import RecursiveChunking
+from agno.knowledge.chunking.document import DocumentChunking
 from agno.knowledge.reader.pdf_reader import PDFReader
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
 from agents.marhinovirus_agents.simple_catalog_language_agent import (
@@ -45,15 +46,15 @@ class VaxStudyConfig(ProjectConfig):
 
         return [
             get_control_marhinovirus_agent(),
-            get_simple_language_marhinovirus_agent(),
-            get_simple_catalog_language_marhinovirus_agent(),
+            # get_simple_language_marhinovirus_agent(),
+            # get_simple_catalog_language_marhinovirus_agent(),
         ]
 
     async def load_knowledge(self, agents: List[Agent]) -> None:
         """Load Marhinovirus research catalogs into all three agents."""
         pdf_reader = PDFReader(
-            chunking_strategy=RecursiveChunking(chunk_size=1200, overlap=120),
-            split_on_pages=True,
+            chunking_strategy=DocumentChunking(chunk_size=1200, overlap=200),
+            # split_on_pages=True,
         )
 
         try:
@@ -64,19 +65,19 @@ class VaxStudyConfig(ProjectConfig):
                 reader=pdf_reader,
                 skip_if_exists=False,
             )
-            await agents[1].knowledge.ainsert(
-                name="Marhinovirus Normal Catalog",
-                url=get_normal_catalog_url(),
-                reader=pdf_reader,
-                skip_if_exists=False,
-            )
-            # Load simple catalog for simple_catalog_lg_agent
-            await agents[2].knowledge.ainsert(
-                name="Marhinovirus Simple Catalog",
-                url=get_simple_catalog_url(),
-                reader=pdf_reader,
-                skip_if_exists=False,
-            )
+            # await agents[1].knowledge.ainsert(
+            #     name="Marhinovirus Normal Catalog",
+            #     url=get_normal_catalog_url(),
+            #     reader=pdf_reader,
+            #     skip_if_exists=False,
+            # )
+            # # Load simple catalog for simple_catalog_lg_agent
+            # await agents[2].knowledge.ainsert(
+            #     name="Marhinovirus Simple Catalog",
+            #     url=get_simple_catalog_url(),
+            #     reader=pdf_reader,
+            #     skip_if_exists=False,
+            # )
             print("✅ Knowledge loaded successfully for 3 vax-study agents")
         except Exception as e:
             print(f"❌ Error loading Marhinovirus knowledge: {e}")
