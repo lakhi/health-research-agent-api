@@ -43,44 +43,6 @@ graph TB
     style User fill:#fff,stroke:#000,color:#000
 ```
 
-### Data Flow (beautiful-mermaid)
-
-```mermaid
-graph LR
-    User(["👤 User"])
-
-    subgraph ACA ["Azure Container Apps"]
-        UI["🌐 nex-agent-ui"]
-        API["⚙️ nex-api"]
-    end
-
-    subgraph ACR ["Azure Container Registry"]
-        IMG["📦 nexdev"]
-    end
-
-    subgraph ADS ["Azure Data Services"]
-        BLOB["📁 nexstorage\nAzure Blob Storage\n20 PDFs"]
-        DB[("💾 azure-db-nex\nPostgreSQL + pgvector")]
-        subgraph AOAI ["azure-openai-nex"]
-            GPT["🤖 GPT-4o"]
-            EMB["🔢 Embedder"]
-        end
-    end
-
-    User -->|"HTTPS"| UI
-    UI -->|"API calls"| API
-    IMG -.->|"pull"| UI
-    IMG -.->|"pull"| API
-
-    API -->|"fetch PDFs on startup"| BLOB
-    BLOB -->|"raw PDF text"| API
-    API -->|"embed chunks"| EMB
-    EMB -->|"store vectors"| DB
-    API -->|"similarity search"| DB
-    DB -->|"relevant chunks"| API
-    API -->|"chat"| GPT
-    GPT -->|"response"| API
-```
 
 ## Setup
 
