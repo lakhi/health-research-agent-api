@@ -6,7 +6,7 @@ from agno.agent import Agent
 from agno.knowledge.chunking.recursive import RecursiveChunking
 from agno.knowledge.reader.pdf_reader import PDFReader
 
-from agents.health_research_network_agent import get_nex_agent
+from agents.nex_agent import get_nex_agent
 from api.project_configs.project_config import ProjectConfig, ProjectName
 from knowledge_base.nex_knowledge_base import get_research_articles_data
 
