@@ -1,6 +1,6 @@
 # Health Research Agent API
 
-A FastAPI-based application for the **Health Research Network's Chatbot project** and the **Social Econ Psych research group studies** at Uni Wien.
+A FastAPI-based application for the **NEX (Network Explorer) Chatbot** and the **Social Econ Psych research group studies** at Uni Wien.
 
 ## Architecture
 
@@ -41,6 +41,45 @@ graph TB
     style EMBEDDER fill:#7fba00,stroke:#5a9216,color:#000
     style ACR fill:#f25022,stroke:#b93a1a,color:#fff
     style User fill:#fff,stroke:#000,color:#000
+```
+
+### Data Flow (beautiful-mermaid)
+
+```mermaid
+graph LR
+    User(["👤 User"])
+
+    subgraph ACA ["Azure Container Apps"]
+        UI["🌐 nex-agent-ui"]
+        API["⚙️ nex-api"]
+    end
+
+    subgraph ACR ["Azure Container Registry"]
+        IMG["📦 nexdev"]
+    end
+
+    subgraph ADS ["Azure Data Services"]
+        BLOB["📁 nexstorage\nAzure Blob Storage\n20 PDFs"]
+        DB[("💾 azure-db-nex\nPostgreSQL + pgvector")]
+        subgraph AOAI ["azure-openai-nex"]
+            GPT["🤖 GPT-4o"]
+            EMB["🔢 Embedder"]
+        end
+    end
+
+    User -->|"HTTPS"| UI
+    UI -->|"API calls"| API
+    IMG -.->|"pull"| UI
+    IMG -.->|"pull"| API
+
+    API -->|"fetch PDFs on startup"| BLOB
+    BLOB -->|"raw PDF text"| API
+    API -->|"embed chunks"| EMB
+    EMB -->|"store vectors"| DB
+    API -->|"similarity search"| DB
+    DB -->|"relevant chunks"| API
+    API -->|"chat"| GPT
+    GPT -->|"response"| API
 ```
 
 ## Setup
