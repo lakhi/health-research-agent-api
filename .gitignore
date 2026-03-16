@@ -15,6 +15,7 @@
 # Machine specific
 .idea
 .vscode
+.claude/settings.local.json
 
 # Ignore .env files
 .env
