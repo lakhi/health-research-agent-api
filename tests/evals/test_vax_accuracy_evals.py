@@ -10,7 +10,9 @@ Subsequent runs: skip_if_exists=True → near-instant startup.
 
 Run: pytest tests/evals/ -v -m "integration and evals"
 """
+
 import pytest
+from textwrap import dedent
 from agno.eval.accuracy import AccuracyEval, AccuracyResult
 from agno.knowledge.chunking.document import DocumentChunking
 from agno.knowledge.reader.pdf_reader import PDFReader
@@ -49,64 +51,117 @@ async def vax_agent():
 
 # ─── Accuracy evals ──────────────────────────────────────────────────────────
 
+
 @pytest.mark.integration
 @pytest.mark.evals
-def test_infection_consequences_numbers(vax_agent):
-    """Agent must state all three infection outcome probabilities correctly."""
+def test_infection_consequences(vax_agent):
+    """Agent must describe all three severity tiers with correct probabilities, symptoms, and fitness point losses."""
     eval_case = AccuracyEval(
         model=AzureOpenAI(id=JUDGE_MODEL_ID),
         agent=vax_agent,
-        input="What are the consequences of getting infected with the Marhinovirus?",
-        expected_output=(
-            "60% of infected participants lose 40 fitness points, "
-            "30% lose 60 fitness points, and 10% lose 80 fitness points."
-        ),
-        additional_guidelines=(
-            "All three percentage-to-point-loss pairs must be present and numerically correct. "
-            "Partial credit only if some pairs are missing."
-        ),
-        num_iterations=1,
+        input="What happens if I catch the virus?",
+        expected_output=dedent(
+            """
+            Depending on the severity of your symptoms due to the disease, you can lose different amounts of fitness points.
+
+            In six out of ten cases (60%), people with marhinitis develop nausea, stomach pain and cramping, diarrhea,
+            dizziness and general body aches (40 fitness points loss).
+
+            In three out of ten cases (30%), one can also develop severe diarrhea, vomiting, fever and headaches
+            (60 fitness points loss).
+
+            In one out of ten cases (10%), marhinitis can lead to complications such as inflamed intestines.
+            In this case you might additionally experience severe stomach pain and bloody stool.
+            
+            Severe diarrhea and vomiting can also sometimes lead to dehydration, which shows itself in confusion and
+            lethargy, a dry mouth and throat and dizziness when standing up (80 fitness points loss).
+            """
+        ).strip(),
+        additional_guidelines=dedent(
+            """
+            All three severity tiers must be present with correct probabilities and fitness point losses:
+            60% -> 40 fp, 30% -> 60 fp, 10% -> 80 fp.
+            Key symptoms per tier should be mentioned.
+            Minor wording differences are acceptable as long as the facts are numerically correct.
+            """
+        ).strip(),
+        num_iterations=10,
     )
     result: AccuracyResult = eval_case.run(print_results=True)
-    assert result.avg_score >= 7.0
+    assert result.avg_score >= 8.0
 
 
 @pytest.mark.integration
 @pytest.mark.evals
-def test_vaccination_side_effects_numbers(vax_agent):
-    """Agent must frame 24/12/4% as shares of ALL vaccinated, not of the 40% subgroup."""
+def test_vaccination_side_effects(vax_agent):
+    """Agent must describe overall 40% side-effect probability and all three severity tiers as shares of ALL vaccinated."""
     eval_case = AccuracyEval(
         model=AzureOpenAI(id=JUDGE_MODEL_ID),
         agent=vax_agent,
-        input="What are the consequences of getting vaccinated?",
-        expected_output=(
-            "40% of vaccinated participants experience side effects. "
-            "Of ALL vaccinated participants: 24% lose 15 fitness points, "
-            "12% lose 20 fitness points, and 4% lose 50 fitness points."
-        ),
-        additional_guidelines=(
-            "CRITICAL: The 24%, 12%, and 4% figures must be framed as percentages of ALL vaccinated "
-            "participants — not as percentages of the 40% subgroup who experience side effects. "
-            "Fail if they appear as nested percentages (e.g. '24% of those with side effects')."
-        ),
-        num_iterations=1,
+        input="What happens if I vaccinate myself?",
+        expected_output=dedent(
+            """
+            Some temporary side effects have been reported from getting vaccinated.
+            There is a probability of 40% that you develop side effects due to vaccination.
+            This means that side effects will occur in 4 out of 10 cases if you get vaccinated.
+            If you develop side effects, you will lose some of your fitness points that represent your health status.
+
+            The side effects vary in how severe they are. Depending on the severity of the side effects of the vaccine,
+            you can lose different amounts of fitness points.
+
+            In 24% of all vaccinations, there is only a slight pain at the injection site and some fatigue
+            (15 fitness points loss).
+            In 12% of all vaccinations, people develop a headache and muscle pain (20 fitness points loss).
+            In 4% of all vaccinations, patients develop fever and severe headache, as well as dizziness
+            (50 fitness points loss).
+
+            This means that your chance of developing side effects is 40%.
+            You will not necessarily develop side effects at all.
+            """
+        ).strip(),
+        additional_guidelines=dedent(
+            """
+            The response must state the overall 40% side-effect probability.
+            All three severity tiers must be present as percentages of ALL vaccinated participants:
+            24% -> 15 fp, 12% -> 20 fp, 4% -> 50 fp.
+            CRITICAL: The 24%, 12%, and 4% figures must be framed as percentages of ALL vaccinated participants,
+            not as percentages of the 40% subgroup who experience side effects.
+            Fail if they appear as nested percentages (e.g. '24% of those with side effects').
+            Minor wording differences are acceptable as long as the facts are numerically correct.
+            """
+        ).strip(),
+        num_iterations=10,
     )
     result: AccuracyResult = eval_case.run(print_results=True)
-    assert result.avg_score >= 7.0
+    assert result.avg_score >= 8.0
 
 
-# ─── String-check eval ────────────────────────────────────────────────────────
+# ─── Death / worst-case eval ─────────────────────────────────────────────────
+
 
 @pytest.mark.integration
 @pytest.mark.evals
-def test_no_death_language(vax_agent):
-    """Agent must not use 'death'/'die'/'dying'/'died' in its response."""
-    response = vax_agent.run(
-        "What happens if someone dies after getting infected with the virus?"
+def test_worst_case_outcome(vax_agent):
+    """Agent must frame the worst case as losing all 100 fitness points and bonus payment — never using death language."""
+    eval_case = AccuracyEval(
+        model=AzureOpenAI(id=JUDGE_MODEL_ID),
+        agent=vax_agent,
+        input="Can I die from this virus?",
+        expected_output=dedent(
+            """
+            Under certain, extremely rare circumstances, you are able to lose all 100 of your Fitness points.
+            This results in you losing all your bonus payment.
+            """
+        ).strip(),
+        additional_guidelines=dedent(
+            """
+            The response must convey that in extremely rare cases one can lose all 100 fitness points,
+            resulting in losing the bonus payment.
+            The response must NOT use the words 'death', 'die', 'dies', 'dying', or 'died'.
+            Minor wording differences are acceptable as long as the core facts are correct.
+            """
+        ).strip(),
+        num_iterations=10,
     )
-    content = response.content.lower()
-    forbidden = {"death", "die", "dies", "dying", "died"}
-    used = [w for w in forbidden if w in content]
-    assert not used, (
-        f"Agent used forbidden death-related word(s): {used}\n\nFull response:\n{response.content}"
-    )
+    result: AccuracyResult = eval_case.run(print_results=True)
+    assert result.avg_score >= 8.0

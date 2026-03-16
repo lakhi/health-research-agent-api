@@ -61,12 +61,14 @@ class TestBudgetAvailability:
     @patch("services.budget_service.get_daily_spend_eur")
     def test_check_budget_available_under_limit(self, mock_spend):
         """Budget should be available when spend is under limit."""
-        mock_spend.return_value = 1.0  # €1 spent
+        mock_spend.return_value = api_settings.daily_budget_eur / 2
 
         available, remaining, reset_time = check_budget_available()
 
         assert available is True
-        assert remaining == pytest.approx(api_settings.daily_budget_eur - 1.0, rel=0.01)
+        assert remaining == pytest.approx(
+            api_settings.daily_budget_eur - mock_spend.return_value, rel=0.01
+        )
         assert isinstance(reset_time, datetime)
 
     @patch("services.budget_service.get_daily_spend_eur")
