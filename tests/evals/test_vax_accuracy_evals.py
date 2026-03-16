@@ -14,15 +14,13 @@ Run: pytest tests/evals/ -v -m "integration and evals"
 import pytest
 from textwrap import dedent
 from agno.eval.accuracy import AccuracyEval, AccuracyResult
-from agno.knowledge.chunking.document import DocumentChunking
-from agno.knowledge.reader.pdf_reader import PDFReader
 from agno.models.azure import AzureOpenAI
 
 from agents.llm_models import LLMModel
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
 from knowledge_base.marhinovirus_knowledge_base import (
-    get_normal_catalog_url,
     initialize_agent_configs,
+    load_normal_catalog,
 )
 
 JUDGE_MODEL_ID = LLMModel.GPT_5_CHAT  # same model as the control agent
@@ -37,15 +35,7 @@ async def vax_agent():
     initialize_agent_configs()
     agent = get_control_marhinovirus_agent(debug_mode=False)
 
-    pdf_reader = PDFReader(
-        chunking_strategy=DocumentChunking(chunk_size=1200, overlap=200)
-    )
-    await agent.knowledge.ainsert(
-        name="Marhinovirus Normal Catalog",
-        url=get_normal_catalog_url(),
-        reader=pdf_reader,
-        skip_if_exists=True,  # fast on re-runs; change to False to force reload
-    )
+    await load_normal_catalog(agent.knowledge, skip_if_exists=True)
     return agent
 
 
