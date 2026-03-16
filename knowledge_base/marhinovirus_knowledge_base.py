@@ -1,4 +1,6 @@
 from agno.knowledge import Knowledge
+from agno.knowledge.chunking.document import DocumentChunking
+from agno.knowledge.reader.pdf_reader import PDFReader
 from agno.vectordb.pgvector import PgVector, SearchType
 from agno.db.postgres import PostgresDb
 
@@ -144,3 +146,35 @@ def get_normal_catalog_url() -> str:
 def get_simple_catalog_url() -> str:
     """Returns the URL for the simple language Marhinovirus catalog PDF."""
     return "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/Marhinovirus-information-catalog_simple-language.pdf"
+
+
+async def load_normal_catalog(
+    knowledge: Knowledge,
+    *,
+    skip_if_exists: bool = False,
+) -> None:
+    pdf_reader = PDFReader(
+        chunking_strategy=DocumentChunking(chunk_size=1200, overlap=200)
+    )
+    await knowledge.ainsert(
+        name="Marhinovirus Normal Catalog",
+        url=get_normal_catalog_url(),
+        reader=pdf_reader,
+        skip_if_exists=skip_if_exists,
+    )
+
+
+async def load_simple_catalog(
+    knowledge: Knowledge,
+    *,
+    skip_if_exists: bool = False,
+) -> None:
+    pdf_reader = PDFReader(
+        chunking_strategy=DocumentChunking(chunk_size=1200, overlap=200)
+    )
+    await knowledge.ainsert(
+        name="Marhinovirus Simple Catalog",
+        url=get_simple_catalog_url(),
+        reader=pdf_reader,
+        skip_if_exists=skip_if_exists,
+    )
