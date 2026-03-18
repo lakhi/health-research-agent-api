@@ -1,10 +1,12 @@
 from agno.knowledge import Knowledge
-from agno.knowledge.chunking.document import DocumentChunking
+from agno.knowledge.chunking.agentic import AgenticChunking
 from agno.knowledge.reader.pdf_reader import PDFReader
+from agno.models.azure import AzureOpenAI
 from agno.vectordb.pgvector import PgVector, SearchType
 from agno.db.postgres import PostgresDb
 
 # from agno.knowledge.reranker.cohere import CohereReranker
+from agents.llm_models import LLMModel
 from db.session import get_db_url_cached
 from knowledge_base import get_azure_embedder
 import requests
@@ -154,7 +156,10 @@ async def load_normal_catalog(
     skip_if_exists: bool = False,
 ) -> None:
     pdf_reader = PDFReader(
-        chunking_strategy=DocumentChunking(chunk_size=1200, overlap=200)
+        chunking_strategy=AgenticChunking(
+            model=AzureOpenAI(id=LLMModel.GPT_4_1),
+            max_chunk_size=3000,
+        )
     )
     await knowledge.ainsert(
         name="Marhinovirus Normal Catalog",
@@ -170,7 +175,10 @@ async def load_simple_catalog(
     skip_if_exists: bool = False,
 ) -> None:
     pdf_reader = PDFReader(
-        chunking_strategy=DocumentChunking(chunk_size=1200, overlap=200)
+        chunking_strategy=AgenticChunking(
+            model=AzureOpenAI(id=LLMModel.GPT_4_1),
+            max_chunk_size=3000,
+        )
     )
     await knowledge.ainsert(
         name="Marhinovirus Simple Catalog",
