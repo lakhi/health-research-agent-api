@@ -19,7 +19,7 @@ logger = getLogger(__name__)
 
 
 def get_control_marhinovirus_agent(
-    model_id: str = LLMModel.GPT_5_CHAT,
+    model_id: str = LLMModel.GPT_4_1,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
     debug_mode: bool = True,
@@ -44,7 +44,10 @@ def get_control_marhinovirus_agent(
         session_id=session_id,
         db=control_agent_db,
         description=marhinovirus_knowledge_base.NORMAL_DESCRIPTION,
-        instructions=marhinovirus_knowledge_base.NORMAL_INSTRUCTIONS,
+        instructions=[
+            marhinovirus_knowledge_base.NORMAL_INSTRUCTIONS,
+            "When the knowledge base describes a consequence as a possible or occasional additional outcome (e.g. 'can also sometimes lead to...'), preserve that conditional framing in your response. Do not present conditional outcomes as guaranteed accompaniments of another tier.",
+        ],
         knowledge=get_normal_catalog_knowledge(
             knowledge_name="Marhinovirus Normal Catalog - Control",
             contents_db_name="marhino_normal_contents_control",

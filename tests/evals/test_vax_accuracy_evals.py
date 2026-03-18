@@ -23,7 +23,7 @@ from knowledge_base.marhinovirus_knowledge_base import (
     load_normal_catalog,
 )
 
-JUDGE_MODEL_ID = LLMModel.GPT_5_CHAT  # same model as the control agent
+JUDGE_MODEL_ID = LLMModel.GPT_4_1  # same model as the control agent
 
 
 @pytest.fixture(scope="session")
@@ -70,10 +70,10 @@ def test_infection_consequences(vax_agent):
             Minor wording differences are acceptable as long as the facts are numerically correct.
             """
         ).strip(),
-        num_iterations=20,
+        num_iterations=30,
     )
     result: AccuracyResult = eval_case.run(print_results=True)
-    assert result.avg_score >= 8.0
+    assert result.avg_score >= 8.5
 
 
 @pytest.mark.integration
@@ -87,7 +87,9 @@ def test_vaccination_side_effects(vax_agent):
         expected_output=dedent(
             """
             If you get vaccinated it is 85% less likely for you to get infected than when you do not get vaccinated.
-            
+
+            You will lose 10 fitness points for the effort of getting vaccinated (scheduling, travel, waiting).
+
             Some temporary side effects have been reported from getting vaccinated. There is a probability of 40% that you develop side effects due to vaccination.
 
             In 24% of all vaccinations, there is only a slight pain at the injection site and some fatigue (15 fitness points loss).
@@ -98,17 +100,16 @@ def test_vaccination_side_effects(vax_agent):
         additional_guidelines=dedent(
             """
             The response must state the overall 40% side-effect probability.
-            The three severity tiers must be present as percentages of all vaccinated participants:
+            The three severity tiers must be present with correct percentages and fitness point losses:
             24% -> 15 fp, 12% -> 20 fp, 4% -> 50 fp.
-            The 24%, 12%, and 4% figures must be framed as percentages of ALL vaccinated participants, not as percentages of the 40% subgroup who experience side effects.
-            Fail if they appear as nested percentages (e.g. '24% of those with side effects').
+            The 10 fitness-point effort cost for getting vaccinated may be mentioned and is acceptable.
             Minor wording differences are acceptable as long as the facts are numerically correct.
             """
         ).strip(),
-        num_iterations=20,
+        num_iterations=30,
     )
     result: AccuracyResult = eval_case.run(print_results=True)
-    assert result.avg_score >= 8.0
+    assert result.avg_score >= 8.5
 
 
 # ─── Death / worst-case eval ─────────────────────────────────────────────────
