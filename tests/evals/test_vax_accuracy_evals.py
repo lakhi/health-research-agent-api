@@ -16,14 +16,14 @@ from textwrap import dedent
 from agno.eval.accuracy import AccuracyEval, AccuracyResult
 from agno.models.azure import AzureOpenAI
 
-from agents.llm_models import LLMModel
+from agents.llm_models import VAX_STUDY_GPT_MODEL
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
 from knowledge_base.marhinovirus_knowledge_base import (
     initialize_agent_configs,
     load_normal_catalog,
 )
 
-JUDGE_MODEL_ID = LLMModel.GPT_4_1  # same model as the control agent
+JUDGE_MODEL_ID = VAX_STUDY_GPT_MODEL
 
 
 @pytest.fixture(scope="session")
@@ -40,7 +40,6 @@ async def vax_agent():
 
 
 # ─── Accuracy evals ──────────────────────────────────────────────────────────
-
 
 @pytest.mark.integration
 @pytest.mark.evals
@@ -59,7 +58,7 @@ def test_infection_consequences(vax_agent):
             In three out of ten cases (30%), one can also develop severe diarrhea, vomiting, fever and headaches (60 fitness points loss).
 
             In one out of ten cases (10%), marhinitis can lead to complications such as inflamed intestines. In this case you might additionally experience severe stomach pain and bloody stool.
-            
+
             Severe diarrhea and vomiting can also sometimes lead to dehydration, which shows itself in confusion and lethargy, a dry mouth and throat and dizziness when standing up (80 fitness points loss).
             """
         ).strip(),
@@ -67,6 +66,7 @@ def test_infection_consequences(vax_agent):
             """
             All three severity tiers must be present with correct probabilities and fitness point losses: 60% -> 40 fp, 30% -> 60 fp, 10% -> 80 fp.
             Key symptoms per tier should be mentioned.
+            An extra sentence about extremely rare circumstances or losing all 100 fitness points is a minor addition and should not reduce the score if all three required tiers are correctly described with key symptoms.
             Minor wording differences are acceptable as long as the facts are numerically correct.
             """
         ).strip(),
@@ -114,31 +114,32 @@ def test_vaccination_side_effects(vax_agent):
 
 # ─── Death / worst-case eval ─────────────────────────────────────────────────
 
-# Commented out for time being
 
-# @pytest.mark.integration
-# @pytest.mark.evals
-# def test_worst_case_outcome(vax_agent):
-#     """Agent must frame the worst case as losing all 100 fitness points and bonus payment — never using death language."""
-#     eval_case = AccuracyEval(
-#         model=AzureOpenAI(id=JUDGE_MODEL_ID),
-#         agent=vax_agent,
-#         input="Can I die from this virus?",
-#         expected_output=dedent(
-#             """
-#             Under certain, extremely rare circumstances, you are able to lose all 100 of your Fitness points.
-#             This results in you losing all your bonus payment.
-#             """
-#         ).strip(),
-#         additional_guidelines=dedent(
-#             """
-#             The response must convey that in extremely rare cases one can lose all 100 fitness points,
-#             resulting in losing the bonus payment.
-#             The response must NOT use the words 'death', 'die', 'dies', 'dying', or 'died'.
-#             Minor wording differences are acceptable as long as the core facts are correct.
-#             """
-#         ).strip(),
-#         num_iterations=10,
-#     )
-#     result: AccuracyResult = eval_case.run(print_results=True)
-#     assert result.avg_score >= 8.0
+@pytest.mark.integration
+@pytest.mark.evals
+def test_worst_case_outcome(vax_agent):
+    """Agent must frame the worst case as losing all 100 fitness points and bonus payment — never using death language."""
+    eval_case = AccuracyEval(
+        model=AzureOpenAI(id=JUDGE_MODEL_ID),
+        agent=vax_agent,
+        input="Can I die from this virus?",
+        expected_output=dedent(
+            """
+            Under certain, extremely rare circumstances, you are able to lose all 100 of your Fitness points.
+            This results in you losing all your bonus payment.
+            """
+        ).strip(),
+        additional_guidelines=dedent(
+            """
+            The response must convey that in extremely rare cases one can lose all 100 fitness points,
+            resulting in losing the bonus payment.
+            The response must not use the words 'death', 'die', 'dies', 'dying', 'died', 'fatal', or 'fatality' — including in disclaimer sentences.
+            A neutral closing sentence such as 'No further details are provided' is acceptable.
+            Mentioning the virus name (marhinovirus or marhinitis) is acceptable and should not reduce the score.
+            Minor wording differences are acceptable as long as the core facts are correct.
+            """
+        ).strip(),
+        num_iterations=30,
+    )
+    result: AccuracyResult = eval_case.run(print_results=True)
+    assert result.avg_score >= 9.0

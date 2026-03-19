@@ -4,7 +4,7 @@ from knowledge_base import marhinovirus_knowledge_base
 from knowledge_base.marhinovirus_knowledge_base import (
     get_simple_catalog_knowledge,
 )
-from agents.llm_models import LLMModel
+from agents.llm_models import VAX_STUDY_GPT_MODEL
 from agents.agent_types import AgentType
 from db import simple_cat_lg_db
 
@@ -15,7 +15,7 @@ logger = getLogger(__name__)
 
 
 def get_simple_catalog_language_marhinovirus_agent(
-    model_id: str = LLMModel.GPT_4_1,
+    model_id: str = VAX_STUDY_GPT_MODEL,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
     debug_mode: bool = True,
