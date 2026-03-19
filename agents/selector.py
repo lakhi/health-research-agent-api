@@ -1,7 +1,7 @@
 from typing import Optional, Union
 
 from agents.agent_types import AgentType
-from agents.llm_models import LLMModel
+from agents.llm_models import VAX_STUDY_GPT_MODEL
 from agents.nex_agent import get_nex_agent
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
 from agents.marhinovirus_agents.simple_language_agent import (
@@ -13,7 +13,7 @@ from agents.marhinovirus_agents.simple_catalog_language_agent import (
 
 
 def get_agent(
-    model_id: str = LLMModel.GPT_4_1,
+    model_id: str = VAX_STUDY_GPT_MODEL,
     agent_id: Optional[Union[AgentType, str]] = None,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
