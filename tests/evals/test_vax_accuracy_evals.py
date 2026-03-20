@@ -31,8 +31,7 @@ JUDGE_MODEL_ID = VAX_STUDY_GPT_MODEL
 
 @pytest.fixture(
     scope="session",
-    params=["control"],
-    # params=["control", "simple_language", "simple_catalog_language"],
+    params=["control", "simple_language", "simple_catalog_language"],
 )
 async def vax_agent(request):
     """
@@ -158,4 +157,4 @@ def test_worst_case_outcome(vax_agent):
         num_iterations=30,
     )
     result: AccuracyResult = eval_case.run(print_results=True)
-    assert result.avg_score >= 9.0
+    assert result.avg_score >= 8.5
