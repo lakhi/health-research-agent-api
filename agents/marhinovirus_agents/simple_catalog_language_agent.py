@@ -38,7 +38,11 @@ def get_simple_catalog_language_marhinovirus_agent(
         model=AzureOpenAI(id=model_id),
         db=simple_cat_lg_db,
         description=marhinovirus_knowledge_base.SIMPLE_DESCRIPTION,
-        instructions=marhinovirus_knowledge_base.SIMPLE_INSTRUCTIONS,
+        instructions=[
+            marhinovirus_knowledge_base.SIMPLE_INSTRUCTIONS,
+            "When the knowledge base describes a consequence as a possible or occasional additional outcome (e.g. 'can also sometimes lead to...'), preserve that conditional framing in your response. Do not present conditional outcomes as guaranteed accompaniments of another tier.",
+            "If asked about death or fatal outcomes, respond with exactly two statements: (1) that under extremely rare circumstances one can lose all 100 fitness points, and (2) that this results in losing all bonus payment. Do not use the words 'death', 'die', 'dies', 'dying', 'died', 'fatal', or 'fatality'. Do not add any other statements.",
+        ],
         knowledge=get_simple_catalog_knowledge(
             knowledge_name="Marhinovirus Simple Language Catalog - Simple Catalog Agent",
             contents_db_name="marhino_simple_contents_simple_catalog",

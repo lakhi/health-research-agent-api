@@ -1,5 +1,5 @@
 """
-Agno AccuracyEval tests for the vax-study (Marhinovirus) control agent.
+Agno AccuracyEval tests for the vax-study (Marhinovirus) agents — all three conditions.
 
 Pre-requisites:
   - docker compose up pgvector -d   (pgvector only — no full app needed)
@@ -18,24 +18,40 @@ from agno.models.azure import AzureOpenAI
 
 from agents.llm_models import VAX_STUDY_GPT_MODEL
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
+from agents.marhinovirus_agents.simple_language_agent import get_simple_language_marhinovirus_agent
+from agents.marhinovirus_agents.simple_catalog_language_agent import get_simple_catalog_language_marhinovirus_agent
 from knowledge_base.marhinovirus_knowledge_base import (
     initialize_agent_configs,
     load_normal_catalog,
+    load_simple_catalog,
 )
 
 JUDGE_MODEL_ID = VAX_STUDY_GPT_MODEL
 
 
-@pytest.fixture(scope="session")
-async def vax_agent():
+@pytest.fixture(
+    scope="session",
+    params=["control"],
+    # params=["control", "simple_language", "simple_catalog_language"],
+)
+async def vax_agent(request):
     """
-    Session-scoped: creates the control agent and loads knowledge once per pytest run.
-    Knowledge loading is skipped on subsequent runs (skip_if_exists=True).
+    Session-scoped parametrized fixture: creates one agent per condition and loads
+    knowledge once per pytest run. Knowledge loading is skipped on subsequent runs
+    (skip_if_exists=True).
     """
     initialize_agent_configs()
-    agent = get_control_marhinovirus_agent(debug_mode=False)
-
-    await load_normal_catalog(agent.knowledge, skip_if_exists=True)
+    if request.param == "control":
+        agent = get_control_marhinovirus_agent(debug_mode=False)
+        await load_normal_catalog(agent.knowledge, skip_if_exists=True)
+    elif request.param == "simple_language":
+        agent = get_simple_language_marhinovirus_agent(debug_mode=False)
+        await load_normal_catalog(agent.knowledge, skip_if_exists=True)
+    elif request.param == "simple_catalog_language":
+        agent = get_simple_catalog_language_marhinovirus_agent(debug_mode=False)
+        await load_simple_catalog(agent.knowledge, skip_if_exists=True)
+    else:
+        raise ValueError(f"Unknown agent condition: {request.param!r}")
     return agent
 
 
