@@ -83,6 +83,34 @@ Run tests with coverage report:
 pytest tests/ -v --cov=services --cov=api --cov-report=term-missing
 ```
 
+### VAX Accuracy Evals
+
+Pre-requisites:
+- `docker compose up pgvector -d` (pgvector only — no full app needed)
+- Azure OpenAI credentials in environment
+
+Run all evals across all three agent conditions:
+
+```sh
+pytest tests/evals/ -v -m "integration and evals"
+```
+
+First run loads PDFs into PgVector (~1-2 min); subsequent runs skip loading (`skip_if_exists=True`).
+
+Filter by agent condition:
+
+```sh
+pytest tests/evals/ -v -m "integration and evals" -k "control"
+pytest tests/evals/ -v -m "integration and evals" -k "simple_language"
+pytest tests/evals/ -v -m "integration and evals" -k "simple_catalog_language"
+```
+
+Filter by eval case:
+
+```sh
+pytest tests/evals/ -v -m "integration and evals" -k "worst_case"
+```
+
 ## Daily Budget System
 
 The nex agent (`nex_agent`) has a daily budget enforcement system to control Azure OpenAI costs.
