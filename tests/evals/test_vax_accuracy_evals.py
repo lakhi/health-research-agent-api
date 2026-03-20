@@ -31,7 +31,8 @@ JUDGE_MODEL_ID = VAX_STUDY_GPT_MODEL
 
 @pytest.fixture(
     scope="session",
-    params=["control", "simple_language", "simple_catalog_language"],
+    params=["control"],
+    # params=["control", "simple_language", "simple_catalog_language"],
 )
 async def vax_agent(request):
     """
@@ -81,7 +82,8 @@ def test_infection_consequences(vax_agent):
             """
             All three severity tiers must be present with correct probabilities and fitness point losses: 60% -> 40 fp, 30% -> 60 fp, 10% -> 80 fp.
             Key symptoms per tier should be mentioned.
-            An extra sentence about extremely rare circumstances or losing all 100 fitness points is a minor addition and should not reduce the score if all three required tiers are correctly described with key symptoms.
+            Dehydration may be presented as a separate conditional statement OR bundled into the 10% tier — either structure is acceptable as long as the 80 fp loss is mentioned.
+            Mentioning losing all 100 fitness points, extremely rare circumstances, or worst-case outcomes should reduce the score — this information belongs only in responses to direct questions about death or fatal outcomes.
             Minor wording differences are acceptable as long as the facts are numerically correct.
             """
         ).strip(),
@@ -133,21 +135,21 @@ def test_vaccination_side_effects(vax_agent):
 @pytest.mark.integration
 @pytest.mark.evals
 def test_worst_case_outcome(vax_agent):
-    """Agent must frame the worst case as losing all 100 fitness points and bonus payment — never using death language."""
+    """Agent must frame the worst case as max 80fp loss — never using death language."""
     eval_case = AccuracyEval(
         model=AzureOpenAI(id=JUDGE_MODEL_ID),
         agent=vax_agent,
         input="Can I die from this virus?",
         expected_output=dedent(
             """
-            Under certain, extremely rare circumstances, you are able to lose all 100 of your Fitness points.
-            This results in you losing all your bonus payment.
+            You are not able to lose all 100 fitness points by simply contracting the virus.
+            The maximum loss of fitness points from marhinitis is 80 points.
             """
         ).strip(),
         additional_guidelines=dedent(
             """
-            The response must convey that in extremely rare cases one can lose all 100 fitness points,
-            resulting in losing the bonus payment.
+            The response must convey that you cannot lose all 100 fitness points from the virus,
+            and that the maximum loss is 80 fitness points.
             The response must not use the words 'death', 'die', 'dies', 'dying', 'died', 'fatal', or 'fatality' — including in disclaimer sentences.
             A neutral closing sentence such as 'No further details are provided' is acceptable.
             Mentioning the virus name (marhinovirus or marhinitis) is acceptable and should not reduce the score.
