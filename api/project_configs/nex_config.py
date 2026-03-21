@@ -9,6 +9,7 @@ from agno.knowledge.reader.pdf_reader import PDFReader
 from agents.nex_agent import get_nex_agent
 from api.project_configs.project_config import ProjectConfig, ProjectName
 from knowledge_base.nex_knowledge_base import get_research_articles_data
+from knowledge_base.nex_rss_knowledge import get_rss_news_data
 
 # from knowledge_base import get_azure_embedder
 
@@ -68,6 +69,15 @@ class NexConfig(ProjectConfig):
             print(
                 f"✅ Knowledge loaded successfully for nex agent ({len(kb_data)} documents)"
             )
+
+            news_items = get_rss_news_data()
+            for item in news_items:
+                await nex_agent.knowledge.ainsert(
+                    name=item["name"],
+                    text_content=item["text_content"],
+                    metadata=item["metadata"],
+                )
+            print(f"✅ RSS news loaded for nex agent ({len(news_items)} articles)")
         except Exception as e:
             print(f"❌ Error loading Network Explorer knowledge: {e}")
             raise
