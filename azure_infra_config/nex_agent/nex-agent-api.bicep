@@ -1,8 +1,8 @@
-param containerapps_chatbot_api_healthsoc_name string = 'healthsoc-chatbot-api'
-param managedEnvironments_healthsoc_apps_env_externalid string = '/subscriptions/444c1e5c-ac0d-4420-94ea-d4a5414d20e1/resourceGroups/healthsociety/providers/Microsoft.App/managedEnvironments/healthsoc-apps-env'
+param containerapps_nex_agent_api_name string = 'nex-agent-api'
+param managedEnvironments_nex_apps_env_externalid string = '/subscriptions/444c1e5c-ac0d-4420-94ea-d4a5414d20e1/resourceGroups/healthsociety/providers/Microsoft.App/managedEnvironments/nex-apps-env'
 
-resource containerapps_chatbot_api_healthsoc_name_resource 'Microsoft.App/containerapps@2025-02-02-preview' = {
-  name: containerapps_chatbot_api_healthsoc_name
+resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@2025-02-02-preview' = {
+  name: containerapps_nex_agent_api_name
   location: 'Sweden Central'
   tags: {
     Kostenstelle: 'FG473001'
@@ -14,8 +14,8 @@ resource containerapps_chatbot_api_healthsoc_name_resource 'Microsoft.App/contai
     type: 'None'
   }
   properties: {
-    managedEnvironmentId: managedEnvironments_healthsoc_apps_env_externalid
-    environmentId: managedEnvironments_healthsoc_apps_env_externalid
+    managedEnvironmentId: managedEnvironments_nex_apps_env_externalid
+    environmentId: managedEnvironments_nex_apps_env_externalid
     workloadProfileName: 'Consumption'
     configuration: {
       secrets: [
@@ -52,7 +52,7 @@ resource containerapps_chatbot_api_healthsoc_name_resource 'Microsoft.App/contai
       }
       registries: [
         {
-          server: 'healthsocietydev.azurecr.io'
+          server: 'nex-acr.azurecr.io'
           identity: 'system-environment'
         }
       ]
@@ -62,9 +62,9 @@ resource containerapps_chatbot_api_healthsoc_name_resource 'Microsoft.App/contai
     template: {
       containers: [
         {
-          image: 'healthsocietydev.azurecr.io/health-research-api:latest'
+          image: 'nex-acr.azurecr.io/nex-agent-api:latest'
           imageType: 'ContainerImage'
-          name: containerapps_chatbot_api_healthsoc_name
+          name: containerapps_nex_agent_api_name
           env: [
             {
               name: 'PYTHONUNBUFFERED'
@@ -72,7 +72,7 @@ resource containerapps_chatbot_api_healthsoc_name_resource 'Microsoft.App/contai
             }
             {
               name: 'DB_HOST'
-              value: 'postgres-db-healthsoc.postgres.database.azure.com'
+              value: 'nex-postgres-db.postgres.database.azure.com'
             }
             {
               name: 'DB_PORT'
@@ -88,11 +88,11 @@ resource containerapps_chatbot_api_healthsoc_name_resource 'Microsoft.App/contai
             }
             {
               name: 'AZURE_OPENAI_ENDPOINT'
-              value: 'https://az-openai-healthsociety.openai.azure.com/openai/deployments/gpt-41-dev-healthsoc/chat/completions?api-version=2025-01-01-preview'
+              value: 'https://az-openai-nex.openai.azure.com/openai/deployments/gpt-41-nex/chat/completions?api-version=2025-01-01-preview'
             }
             {
               name: 'AZURE_EMBEDDER_OPENAI_ENDPOINT'
-              value: 'https://az-openai-healthsociety.openai.azure.com/openai/deployments/embedding-large-dev-healthsoc/embeddings?api-version=2023-05-15'
+              value: 'https://az-openai-nex.openai.azure.com/openai/deployments/embedding-large-nex/embeddings?api-version=2023-05-15'
             }
             {
               name: 'DB_PASS'
