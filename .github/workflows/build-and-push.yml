@@ -9,7 +9,7 @@ on:
 
 # Environment variables available to all jobs
 env:
-  IMAGE_NAME: health-research-api
+  IMAGE_NAME: nex-agent-api
   IMAGE_TAG: latest
   PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
 

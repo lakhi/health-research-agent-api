@@ -24,7 +24,7 @@ class NexConfig(ProjectConfig):
     @property
     def cors_origins(self) -> List[str]:
         return [
-            "https://hrn-agent-ui.niceground-23078755.westeurope.azurecontainerapps.io"
+            "https://nex-agent-ui.niceground-23078755.westeurope.azurecontainerapps.io"
         ]
 
     def get_agents(self) -> List[Agent]:

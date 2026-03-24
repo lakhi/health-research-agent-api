@@ -18,7 +18,7 @@ def test_azure_connection():
     connection_params = {
         "user": "postgres",
         "password": "REDACTED",
-        "host": "azure-db-hrn.postgres.database.azure.com",
+        "host": "nex-postgres-db.postgres.database.azure.com",
         "port": 5432,
         "database": "postgres",
         "sslmode": "require"  # Azure PostgreSQL requires SSL

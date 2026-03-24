@@ -1,4 +1,4 @@
-# Deployment & Testing — Health Research Agent API
+# Deployment & Testing — NEX Agent API
 
 ## Deployment to Azure
 
@@ -14,6 +14,39 @@ To deploy to ACR:
 3. Commit and deploy (will trigger Github Actions)
 
 Useful commands for Azure Container Apps CI/CD:
+
+### NEX Agent (`nex-agent-api`, resource group `healthsociety`)
+
+0. Check the new revision's detailed status
+   az containerapp revision list \
+   --name nex-agent-api \
+   --resource-group healthsociety \
+   --query "[0].{revisionName:name,provisioningState:properties.provisioningState,healthState:properties.healthState,runningState:properties.runningState,replicas:properties.replicas,lastActiveTime:properties.lastActiveTime}" \
+   --output table
+
+1. Deploy with env variable
+   az containerapp update \
+   --name nex-agent-api \
+   --resource-group healthsociety \
+   --image nex-acr.azurecr.io/nex-agent-api:<git-sha> \
+   --set-env-vars PROJECT_NAME=nex \
+   --revision-suffix "$(date +%d | tr -d '\n')$(date +%b | tr '[:upper:]' '[:lower:]')"
+
+2. Verify revisions are healthy
+   az containerapp revision list \
+   --name nex-agent-api \
+   --resource-group healthsociety \
+   --output table
+
+3. Deactivate older revisions
+   az containerapp revision deactivate \
+   --name nex-agent-api \
+   --resource-group healthsociety \
+   --revision <old-revision-name>
+
+---
+
+### VAX Study (`marhinovirus-study-api`, resource group `socialeconpsyresearch`)
 
 0. Check the new revision's detailed status
    az containerapp revision list \

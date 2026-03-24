@@ -28,7 +28,7 @@ agent_os_db = get_project_db(api_settings.project_config.project_name)
 # TODO: feat(tracing) - Tracing can be enabled later if required
 # Configure Native OpenTelemetry Tracing
 # configure_tracing(
-#     service_name=f"health-research-api-{api_settings.project_config.project_name}",
+#     service_name=f"nex-agent-api-{api_settings.project_config.project_name}",
 #     db=agent_os_db,
 # )
 
