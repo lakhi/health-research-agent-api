@@ -3,10 +3,6 @@ from agno.models.azure import AzureOpenAI
 from agents.agent_types import AgentType
 from knowledge_base.nex_knowledge_base import get_nex_knowledge
 from agents.llm_models import LLMModel
-
-# TODO: Remove after confirming session storage is permanently disabled
-# from db import nex_agent_db
-
 from typing import Optional
 from logging import getLogger
 
@@ -14,19 +10,8 @@ from textwrap import dedent
 
 logger = getLogger(__name__)
 
-# 0. TODO: try better-agents framework using Antigravity? https://github.com/langwatch/better-agents
-# 0. TODO: move to the Donain-Driven TDD approach integrating Scenario Testing from the beginning: https://scenario.langwatch.ai/best-practices/domain-driven-tdd
-# 0. TODO: implement TDD-based approach for the NEX agent: https://docs.agno.com/basics/agents/usage/scenario-testing
-# 1. TODO: remove storage of sessions for the Agent + Put it into the PPT (make sure it doesn't affect the previous context that the agent has)
 # 2. TODO: implement Metrics: https://docs.agno.com/agents/metrics
-# 3. TODO: upgrade the model to gpt-4i or 5 depending on analysis
 # 4. TODO: add KnowledgeTools if answers are not very good: https://docs-v1.agno.com/tools/reasoning_tools/knowledge-tools
-
-
-# JAN/FEB 2026 RELEASE
-# 0. TODO: implement application-level monitoring that checks costs via Azure Cost Management   API and stops services immediately when threshold is reached (ref chat)
-# 2. TODO: impl semantic chunking strategy through the embedder: https://docs-v1.agno.com/reference/chunking/semantic
-# 3. TODO: impl /ready endpoint and add to the readiness probe in health.py the Azure container app
 
 
 def get_nex_agent() -> Agent:
