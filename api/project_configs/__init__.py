@@ -9,13 +9,13 @@ Import the factory function to get the active project configuration:
     config = get_project_config()  # Returns VaxStudyConfig or NexConfig based on PROJECT_NAME env var
 """
 
+from api.project_configs.nex_config import NexConfig
 from api.project_configs.project_config import (
-    ProjectName,
     ProjectConfig,
+    ProjectName,
 )
 from api.project_configs.project_config_factory import get_project_config
 from api.project_configs.vax_study_config import VaxStudyConfig
-from api.project_configs.nex_config import NexConfig
 
 __all__ = [
     "ProjectName",

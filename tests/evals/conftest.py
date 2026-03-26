@@ -1,5 +1,7 @@
 """Load .env before any modules that read env vars at import time."""
+
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv(override=False)

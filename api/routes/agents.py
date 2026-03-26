@@ -6,7 +6,7 @@ from agno.agent import Agent
 from agno.knowledge import Knowledge
 from agno.os.utils import format_sse_event
 from fastapi import APIRouter, Body, Form, HTTPException, status
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 from agents.llm_models import LLMModel
@@ -27,9 +27,7 @@ logger = getLogger(__name__)
 agents_router = APIRouter(prefix="/agents", tags=["Agents"])
 
 
-async def chat_response_streamer(
-    agent: Agent, message: str, is_nex: bool = False
-) -> AsyncGenerator:
+async def chat_response_streamer(agent: Agent, message: str, is_nex: bool = False) -> AsyncGenerator:
     """
     Stream agent responses chunk by chunk.
 
@@ -71,6 +69,7 @@ async def chat_response_streamer(
 
 class RunRequest(BaseModel):
     """Request model for an running an agent"""
+
     # TODO: make the change at the FE to remove sending model_id and user_id
     message: str
     stream: bool = True
@@ -144,7 +143,7 @@ async def create_agent_run(
     try:
         agent: Agent = get_agent(
             # TODO: make the change at the FE to remove sending model_id and user_id
-            model_id=None, # Ignored since model is set at agent level, not per-run.
+            model_id=None,  # Ignored since model is set at agent level, not per-run.
             agent_id=agent_id,
             user_id=run_request.user_id,
             session_id=run_request.session_id,
@@ -180,15 +179,9 @@ async def create_agent_run(
             output_tokens = 0
 
             if hasattr(response, "metrics") and response.metrics is not None:
-                if (
-                    hasattr(response.metrics, "input_tokens")
-                    and response.metrics.input_tokens
-                ):
+                if hasattr(response.metrics, "input_tokens") and response.metrics.input_tokens:
                     input_tokens = response.metrics.input_tokens
-                if (
-                    hasattr(response.metrics, "output_tokens")
-                    and response.metrics.output_tokens
-                ):
+                if hasattr(response.metrics, "output_tokens") and response.metrics.output_tokens:
                     output_tokens = response.metrics.output_tokens
 
             if input_tokens > 0 or output_tokens > 0:

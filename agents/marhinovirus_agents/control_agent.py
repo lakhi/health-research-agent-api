@@ -1,15 +1,17 @@
+from logging import getLogger
+from typing import Optional
+
 from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
+
+from agents.agent_types import AgentType
+from agents.llm_models import VAX_STUDY_GPT_MODEL
+from agents.marhinovirus_agents.shared_instructions import SHARED_MARHINOVIRUS_INSTRUCTIONS
+from db import control_agent_db
 from knowledge_base import marhinovirus_knowledge_base
 from knowledge_base.marhinovirus_knowledge_base import (
     get_normal_catalog_knowledge,
 )
-from agents.llm_models import VAX_STUDY_GPT_MODEL
-from agents.agent_types import AgentType
-from agents.marhinovirus_agents.shared_instructions import SHARED_MARHINOVIRUS_INSTRUCTIONS
-from db import control_agent_db
-from typing import Optional
-from logging import getLogger
 
 logger = getLogger(__name__)
 
@@ -33,8 +35,7 @@ def get_control_marhinovirus_agent(
         or marhinovirus_knowledge_base.NORMAL_INSTRUCTIONS is None
     ):
         raise RuntimeError(
-            "Agent configurations not initialized. "
-            "Call initialize_agent_configs() before creating agents."
+            "Agent configurations not initialized. Call initialize_agent_configs() before creating agents."
         )
 
     control_agent = Agent(
