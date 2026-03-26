@@ -8,13 +8,14 @@ authors = [{ name = "Akshay Lakhi", email = "akshay.lakhi@univie.ac.at" }]
 dependencies = [
   "agno",
   "aiohttp",
-  "chonkie[openai]",
+  "chonkie[semantic]",
   "fastapi[standard]",
   "openai",
   "pgvector",
   "psycopg2-binary",
   "pyjwt",  # Required by agno v2.4.0+ (missing from their dependencies)
   "pypdf",
+  "requests",
   "sentence-transformers",
   "sqlalchemy",
 ]
