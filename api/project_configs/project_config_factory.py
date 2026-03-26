@@ -1,7 +1,7 @@
 import os
 
-from api.project_configs.project_config import ProjectConfig, ProjectName
 from api.project_configs.nex_config import NexConfig
+from api.project_configs.project_config import ProjectConfig, ProjectName
 from api.project_configs.vax_study_config import VaxStudyConfig
 
 
@@ -19,8 +19,7 @@ def get_project_config() -> ProjectConfig:
 
     if not project:
         raise ValueError(
-            "PROJECT_NAME environment variable must be set. "
-            f"Valid values: {', '.join([p.value for p in ProjectName])}"
+            f"PROJECT_NAME environment variable must be set. Valid values: {', '.join([p.value for p in ProjectName])}"
         )
 
     if project == ProjectName.VAX_STUDY.value:
@@ -29,6 +28,5 @@ def get_project_config() -> ProjectConfig:
         return NexConfig()
     else:
         raise ValueError(
-            f"Invalid PROJECT_NAME: '{project}'. "
-            f"Must be one of: {', '.join([p.value for p in ProjectName])}"
+            f"Invalid PROJECT_NAME: '{project}'. Must be one of: {', '.join([p.value for p in ProjectName])}"
         )

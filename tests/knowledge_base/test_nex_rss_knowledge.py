@@ -10,7 +10,6 @@ from knowledge_base.nex_rss_knowledge import (
     parse_rss_feed,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixture XML — modelled on the verified live feed (19 items analysed)
 # ---------------------------------------------------------------------------

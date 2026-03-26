@@ -6,7 +6,7 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_core.core_schema import FieldValidationInfo
 from pydantic_settings import BaseSettings
 
-from api.project_configs import get_project_config, ProjectConfig
+from api.project_configs import ProjectConfig, get_project_config
 from api.project_configs.project_config import ProjectName
 
 # Budget timezone constant (hardcoded, not configurable)
@@ -66,10 +66,7 @@ class ApiSettings(BaseSettings):
 
         if missing_vars:
             missing = ", ".join(missing_vars)
-            raise ValueError(
-                "Missing required budget environment variables for PROJECT_NAME=nex: "
-                f"{missing}"
-            )
+            raise ValueError(f"Missing required budget environment variables for PROJECT_NAME=nex: {missing}")
 
         return self
 

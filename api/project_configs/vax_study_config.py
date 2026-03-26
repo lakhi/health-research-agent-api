@@ -2,10 +2,10 @@ from typing import List
 
 from agno.agent import Agent
 
-from api.project_configs.project_config import ProjectConfig, ProjectName
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
-from agents.marhinovirus_agents.simple_language_agent import get_simple_language_marhinovirus_agent
 from agents.marhinovirus_agents.simple_catalog_language_agent import get_simple_catalog_language_marhinovirus_agent
+from agents.marhinovirus_agents.simple_language_agent import get_simple_language_marhinovirus_agent
+from api.project_configs.project_config import ProjectConfig, ProjectName
 from knowledge_base.marhinovirus_knowledge_base import (
     initialize_agent_configs,
     load_normal_catalog,
@@ -23,9 +23,7 @@ class VaxStudyConfig(ProjectConfig):
     @property
     def cors_origins(self) -> List[str]:
         # TODO: remove CORS-coupling between FE and BE projects
-        return [
-            "https://marhinovirus-study-ui.whitedesert-10483e06.westeurope.azurecontainerapps.io"
-        ]
+        return ["https://marhinovirus-study-ui.whitedesert-10483e06.westeurope.azurecontainerapps.io"]
 
     def get_agents(self) -> List[Agent]:
         """Initialize vax-study agents (control, simple_lg, simple_catalog_lg)."""

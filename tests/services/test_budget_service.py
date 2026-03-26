@@ -6,22 +6,23 @@ Run with: pytest tests/services/test_budget_service.py -v
 """
 
 from datetime import date, datetime, timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 from zoneinfo import ZoneInfo
 
 import pytest
+
+from api.settings import api_settings
 
 # These imports will fail until implementation is complete
 from services.budget_service import (
     BUDGET_TIMEZONE,
     calculate_cost_eur,
-    get_daily_spend_eur,
     check_budget_available,
-    record_usage,
-    get_today_vienna,
+    get_daily_spend_eur,
     get_next_reset_time_utc,
+    get_today_vienna,
+    record_usage,
 )
-from api.settings import api_settings
 
 
 class TestCalculateCostEur:
@@ -66,9 +67,7 @@ class TestBudgetAvailability:
         available, remaining, reset_time = check_budget_available()
 
         assert available is True
-        assert remaining == pytest.approx(
-            api_settings.daily_budget_eur - mock_spend.return_value, rel=0.01
-        )
+        assert remaining == pytest.approx(api_settings.daily_budget_eur - mock_spend.return_value, rel=0.01)
         assert isinstance(reset_time, datetime)
 
     @patch("services.budget_service.get_daily_spend_eur")

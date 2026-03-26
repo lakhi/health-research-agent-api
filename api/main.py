@@ -1,5 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
+
 from agno.os import AgentOS
 
 # TODO: feat(tracing) - Tracing can be enabled later if required
@@ -9,7 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes.agents import agents_router
 from api.settings import api_settings
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,9 +39,7 @@ async def app_lifecycle(app):
     Lifespan context manager to handle startup and shutdown events.
     Loads knowledge into agents when the application starts.
     """
-    print(
-        f"📚 Loading knowledge for {api_settings.project_config.project_name} project..."
-    )
+    print(f"📚 Loading knowledge for {api_settings.project_config.project_name} project...")
 
     await api_settings.project_config.load_knowledge(agents)
 

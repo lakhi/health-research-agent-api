@@ -1,5 +1,7 @@
 import os
+
 from agno.knowledge.embedder.azure_openai import AzureOpenAIEmbedder
+
 
 def get_azure_embedder() -> AzureOpenAIEmbedder:
     """

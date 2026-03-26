@@ -11,15 +11,16 @@ Subsequent runs: skip_if_exists=True → near-instant startup.
 Run: pytest tests/evals/ -v -m "integration and evals"
 """
 
-import pytest
 from textwrap import dedent
+
+import pytest
 from agno.eval.accuracy import AccuracyEval, AccuracyResult
 from agno.models.azure import AzureOpenAI
 
 from agents.llm_models import VAX_STUDY_GPT_MODEL
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
-from agents.marhinovirus_agents.simple_language_agent import get_simple_language_marhinovirus_agent
 from agents.marhinovirus_agents.simple_catalog_language_agent import get_simple_catalog_language_marhinovirus_agent
+from agents.marhinovirus_agents.simple_language_agent import get_simple_language_marhinovirus_agent
 from knowledge_base.marhinovirus_knowledge_base import (
     initialize_agent_configs,
     load_normal_catalog,
@@ -56,6 +57,7 @@ async def vax_agent(request):
 
 
 # ─── Accuracy evals ──────────────────────────────────────────────────────────
+
 
 @pytest.mark.integration
 @pytest.mark.evals

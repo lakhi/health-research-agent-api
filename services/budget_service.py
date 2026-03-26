@@ -12,9 +12,9 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import func
 
-from api.settings import api_settings, BUDGET_TIMEZONE
-from db.session import SessionLocal
+from api.settings import BUDGET_TIMEZONE, api_settings
 from db.models.budget import DailyNexAgentUsage
+from db.session import SessionLocal
 
 logger = getLogger(__name__)
 
@@ -35,10 +35,7 @@ def _get_required_budget_config() -> Tuple[float, float, float]:
 
     if missing_vars:
         missing = ", ".join(missing_vars)
-        raise RuntimeError(
-            "Budget settings are not configured. Missing environment variables: "
-            f"{missing}"
-        )
+        raise RuntimeError(f"Budget settings are not configured. Missing environment variables: {missing}")
 
     return daily_budget, input_price, output_price
 
@@ -186,10 +183,7 @@ def record_usage(input_tokens: int, output_tokens: int) -> None:
         db.add(usage)
         db.commit()
 
-        logger.info(
-            f"Recorded usage: input={input_tokens}, output={output_tokens}, "
-            f"cost={cost:.6f} EUR"
-        )
+        logger.info(f"Recorded usage: input={input_tokens}, output={output_tokens}, cost={cost:.6f} EUR")
     except Exception as e:
         db.rollback()
         logger.error(f"Failed to record usage: {e}")

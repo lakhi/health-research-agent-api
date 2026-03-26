@@ -6,7 +6,7 @@ This model stores daily token usage and costs for budget enforcement.
 
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Column, Integer, Float, Date, DateTime, Index
+from sqlalchemy import Column, Date, DateTime, Float, Index, Integer
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -36,9 +36,7 @@ class DailyNexAgentUsage(Base):
     input_tokens = Column(Integer, nullable=False, default=0)
     output_tokens = Column(Integer, nullable=False, default=0)
     cost_eur = Column(Float, nullable=False, default=0.0)
-    created_at = Column(
-        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (Index("ix_daily_nex_usage_date", "date"),)
 

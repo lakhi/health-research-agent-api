@@ -1,16 +1,17 @@
+import logging
+
+import requests
+from agno.db.postgres import PostgresDb
 from agno.knowledge import Knowledge
 from agno.knowledge.chunking.agentic import AgenticChunking
 from agno.knowledge.reader.pdf_reader import PDFReader
 from agno.models.azure import AzureOpenAI
 from agno.vectordb.pgvector import PgVector, SearchType
-from agno.db.postgres import PostgresDb
 
 # from agno.knowledge.reranker.cohere import CohereReranker
 from agents.llm_models import LLMModel
 from db.session import get_db_url_cached
 from knowledge_base import get_azure_embedder
-import requests
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +20,13 @@ logger = logging.getLogger(__name__)
 
 # URLs for fetching agent configurations from cloud storage
 NORMAL_DESCRIPTION_URL = "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/normal-description.txt"
-NORMAL_INSTRUCTIONS_URL = "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/normal-instructions.txt"
+NORMAL_INSTRUCTIONS_URL = (
+    "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/normal-instructions.txt"
+)
 SIMPLE_DESCRIPTION_URL = "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/simple-description.txt"
-SIMPLE_INSTRUCTIONS_URL = "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/simple-instructions.txt"
+SIMPLE_INSTRUCTIONS_URL = (
+    "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/simple-instructions.txt"
+)
 
 # Module-level variables populated at startup from cloud URLs
 NORMAL_DESCRIPTION: str | None = None
