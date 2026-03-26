@@ -40,8 +40,10 @@ pytest tests/ -v -m integration              # integration tests only
 
 ### Lint / format
 ```bash
-./scripts/format.sh    # ruff format + ruff check --fix
-./scripts/validate.sh  # ruff check + mypy (non-zero on error)
+ruff format .
+ruff check --fix .
+ruff check .
+mypy . --config-file pyproject.toml
 ```
 
 ## Architecture
