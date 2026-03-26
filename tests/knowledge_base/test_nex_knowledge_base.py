@@ -1,6 +1,6 @@
-from pathlib import Path
 import sys
 import types
+from pathlib import Path
 
 import pytest
 
@@ -31,7 +31,6 @@ def _install_agno_stubs() -> None:
 _install_agno_stubs()
 
 from knowledge_base import nex_knowledge_base
-
 
 MEMBERS_HEADER = (
     "first_name,last_name,gender,email_address,academic_position,"
@@ -72,6 +71,7 @@ def test_get_research_articles_data_joins_member_metadata(tmp_path, monkeypatch)
     assert rows[0]["metadata"]["first_name"] == "Ada"
     assert rows[0]["metadata"]["last_name"] == "Lovelace"
     assert rows[0]["metadata"]["ucris_url"] == "https://ucris.example/ada"
+    assert rows[0]["metadata"]["source_type"] == "research_paper"
 
 
 def test_get_research_articles_data_fails_on_duplicate_doi(tmp_path, monkeypatch):
@@ -97,9 +97,7 @@ def test_get_research_articles_data_fails_on_duplicate_doi(tmp_path, monkeypatch
         nex_knowledge_base.get_research_articles_data()
 
 
-def test_get_research_articles_data_fails_on_unknown_member_email(
-    tmp_path, monkeypatch
-):
+def test_get_research_articles_data_fails_on_unknown_member_email(tmp_path, monkeypatch):
     members_csv = tmp_path / "members.csv"
     articles_csv = tmp_path / "articles.csv"
 
@@ -110,8 +108,7 @@ def test_get_research_articles_data_fails_on_unknown_member_email(
     )
     _write_csv(
         articles_csv,
-        ARTICLES_HEADER
-        + "10.1234/doi,missing@univie.ac.at,https://demo.blob.core.windows.net/research/unknown.pdf\n",
+        ARTICLES_HEADER + "10.1234/doi,missing@univie.ac.at,https://demo.blob.core.windows.net/research/unknown.pdf\n",
     )
 
     monkeypatch.setattr(nex_knowledge_base, "NEX_MEMBERS_CSV", members_csv)

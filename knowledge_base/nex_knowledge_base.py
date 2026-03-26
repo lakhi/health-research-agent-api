@@ -2,9 +2,10 @@ import csv
 from pathlib import Path
 from urllib.parse import urlparse
 
+from agno.db.postgres import PostgresDb
 from agno.knowledge import Knowledge
 from agno.vectordb.pgvector import PgVector, SearchType
-from agno.db.postgres import PostgresDb
+
 from db.session import get_db_url_cached
 from knowledge_base import get_azure_embedder
 
@@ -110,9 +111,7 @@ def _validate_required_columns(required_columns: set[str], file_path: Path) -> N
     headers = _read_csv_headers(file_path)
     missing_columns = sorted(required_columns - headers)
     if missing_columns:
-        raise ValueError(
-            f"Missing required columns in {file_path.name}: {', '.join(missing_columns)}"
-        )
+        raise ValueError(f"Missing required columns in {file_path.name}: {', '.join(missing_columns)}")
 
 
 def _validate_blob_pdf_url(url: str) -> None:
@@ -141,14 +140,10 @@ def _build_member_index(
     for index, member in enumerate(members_rows, start=2):
         email = _normalize_email(member.get("email_address", ""))
         if not email:
-            raise ValueError(
-                f"Missing email_address in {NEX_MEMBERS_CSV.name} at row {index}"
-            )
+            raise ValueError(f"Missing email_address in {NEX_MEMBERS_CSV.name} at row {index}")
 
         if email in members_by_email:
-            raise ValueError(
-                f"Duplicate email_address in {NEX_MEMBERS_CSV.name}: {email}"
-            )
+            raise ValueError(f"Duplicate email_address in {NEX_MEMBERS_CSV.name}: {email}")
 
         member_metadata = {key: _normalize_cell(value) for key, value in member.items()}
         member_metadata["email_address"] = email
@@ -185,13 +180,9 @@ def get_research_articles_data() -> list:
         if not doi:
             raise ValueError(f"Missing doi in {NEX_ARTICLES_CSV.name} at row {index}")
         if not member_email:
-            raise ValueError(
-                f"Missing member_email in {NEX_ARTICLES_CSV.name} at row {index}"
-            )
+            raise ValueError(f"Missing member_email in {NEX_ARTICLES_CSV.name} at row {index}")
         if not pdf_url:
-            raise ValueError(
-                f"Missing pdf_url in {NEX_ARTICLES_CSV.name} at row {index}"
-            )
+            raise ValueError(f"Missing pdf_url in {NEX_ARTICLES_CSV.name} at row {index}")
 
         if doi in seen_dois:
             raise ValueError(f"Duplicate doi in {NEX_ARTICLES_CSV.name}: {doi}")
@@ -204,9 +195,7 @@ def get_research_articles_data() -> list:
         _validate_blob_pdf_url(pdf_url)
 
         if member_email not in members_by_email:
-            raise ValueError(
-                f"Unknown member_email in {NEX_ARTICLES_CSV.name} at row {index}: {member_email}"
-            )
+            raise ValueError(f"Unknown member_email in {NEX_ARTICLES_CSV.name} at row {index}: {member_email}")
 
         member_metadata = dict(members_by_email[member_email])
         member_name = " ".join(
@@ -222,6 +211,7 @@ def get_research_articles_data() -> list:
         metadata = {
             **member_metadata,
             "doi": doi,
+            "source_type": "research_paper",
         }
 
         kb_data.append(
