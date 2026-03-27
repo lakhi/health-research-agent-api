@@ -4,7 +4,7 @@ Database model for tracking daily nex agent usage.
 This model stores daily token usage and costs for budget enforcement.
 """
 
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, Date, DateTime, Float, Index, Integer
 from sqlalchemy.ext.declarative import declarative_base

@@ -5,8 +5,8 @@ Tests follow TDD approach - written before implementation.
 Run with: pytest tests/services/test_budget_service.py -v
 """
 
-from datetime import date, datetime, timedelta
-from unittest.mock import MagicMock, patch
+from datetime import date, datetime
+from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -18,10 +18,8 @@ from services.budget_service import (
     BUDGET_TIMEZONE,
     calculate_cost_eur,
     check_budget_available,
-    get_daily_spend_eur,
     get_next_reset_time_utc,
     get_today_vienna,
-    record_usage,
 )
 
 

@@ -1,8 +1,8 @@
 import sys
 import types
+from dataclasses import dataclass
 from pathlib import Path
 
-import pytest
 
 
 def _install_agno_stubs() -> None:
@@ -38,81 +38,122 @@ MEMBERS_HEADER = (
 )
 
 
-ARTICLES_HEADER = "doi,member_email,pdf_url\n"
-
-
 def _write_csv(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def test_get_research_articles_data_joins_member_metadata(tmp_path, monkeypatch):
-    members_csv = tmp_path / "members.csv"
-    articles_csv = tmp_path / "articles.csv"
+@dataclass
+class FakeDiscoveredPDF:
+    local_path: Path
+    member_folder_name: str
+    filename: str
 
+
+def test_get_research_articles_from_ucloud_matches_member(tmp_path, monkeypatch):
+    members_csv = tmp_path / "members.csv"
     _write_csv(
         members_csv,
         MEMBERS_HEADER
         + "Ada,Lovelace,F,ada@univie.ac.at,Professor,Faculty X,Dept Y,Computing,https://ucris.example/ada\n",
     )
-    _write_csv(
-        articles_csv,
-        ARTICLES_HEADER
-        + "10.1234/example-doi,ada@univie.ac.at,https://demo.blob.core.windows.net/research/ada-paper.pdf\n",
-    )
-
     monkeypatch.setattr(nex_knowledge_base, "NEX_MEMBERS_CSV", members_csv)
-    monkeypatch.setattr(nex_knowledge_base, "NEX_ARTICLES_CSV", articles_csv)
 
-    rows = nex_knowledge_base.get_research_articles_data()
+    pdf_path = tmp_path / "Ada Lovelace" / "paper.pdf"
+    pdf_path.parent.mkdir()
+    pdf_path.write_bytes(b"%PDF-fake")
 
-    assert len(rows) == 1
-    assert rows[0]["url"] == "https://demo.blob.core.windows.net/research/ada-paper.pdf"
-    assert rows[0]["metadata"]["doi"] == "10.1234/example-doi"
-    assert rows[0]["metadata"]["first_name"] == "Ada"
-    assert rows[0]["metadata"]["last_name"] == "Lovelace"
-    assert rows[0]["metadata"]["ucris_url"] == "https://ucris.example/ada"
-    assert rows[0]["metadata"]["source_type"] == "research_paper"
+    discovered = [FakeDiscoveredPDF(local_path=pdf_path, member_folder_name="Ada Lovelace", filename="paper.pdf")]
+    result = nex_knowledge_base.get_research_articles_from_ucloud(discovered)
+
+    assert len(result) == 1
+    assert result[0]["path"] == pdf_path
+    assert result[0]["metadata"]["first_name"] == "Ada"
+    assert result[0]["metadata"]["last_name"] == "Lovelace"
+    assert result[0]["metadata"]["email_address"] == "ada@univie.ac.at"
+    assert result[0]["metadata"]["source_type"] == "research_paper"
+    assert result[0]["metadata"]["network_member_name"] == "Ada Lovelace"
+    assert result[0]["name"] == "NEX Research - Ada Lovelace"
 
 
-def test_get_research_articles_data_fails_on_duplicate_doi(tmp_path, monkeypatch):
+def test_get_research_articles_from_ucloud_handles_double_spaces(tmp_path, monkeypatch):
+    """u:Cloud folders may have double spaces (e.g. 'Dagmar  Vorlicek') but CSV has single."""
     members_csv = tmp_path / "members.csv"
-    articles_csv = tmp_path / "articles.csv"
-
     _write_csv(
         members_csv,
-        MEMBERS_HEADER
-        + "Ada,Lovelace,F,ada@univie.ac.at,Professor,Faculty X,Dept Y,Computing,https://ucris.example/ada\n",
+        MEMBERS_HEADER + "Dagmar ,Vorlicek,F,dagmar@univie.ac.at,PostDoc,Faculty S,Sociology,ISP,\n",
     )
-    _write_csv(
-        articles_csv,
-        ARTICLES_HEADER
-        + "10.1234/dup,ada@univie.ac.at,https://demo.blob.core.windows.net/research/a.pdf\n"
-        + "10.1234/dup,ada@univie.ac.at,https://demo.blob.core.windows.net/research/b.pdf\n",
-    )
-
     monkeypatch.setattr(nex_knowledge_base, "NEX_MEMBERS_CSV", members_csv)
-    monkeypatch.setattr(nex_knowledge_base, "NEX_ARTICLES_CSV", articles_csv)
 
-    with pytest.raises(ValueError, match="Duplicate doi"):
-        nex_knowledge_base.get_research_articles_data()
+    pdf_path = tmp_path / "Dagmar  Vorlicek" / "paper.pdf"
+    pdf_path.parent.mkdir()
+    pdf_path.write_bytes(b"%PDF-fake")
+
+    discovered = [FakeDiscoveredPDF(local_path=pdf_path, member_folder_name="Dagmar  Vorlicek", filename="paper.pdf")]
+    result = nex_knowledge_base.get_research_articles_from_ucloud(discovered)
+
+    assert len(result) == 1
+    assert result[0]["metadata"]["last_name"] == "Vorlicek"
 
 
-def test_get_research_articles_data_fails_on_unknown_member_email(tmp_path, monkeypatch):
+def test_get_research_articles_from_ucloud_handles_umlauts(tmp_path, monkeypatch):
     members_csv = tmp_path / "members.csv"
-    articles_csv = tmp_path / "articles.csv"
-
     _write_csv(
         members_csv,
-        MEMBERS_HEADER
-        + "Ada,Lovelace,F,ada@univie.ac.at,Professor,Faculty X,Dept Y,Computing,https://ucris.example/ada\n",
+        MEMBERS_HEADER + "Laura Maria,König,F,laura@univie.ac.at,Professor,Faculty P,Dept C,Health,\n",
     )
-    _write_csv(
-        articles_csv,
-        ARTICLES_HEADER + "10.1234/doi,missing@univie.ac.at,https://demo.blob.core.windows.net/research/unknown.pdf\n",
-    )
-
     monkeypatch.setattr(nex_knowledge_base, "NEX_MEMBERS_CSV", members_csv)
-    monkeypatch.setattr(nex_knowledge_base, "NEX_ARTICLES_CSV", articles_csv)
 
-    with pytest.raises(ValueError, match="Unknown member_email"):
-        nex_knowledge_base.get_research_articles_data()
+    pdf_path = tmp_path / "Laura Maria König" / "paper.pdf"
+    pdf_path.parent.mkdir()
+    pdf_path.write_bytes(b"%PDF-fake")
+
+    discovered = [FakeDiscoveredPDF(local_path=pdf_path, member_folder_name="Laura Maria König", filename="paper.pdf")]
+    result = nex_knowledge_base.get_research_articles_from_ucloud(discovered)
+
+    assert len(result) == 1
+    assert result[0]["metadata"]["last_name"] == "König"
+
+
+def test_get_research_articles_from_ucloud_skips_unmatched_folder(tmp_path, monkeypatch):
+    members_csv = tmp_path / "members.csv"
+    _write_csv(
+        members_csv,
+        MEMBERS_HEADER + "Ada,Lovelace,F,ada@univie.ac.at,Professor,Faculty X,Dept Y,Computing,\n",
+    )
+    monkeypatch.setattr(nex_knowledge_base, "NEX_MEMBERS_CSV", members_csv)
+
+    pdf_path = tmp_path / "Unknown Person" / "paper.pdf"
+    pdf_path.parent.mkdir()
+    pdf_path.write_bytes(b"%PDF-fake")
+
+    discovered = [FakeDiscoveredPDF(local_path=pdf_path, member_folder_name="Unknown Person", filename="paper.pdf")]
+    result = nex_knowledge_base.get_research_articles_from_ucloud(discovered)
+
+    assert len(result) == 0
+
+
+def test_get_research_articles_from_ucloud_multiple_pdfs_per_member(tmp_path, monkeypatch):
+    members_csv = tmp_path / "members.csv"
+    _write_csv(
+        members_csv,
+        MEMBERS_HEADER + "Ada,Lovelace,F,ada@univie.ac.at,Professor,Faculty X,Dept Y,Computing,\n",
+    )
+    monkeypatch.setattr(nex_knowledge_base, "NEX_MEMBERS_CSV", members_csv)
+
+    folder = tmp_path / "Ada Lovelace"
+    folder.mkdir()
+    pdf1 = folder / "paper1.pdf"
+    pdf2 = folder / "paper2.pdf"
+    pdf1.write_bytes(b"%PDF-1")
+    pdf2.write_bytes(b"%PDF-2")
+
+    discovered = [
+        FakeDiscoveredPDF(local_path=pdf1, member_folder_name="Ada Lovelace", filename="paper1.pdf"),
+        FakeDiscoveredPDF(local_path=pdf2, member_folder_name="Ada Lovelace", filename="paper2.pdf"),
+    ]
+    result = nex_knowledge_base.get_research_articles_from_ucloud(discovered)
+
+    assert len(result) == 2
+    paths = {r["path"] for r in result}
+    assert pdf1 in paths
+    assert pdf2 in paths
