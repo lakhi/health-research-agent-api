@@ -31,6 +31,10 @@ class ApiSettings(BaseSettings):
     model_pricing_input_eur: Optional[float] = None
     model_pricing_output_eur: Optional[float] = None
 
+    # u:Cloud (Nextcloud) configuration for nex_agent research papers
+    ucloud_share_token: Optional[str] = None
+    ucloud_share_password: str = ""
+
     @field_validator("cors_origin_list", mode="before")
     def set_cors_origin_list(cls, cors_origin_list, info: FieldValidationInfo):
         # Get project-specific CORS origins
@@ -63,6 +67,8 @@ class ApiSettings(BaseSettings):
             missing_vars.append("MODEL_PRICING_INPUT_EUR")
         if self.model_pricing_output_eur is None:
             missing_vars.append("MODEL_PRICING_OUTPUT_EUR")
+        if not self.ucloud_share_token:
+            missing_vars.append("UCLOUD_SHARE_TOKEN")
 
         if missing_vars:
             missing = ", ".join(missing_vars)

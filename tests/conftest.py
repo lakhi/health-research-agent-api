@@ -2,7 +2,6 @@
 Pytest configuration and fixtures for the test suite.
 """
 
-import pytest
 
 
 def pytest_configure(config):
