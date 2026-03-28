@@ -1,5 +1,5 @@
 """
-Database model for tracking daily nex agent usage.
+Database model for tracking daily agent usage.
 
 This model stores daily token usage and costs for budget enforcement.
 """
@@ -12,9 +12,9 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 
-class DailyNexAgentUsage(Base):
+class DailyAgentUsage(Base):
     """
-    Tracks daily token usage and costs for the nex agent.
+    Tracks daily token usage and costs for a deployed agent.
 
     Each row represents one usage event (API call) on a specific date.
     The budget service aggregates all rows for a given date to calculate
@@ -29,20 +29,20 @@ class DailyNexAgentUsage(Base):
         created_at: Timestamp when the record was created
     """
 
-    __tablename__ = "daily_nex_agent_usage"
+    __tablename__ = "daily_agent_usage"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    date = Column(Date, nullable=False)  # removed index=True
+    date = Column(Date, nullable=False)
     input_tokens = Column(Integer, nullable=False, default=0)
     output_tokens = Column(Integer, nullable=False, default=0)
     cost_eur = Column(Float, nullable=False, default=0.0)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
-    __table_args__ = (Index("ix_daily_nex_usage_date", "date"),)
+    __table_args__ = (Index("ix_daily_agent_usage_date", "date"),)
 
     def __repr__(self):
         return (
-            f"<DailyNexAgentUsage("
+            f"<DailyAgentUsage("
             f"date={self.date}, "
             f"input_tokens={self.input_tokens}, "
             f"output_tokens={self.output_tokens}, "

@@ -2,6 +2,7 @@ import os
 
 from api.project_configs.nex_config import NexConfig
 from api.project_configs.project_config import ProjectConfig, ProjectName
+from api.project_configs.ssc_psych_config import SscPsychConfig
 from api.project_configs.vax_study_config import VaxStudyConfig
 
 
@@ -26,6 +27,8 @@ def get_project_config() -> ProjectConfig:
         return VaxStudyConfig()
     elif project == ProjectName.NEX.value:
         return NexConfig()
+    elif project == ProjectName.SSC_PSYCH.value:
+        return SscPsychConfig()
     else:
         raise ValueError(
             f"Invalid PROJECT_NAME: '{project}'. Must be one of: {', '.join([p.value for p in ProjectName])}"

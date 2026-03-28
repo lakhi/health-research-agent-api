@@ -10,6 +10,7 @@ class ProjectName(str, Enum):
 
     VAX_STUDY = "vax-study"
     NEX = "nex"
+    SSC_PSYCH = "ssc-psych"
 
 
 class ProjectConfig(ABC):

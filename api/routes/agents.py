@@ -30,7 +30,7 @@ agents_router = APIRouter(prefix="/agents", tags=["Agents"])
 
 
 async def chat_response_streamer(
-    agent: Agent, message: str, is_nex: bool = False, session_id: Optional[str] = None
+    agent: Agent, message: str, has_budget: bool = False, session_id: Optional[str] = None
 ) -> AsyncGenerator:
     """
     Stream agent responses chunk by chunk.
@@ -38,7 +38,7 @@ async def chat_response_streamer(
     Args:
         agent: The agent instance to interact with
         message: User message to process
-        is_nex: Whether this is the nex agent (for metrics recording)
+        has_budget: Whether this deployment enforces budget (for usage recording)
         session_id: Anonymous session identifier for metrics tracking
 
     Yields:
@@ -78,15 +78,15 @@ async def chat_response_streamer(
     if duration_seconds is None:
         duration_seconds = time.monotonic() - start_time
 
-    # Record budget usage after stream completes (for nex agent only)
-    if is_nex and (input_tokens > 0 or output_tokens > 0):
+    # Record budget usage after stream completes
+    if has_budget and (input_tokens > 0 or output_tokens > 0):
         try:
             record_usage(input_tokens=input_tokens, output_tokens=output_tokens)
         except Exception as e:
             logger.error(f"Failed to record streaming usage metrics: {e}")
 
-    # Record anonymous usage metrics (for nex agent only)
-    if is_nex:
+    # Record anonymous usage metrics
+    if has_budget:
         record_agent_metrics(
             session_id=session_id,
             input_tokens=input_tokens,
@@ -152,12 +152,12 @@ async def create_agent_run(
     logger.info(f"CREATE_AGENT_RUN: agent_id={agent_id}")
     logger.debug(f"RunRequest: {run_request}")
 
-    # Check if this is the nex agent (budget enforcement applies)
-    is_nex = agent_id == AgentType.NEX_AGENT.id
-    logger.info(f"Agent ID: {agent_id}, is_nex: {is_nex}")
+    # Check if this deployment enforces budget (budget env vars are configured)
+    has_budget = api_settings.daily_budget_eur is not None
+    logger.info(f"Agent ID: {agent_id}, has_budget: {has_budget}")
 
-    # Budget pre-check for nex agent
-    if is_nex:
+    # Budget pre-check
+    if has_budget:
         available, _, reset_time = check_budget_available()
 
         if not available:
@@ -188,13 +188,15 @@ async def create_agent_run(
     if run_request.stream:
         # For streaming, include remaining budget in headers
         headers = {}
-        if is_nex:
+        if has_budget:
             # Re-check to get current remaining (pre-run value)
             _, remaining_eur, _ = check_budget_available()
             headers["X-Budget-Remaining-EUR"] = f"{remaining_eur:.4f}"
 
         return StreamingResponse(
-            chat_response_streamer(agent, run_request.message, is_nex=is_nex, session_id=run_request.session_id),
+            chat_response_streamer(
+                agent, run_request.message, has_budget=has_budget, session_id=run_request.session_id
+            ),
             media_type="text/event-stream",
             headers=headers,
         )
@@ -209,8 +211,8 @@ async def create_agent_run(
                 "content": getattr(response, "content", ""),
             }
 
-        # Record usage for nex agent
-        if is_nex:
+        # Record usage for budgeted agents
+        if has_budget:
             input_tokens = 0
             output_tokens = 0
             total_tokens = 0
