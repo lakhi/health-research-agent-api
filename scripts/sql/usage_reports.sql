@@ -1,9 +1,9 @@
 -- =============================================================================
--- NEX Agent Usage Reports
+-- Agent Usage Reports
 -- =============================================================================
 --
 -- Description:
---   Ready-to-run reporting queries for the nex agent usage metrics table.
+--   Ready-to-run reporting queries for the agent usage metrics table.
 --   All queries operate on aggregates — no individual message content is stored.
 --
 -- Usage:
@@ -25,7 +25,7 @@
 SELECT
     COUNT(DISTINCT anonymous_session_id) AS unique_sessions,
     COUNT(*) AS total_requests
-FROM nex_agent_usage_metrics
+FROM agent_usage_metrics
 WHERE date BETWEEN :from_date AND :to_date
   AND anonymous_session_id IS NOT NULL;
 
@@ -39,7 +39,7 @@ SELECT
     MIN(created_at) AS first_message,
     MAX(created_at) AS last_message,
     ROUND(EXTRACT(EPOCH FROM MAX(created_at) - MIN(created_at))::numeric, 0) AS duration_seconds
-FROM nex_agent_usage_metrics
+FROM agent_usage_metrics
 WHERE date BETWEEN :from_date AND :to_date
   AND anonymous_session_id IS NOT NULL
 GROUP BY anonymous_session_id
@@ -57,7 +57,7 @@ SELECT
     COUNT(*) FILTER (WHERE response_status = 'success') AS successful,
     COUNT(*) FILTER (WHERE response_status = 'error') AS errors,
     COUNT(*) FILTER (WHERE response_status = 'budget_exceeded') AS budget_exceeded
-FROM nex_agent_usage_metrics
+FROM agent_usage_metrics
 WHERE date BETWEEN :from_date AND :to_date
 GROUP BY date
 ORDER BY date;
@@ -72,7 +72,7 @@ SELECT
     COALESCE(SUM(output_tokens), 0) AS total_output_tokens,
     COALESCE(SUM(total_tokens), 0) AS total_tokens,
     ROUND(COALESCE(SUM(cost_eur), 0)::numeric, 4) AS total_cost_eur
-FROM nex_agent_usage_metrics
+FROM agent_usage_metrics
 WHERE date BETWEEN :from_date AND :to_date
 GROUP BY date
 ORDER BY date;
@@ -85,7 +85,7 @@ SELECT
     EXTRACT(HOUR FROM created_at AT TIME ZONE 'Europe/Vienna') AS hour_vienna,
     COUNT(*) AS requests,
     COUNT(DISTINCT anonymous_session_id) AS unique_sessions
-FROM nex_agent_usage_metrics
+FROM agent_usage_metrics
 WHERE date BETWEEN :from_date AND :to_date
 GROUP BY hour_vienna
 ORDER BY hour_vienna;
@@ -100,7 +100,7 @@ SELECT
     ROUND(AVG(duration_seconds)::numeric, 2) AS avg_duration_s,
     ROUND(AVG(time_to_first_token)::numeric, 3) AS avg_ttft_s,
     ROUND(MAX(duration_seconds)::numeric, 2) AS max_duration_s
-FROM nex_agent_usage_metrics
+FROM agent_usage_metrics
 WHERE date BETWEEN :from_date AND :to_date
   AND response_status = 'success'
 GROUP BY date
@@ -118,7 +118,7 @@ SELECT
         (COUNT(*) FILTER (WHERE response_status != 'success'))::numeric / NULLIF(COUNT(*), 0) * 100,
         1
     ) AS error_rate_pct
-FROM nex_agent_usage_metrics
+FROM agent_usage_metrics
 WHERE date BETWEEN :from_date AND :to_date
 GROUP BY date
 ORDER BY date;
@@ -135,7 +135,7 @@ SELECT
     ROUND(COALESCE(SUM(cost_eur), 0)::numeric, 4) AS total_cost_eur,
     ROUND(AVG(duration_seconds)::numeric, 2) AS avg_duration_s,
     COUNT(*) FILTER (WHERE response_status != 'success') AS non_success_count
-FROM nex_agent_usage_metrics
+FROM agent_usage_metrics
 WHERE date BETWEEN :from_date AND :to_date
 GROUP BY week_start
 ORDER BY week_start;

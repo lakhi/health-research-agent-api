@@ -1,17 +1,17 @@
 -- =============================================================================
--- Get Daily NEX Agent Usage
+-- Get Daily Agent Usage
 -- =============================================================================
--- 
+--
 -- Description:
---   Retrieves the total daily usage and remaining budget for the nex
+--   Retrieves the total daily usage and remaining budget for the deployed
 --   agent on a specified date.
 --
 -- Usage:
---   psql -v daily_budget=2.0 -f get_daily_nex_usage.sql
+--   psql -v daily_budget=2.0 -f get_daily_agent_usage.sql
 --
 --   Or directly in psql:
 --   \set daily_budget 2.0
---   \i get_daily_nex_usage.sql
+--   \i get_daily_agent_usage.sql
 --
 -- Parameters:
 --   :daily_budget - Daily budget in EUR (e.g., 2.0)
@@ -25,29 +25,29 @@
 --   budget_exceeded      - Boolean indicating if budget was exceeded
 -- =============================================================================
 
-SELECT 
+SELECT
     TO_CHAR(date, 'DD-Mon-YYYY') AS date,
     COALESCE(SUM(input_tokens), 0) AS total_input_tokens,
     COALESCE(SUM(output_tokens), 0) AS total_output_tokens,
     ROUND(COALESCE(SUM(cost_eur), 0)::numeric, 4) AS total_cost_eur,
     ROUND((:daily_budget - COALESCE(SUM(cost_eur), 0))::numeric, 4) AS remaining_eur,
-    CASE 
-        WHEN COALESCE(SUM(cost_eur), 0) >= :daily_budget THEN TRUE 
-        ELSE FALSE 
+    CASE
+        WHEN COALESCE(SUM(cost_eur), 0) >= :daily_budget THEN TRUE
+        ELSE FALSE
     END AS budget_exceeded
-FROM daily_nex_agent_usage
+FROM daily_agent_usage
 WHERE date = CURRENT_DATE
 GROUP BY date;
 
 -- =============================================================================
 -- Alternative: Get usage for a date range (last 7 days example)
 -- =============================================================================
--- SELECT 
+-- SELECT
 --     TO_CHAR(date, 'DD-Mon-YYYY') AS date,
 --     COALESCE(SUM(input_tokens), 0) AS total_input_tokens,
 --     COALESCE(SUM(output_tokens), 0) AS total_output_tokens,
 --     ROUND(COALESCE(SUM(cost_eur), 0)::numeric, 4) AS total_cost_eur
--- FROM daily_nex_agent_usage
+-- FROM daily_agent_usage
 -- WHERE date >= CURRENT_DATE - INTERVAL '7 days'
 -- GROUP BY date
 -- ORDER BY date DESC;
