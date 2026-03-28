@@ -26,12 +26,12 @@ logger = logging.getLogger(__name__)
 class ApiSettings(BaseSettings):
     cors_origin_list: Optional[List[str]] = Field(None, validate_default=True)
 
-    # Budget configuration for nex_agent
+    # Budget configuration (shared across budgeted projects: nex, ssc-psych)
     daily_budget_eur: Optional[float] = None
     model_pricing_input_eur: Optional[float] = None
     model_pricing_output_eur: Optional[float] = None
 
-    # u:Cloud (Nextcloud) configuration for nex_agent research papers
+    # u:Cloud (Nextcloud) configuration for nex project research papers
     ucloud_share_token: Optional[str] = None
     ucloud_share_password: str = ""
 
@@ -55,24 +55,29 @@ class ApiSettings(BaseSettings):
         return valid_cors
 
     @model_validator(mode="after")
-    def validate_nex_budget_settings(self):
-        """Require budget env vars only for nex project."""
-        if self.project_config.project_name != ProjectName.NEX.value:
-            return self
+    def validate_project_settings(self):
+        """Require budget env vars for projects that enforce budgets, and project-specific vars."""
+        project = self.project_config.project_name
+        budgeted_projects = {ProjectName.NEX.value, ProjectName.SSC_PSYCH.value}
 
-        missing_vars = []
-        if self.daily_budget_eur is None:
-            missing_vars.append("DAILY_BUDGET_EUR")
-        if self.model_pricing_input_eur is None:
-            missing_vars.append("MODEL_PRICING_INPUT_EUR")
-        if self.model_pricing_output_eur is None:
-            missing_vars.append("MODEL_PRICING_OUTPUT_EUR")
-        if not self.ucloud_share_token:
-            missing_vars.append("UCLOUD_SHARE_TOKEN")
+        if project in budgeted_projects:
+            missing_vars = []
+            if self.daily_budget_eur is None:
+                missing_vars.append("DAILY_BUDGET_EUR")
+            if self.model_pricing_input_eur is None:
+                missing_vars.append("MODEL_PRICING_INPUT_EUR")
+            if self.model_pricing_output_eur is None:
+                missing_vars.append("MODEL_PRICING_OUTPUT_EUR")
 
-        if missing_vars:
-            missing = ", ".join(missing_vars)
-            raise ValueError(f"Missing required budget environment variables for PROJECT_NAME=nex: {missing}")
+            if missing_vars:
+                missing = ", ".join(missing_vars)
+                raise ValueError(
+                    f"Missing required budget environment variables for PROJECT_NAME={project}: {missing}"
+                )
+
+        # NEX-specific: u:Cloud token required for research paper downloads
+        if project == ProjectName.NEX.value and not self.ucloud_share_token:
+            raise ValueError("Missing required environment variable for PROJECT_NAME=nex: UCLOUD_SHARE_TOKEN")
 
         return self
 

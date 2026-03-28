@@ -10,6 +10,7 @@ from agents.marhinovirus_agents.simple_language_agent import (
     get_simple_language_marhinovirus_agent,
 )
 from agents.nex_agent import get_nex_agent
+from agents.ssc_psych_agent import get_ssc_psych_agent
 
 
 def get_agent(
@@ -28,6 +29,8 @@ def get_agent(
     if agent_id == AgentType.NEX_AGENT:
         # No parameters - session storage disabled for this agent
         return get_nex_agent()
+    elif agent_id == AgentType.SSC_PSYCH_AGENT:
+        return get_ssc_psych_agent()
     elif agent_id == AgentType.CONTROL_MARHINOVIRUS:
         return get_control_marhinovirus_agent(
             model_id=model_id,

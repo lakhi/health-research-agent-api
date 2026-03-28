@@ -15,6 +15,7 @@ class AgentType(Enum):
         return self._name
 
     NEX_AGENT = ("nex_agent", "Network Explorer")
+    SSC_PSYCH_AGENT = ("ssc_psych_agent", "SSC Psychologie Assistant")
     CONTROL_MARHINOVIRUS = ("control_agent", "Control Marhinovirus Agent")
     SIMPLE_LANGUAGE_MARHINOVIRUS = (
         "simple_lg_agent",

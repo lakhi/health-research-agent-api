@@ -1,5 +1,5 @@
 """
-Metrics service for recording anonymous usage metrics for the nex agent.
+Metrics service for recording anonymous agent usage metrics.
 
 Records per-request operational data (tokens, latency, cost, status) without
 any message content or user identity. Designed for aggregate reporting.
@@ -8,7 +8,7 @@ any message content or user identity. Designed for aggregate reporting.
 from logging import getLogger
 from typing import Optional
 
-from db.models.usage_metrics import NexAgentUsageMetrics
+from db.models.usage_metrics import AgentUsageMetrics
 from db.session import SessionLocal
 from services.budget_service import calculate_cost_eur, get_today_vienna
 
@@ -27,7 +27,7 @@ def record_agent_metrics(
     response_status: str = "success",
 ) -> None:
     """
-    Record anonymous usage metrics for a single nex agent request.
+    Record anonymous usage metrics for a single agent request.
 
     This function never raises — metrics recording failures are logged
     but never propagated to the caller, so they cannot break user responses.
@@ -51,7 +51,7 @@ def record_agent_metrics(
         if total_tokens == 0 and (input_tokens > 0 or output_tokens > 0):
             total_tokens = input_tokens + output_tokens
 
-        metrics = NexAgentUsageMetrics(
+        metrics = AgentUsageMetrics(
             date=today,
             anonymous_session_id=session_id,
             input_tokens=input_tokens,

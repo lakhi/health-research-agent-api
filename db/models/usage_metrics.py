@@ -1,5 +1,5 @@
 """
-Database model for tracking anonymous usage metrics for the nex agent.
+Database model for tracking anonymous agent usage metrics.
 
 This model stores per-request operational metrics (tokens, latency, cost, status)
 without any message content or user identity, enabling aggregate reporting while
@@ -14,9 +14,9 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 
-class NexAgentUsageMetrics(Base):
+class AgentUsageMetrics(Base):
     """
-    Tracks anonymous per-request usage metrics for the nex agent.
+    Tracks anonymous per-request usage metrics for a deployed agent.
 
     Each row represents one agent run. The anonymous_session_id (a random UUID
     from the frontend) enables session counting and duration estimation without
@@ -36,7 +36,7 @@ class NexAgentUsageMetrics(Base):
         created_at: Timestamp when the record was created (UTC)
     """
 
-    __tablename__ = "nex_agent_usage_metrics"
+    __tablename__ = "agent_usage_metrics"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(Date, nullable=False)
@@ -51,13 +51,13 @@ class NexAgentUsageMetrics(Base):
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (
-        Index("ix_nex_usage_metrics_date", "date"),
-        Index("ix_nex_usage_metrics_session", "anonymous_session_id"),
+        Index("ix_agent_usage_metrics_date", "date"),
+        Index("ix_agent_usage_metrics_session", "anonymous_session_id"),
     )
 
     def __repr__(self):
         return (
-            f"<NexAgentUsageMetrics("
+            f"<AgentUsageMetrics("
             f"date={self.date}, "
             f"session={self.anonymous_session_id}, "
             f"tokens={self.total_tokens}, "

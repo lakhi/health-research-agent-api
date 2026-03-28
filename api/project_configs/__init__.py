@@ -15,6 +15,7 @@ from api.project_configs.project_config import (
     ProjectName,
 )
 from api.project_configs.project_config_factory import get_project_config
+from api.project_configs.ssc_psych_config import SscPsychConfig
 from api.project_configs.vax_study_config import VaxStudyConfig
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     "get_project_config",
     "VaxStudyConfig",
     "NexConfig",
+    "SscPsychConfig",
 ]

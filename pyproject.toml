@@ -8,6 +8,7 @@ authors = [{ name = "Akshay Lakhi", email = "akshay.lakhi@univie.ac.at" }]
 dependencies = [
   "agno",
   "aiohttp",
+  "beautifulsoup4",
   "chonkie[semantic]",
   "fastapi[standard]",
   "openai",

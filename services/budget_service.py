@@ -1,8 +1,9 @@
 """
-Budget service for tracking and enforcing daily usage limits for nex agent.
+Budget service for tracking and enforcing daily agent usage limits.
 
 This service tracks token usage and costs, enforcing a configurable daily budget
 in EUR. The budget resets at midnight Vienna time (Europe/Vienna timezone).
+Each deployment has its own database, so no agent_id filtering is needed.
 """
 
 from datetime import date, datetime, timedelta
@@ -13,7 +14,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import func
 
 from api.settings import BUDGET_TIMEZONE, api_settings
-from db.models.budget import DailyNexAgentUsage
+from db.models.budget import DailyAgentUsage
 from db.session import SessionLocal
 
 logger = getLogger(__name__)
@@ -121,8 +122,8 @@ def get_daily_spend_eur() -> float:
     db = SessionLocal()
     try:
         result = (
-            db.query(func.coalesce(func.sum(DailyNexAgentUsage.cost_eur), 0.0))
-            .filter(DailyNexAgentUsage.date == today)
+            db.query(func.coalesce(func.sum(DailyAgentUsage.cost_eur), 0.0))
+            .filter(DailyAgentUsage.date == today)
             .scalar()
         )
 
@@ -133,7 +134,7 @@ def get_daily_spend_eur() -> float:
 
 def check_budget_available() -> Tuple[bool, float, datetime]:
     """
-    Check if budget is available for the nex agent.
+    Check if budget is available for the deployed agent.
 
     Returns:
         Tuple of:
@@ -160,7 +161,7 @@ def check_budget_available() -> Tuple[bool, float, datetime]:
 
 def record_usage(input_tokens: int, output_tokens: int) -> None:
     """
-    Record token usage for the nex agent.
+    Record token usage for the deployed agent.
 
     Creates a new record in the database with the token counts
     and calculated cost.
@@ -174,7 +175,7 @@ def record_usage(input_tokens: int, output_tokens: int) -> None:
 
     db = SessionLocal()
     try:
-        usage = DailyNexAgentUsage(
+        usage = DailyAgentUsage(
             date=today,
             input_tokens=input_tokens,
             output_tokens=output_tokens,

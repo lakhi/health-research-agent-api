@@ -1,8 +1,8 @@
 # Health Research Agent API
 
-A FastAPI-based application for the **NEX (Network Explorer) Chatbot** and the **Social Econ Psych research group studies** at Uni Wien.
+A FastAPI-based application for the **NEX (Network Explorer) Chatbot**, the **SSC Psychologie Assistant**, and the **Social Econ Psych research group studies** at Uni Wien.
 
-This platform powers two AI-assisted research tools at the University of Vienna. **NEX** is a conversational agent for the Health in Society network that enables researchers to explore a curated knowledge base of literature on health and its intersections with society through natural language queries, backed by semantic search over PDF-embedded vector stores and GPT-4o. **Vax Study** is a controlled-language chatbot designed for vaccine communication research, delivering factually accurate, regulation-compliant responses about vaccination side effects and outcomes. Both tools share a FastAPI backend with project-specific RAG pipelines, pgvector storage, and Azure OpenAI, deployed on Azure Container Apps.
+This platform powers three AI-assisted tools at the University of Vienna. **NEX** is a conversational agent for the Health in Society network that enables researchers to explore a curated knowledge base of literature on health and its intersections with society through natural language queries, backed by semantic search over PDF-embedded vector stores and GPT-4o. **SSC Psychologie** is a bilingual chatbot for the Student Service Center for Psychology, helping prospective students and the public find information about psychology study programs by drawing on scraped SSC website content and downloadable documents. **Vax Study** is a controlled-language chatbot designed for vaccine communication research, delivering factually accurate, regulation-compliant responses about vaccination side effects and outcomes. All tools share a FastAPI backend with project-specific RAG pipelines, pgvector storage, and Azure OpenAI, deployed as separate Azure Container Apps per project.
 
 ## Architecture
 
