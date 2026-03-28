@@ -15,6 +15,8 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(levelname)s - %(message)s",
 )
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 # Initialize agents based on active project configuration

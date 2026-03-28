@@ -141,6 +141,54 @@ def _build_member_name_index() -> dict[str, dict[str, str]]:
     return members_by_name
 
 
+def _format_member_profile(member: dict[str, str]) -> str:
+    """Format a member's CSV row as readable text for embedding."""
+    parts = [f"Network Member: {member.get('first_name', '')} {member.get('last_name', '')}".strip()]
+
+    field_map = {
+        "academic_position": "Academic Position",
+        "faculty_affiliation": "Faculty",
+        "department_affiliation": "Department",
+        "discipline": "Discipline",
+        "email_address": "Email",
+    }
+    for key, label in field_map.items():
+        value = member.get(key, "").strip()
+        if value:
+            parts.append(f"{label}: {value}")
+
+    return "\n".join(parts)
+
+
+def get_member_profiles_data() -> list[dict]:
+    """Build member profile documents from the members CSV.
+
+    Returns a list of dicts with keys: ``name``, ``text_content``, ``metadata``.
+    Each member becomes one searchable document in the knowledge base.
+    """
+    members_by_name = _build_member_name_index()
+
+    profiles: list[dict] = []
+    for full_name, member in members_by_name.items():
+        text_content = _format_member_profile(member)
+
+        metadata = {
+            **member,
+            "network_member_name": full_name,
+            "source_type": "member_profile",
+        }
+
+        profiles.append(
+            {
+                "name": f"NEX Member - {full_name}",
+                "text_content": text_content,
+                "metadata": metadata,
+            }
+        )
+
+    return profiles
+
+
 def get_research_articles_from_ucloud(discovered_pdfs: list) -> list[dict]:
     """Match discovered PDFs from u:Cloud to network members and build knowledge base data.
 

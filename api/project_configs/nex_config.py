@@ -1,4 +1,3 @@
-import shutil
 from typing import List
 
 from agno.agent import Agent
@@ -6,7 +5,7 @@ from agno.knowledge.reader.pdf_reader import PDFReader
 
 from agents.nex_agent import get_nex_agent
 from api.project_configs.project_config import ProjectConfig, ProjectName
-from knowledge_base.nex_knowledge_base import get_research_articles_from_ucloud
+from knowledge_base.nex_knowledge_base import get_member_profiles_data, get_research_articles_from_ucloud
 from knowledge_base.nex_rss_knowledge import get_rss_news_data
 from services.nextcloud_client import NextcloudClient
 from services.nextcloud_pdf_provider import NextcloudPDFProvider
@@ -33,13 +32,16 @@ class NexConfig(ProjectConfig):
         """Load Network Explorer knowledge from u:Cloud and RSS into the nex agent."""
         import os
 
-        from agno.knowledge.chunking.semantic import SemanticChunking
+        load_knowledge = os.environ.get("LOAD_NEX_KNOWLEDGE", "true").lower() == "true"
+        if not load_knowledge:
+            print("⏭️  Skipping NEX knowledge loading (LOAD_NEX_KNOWLEDGE=false)")
+            return
 
-        from knowledge_base import get_azure_embedder
+        from agno.knowledge.chunking.semantic import SemanticChunking
 
         pdf_reader = PDFReader(
             chunking_strategy=SemanticChunking(
-                embedder=get_azure_embedder(),
+                embedder="minishlab/potion-base-32M",
                 chunk_size=2000,
                 similarity_threshold=0.5,
                 similarity_window=3,
@@ -62,21 +64,19 @@ class NexConfig(ProjectConfig):
                 share_password=share_password,
             )
             provider = NextcloudPDFProvider(client)
-            discovered, temp_dir = await provider.discover_and_download()
+            discovered = await provider.discover_and_download()
 
-            try:
-                kb_data = get_research_articles_from_ucloud(discovered)
-                for item in kb_data:
-                    await nex_agent.knowledge.ainsert(
-                        name=item["name"],
-                        path=str(item["path"]),
-                        reader=pdf_reader,
-                        metadata=item["metadata"],
-                        skip_if_exists=True,
-                    )
-                print(f"✅ Knowledge loaded from u:Cloud ({len(kb_data)} documents)")
-            finally:
-                shutil.rmtree(temp_dir, ignore_errors=True)
+            kb_data = get_research_articles_from_ucloud(discovered)
+            for i, item in enumerate(kb_data, 1):
+                print(f"  [{i}/{len(kb_data)}] Embedding: {item['name']}")
+                await nex_agent.knowledge.ainsert(
+                    name=item["name"],
+                    path=str(item["path"]),
+                    reader=pdf_reader,
+                    metadata=item["metadata"],
+                    skip_if_exists=True,
+                )
+            print(f"✅ Knowledge loaded from u:Cloud ({len(kb_data)} documents)")
 
             # Load RSS news
             news_items = get_rss_news_data()
@@ -88,6 +88,17 @@ class NexConfig(ProjectConfig):
                     skip_if_exists=True,
                 )
             print(f"✅ RSS news loaded for nex agent ({len(news_items)} articles)")
+
+            # Load member profiles from CSV
+            member_profiles = get_member_profiles_data()
+            for item in member_profiles:
+                await nex_agent.knowledge.ainsert(
+                    name=item["name"],
+                    text_content=item["text_content"],
+                    metadata=item["metadata"],
+                    skip_if_exists=True,
+                )
+            print(f"✅ Member profiles loaded ({len(member_profiles)} members)")
         except Exception as e:
             print(f"❌ Error loading Network Explorer knowledge: {e}")
             raise

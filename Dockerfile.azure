@@ -29,6 +29,9 @@ RUN uv pip sync requirements-linux.txt --system \
     --index-url https://download.pytorch.org/whl/cpu \
     --extra-index-url https://pypi.org/simple/
 
+# Pre-download model2vec model for semantic chunking
+RUN python -c "from model2vec import StaticModel; StaticModel.from_pretrained('minishlab/potion-base-32M')"
+
 # Copy project files
 COPY . .
 
