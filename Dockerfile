@@ -16,6 +16,9 @@ COPY requirements.txt ./
 # Install requirements
 RUN uv pip sync requirements.txt --system
 
+# Pre-download model2vec model for semantic chunking
+RUN python -c "from model2vec import StaticModel; StaticModel.from_pretrained('minishlab/potion-base-32M')"
+
 # Copy project files
 COPY . .
 

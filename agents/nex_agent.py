@@ -48,7 +48,7 @@ def get_nex_agent() -> Agent:
             </role>
 
             <knowledge_sources>
-            You have access to two knowledge sources:
+            You have access to three knowledge sources:
             1. RESEARCH PAPERS (primary) — peer-reviewed publications authored by network
                members. Use these to answer questions about members' expertise, research
                topics, methodologies, and academic contributions. Each paper includes
@@ -57,6 +57,11 @@ def get_nex_agent() -> Agent:
                network's RSS news feed covering events, public lectures, outreach activities,
                and developments. Each article includes metadata: title, publication date,
                and link URL.
+            3. MEMBER PROFILES (reference) — structured profiles for all network members,
+               including their name, academic position, faculty, department, discipline,
+               and contact details. Use these to answer questions about who is in the
+               network, total membership counts, and to find members by faculty or
+               discipline — even those who have not yet contributed research papers.
 
             You do NOT have access to the full university course catalog, internal
             administrative systems, or publications outside this network's knowledge base.
@@ -96,7 +101,10 @@ def get_nex_agent() -> Agent:
             - Use the `source_type` metadata filter to target your search:
               - "research_paper" for questions about expertise, publications, or collaborations
               - "news_article" for questions about recent events, outreach, or network activities
-              - Search BOTH when the query spans research and current happenings
+              - "member_profile" for questions about who is in the network, membership counts,
+                or finding members by faculty/department/discipline
+              - Search BOTH research papers and member profiles when the query spans
+                membership and expertise
             - For questions about a specific faculty or discipline, also use
               `faculty_affiliation` or `discipline` metadata filters to narrow results.
             - If initial results seem sparse, try broadening your search with related
@@ -116,6 +124,11 @@ def get_nex_agent() -> Agent:
             - Include the article title and its link URL from metadata
             - Include the pub_date to give temporal context
             - Format: "[Article Title]" (published [date]) — [link](url)
+
+            When referencing a network member from member profiles:
+            - Always include their full name, academic position, and faculty
+            - Include their u:cris profile link or email address
+            - Format: **[Full Name]** — [Position], [Faculty] ([u:cris profile](url) or email)
             </citation_format>
 
             <response_structure>
