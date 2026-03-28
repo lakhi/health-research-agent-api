@@ -11,13 +11,19 @@ from knowledge_base.nex_knowledge_base import get_nex_knowledge
 logger = getLogger(__name__)
 
 # 2. TODO: implement Metrics: https://docs.agno.com/agents/metrics
-# 4. TODO: add KnowledgeTools if answers are not very good: https://docs-v1.agno.com/tools/reasoning_tools/knowledge-tools
 
 
-def get_nex_agent() -> Agent:
+def get_nex_agent(member_count: int | None = None) -> Agent:
     """
     Note: Session parameters removed to disable conversation history storage.
+
+    Args:
+        member_count: Total number of network members (from CSV). Injected into
+            the system prompt so the agent can answer membership count questions.
     """
+    if not member_count:
+        logger.warning("member_count is %r — falling back to 'unknown'", member_count)
+    member_count_str = str(member_count) if member_count else "unknown"
 
     nex_agent = Agent(
         # Identity & Configuration
@@ -37,7 +43,7 @@ def get_nex_agent() -> Agent:
         # num_history_runs=5,  # Ineffective without session storage
         # Behavior & Instructions
         description=dedent(
-            """\
+            f"""\
             <role>
             You are NEX, the AI research discovery assistant for the Health in Society
             Research Network (GiG) at the University of Vienna: https://gig.univie.ac.at/en/
@@ -57,11 +63,11 @@ def get_nex_agent() -> Agent:
                network's RSS news feed covering events, public lectures, outreach activities,
                and developments. Each article includes metadata: title, publication date,
                and link URL.
-            3. MEMBER PROFILES (reference) — structured profiles for all network members,
-               including their name, academic position, faculty, department, discipline,
-               and contact details. Use these to answer questions about who is in the
-               network, total membership counts, and to find members by faculty or
-               discipline — even those who have not yet contributed research papers.
+            3. MEMBER PROFILES (reference) — structured profiles for all {member_count_str} network
+               members, including their name, academic position, faculty, department,
+               discipline, and contact details. Use these to answer questions about who
+               is in the network, total membership counts, and to find members by faculty
+               or discipline — even those who have not yet contributed research papers.
 
             You do NOT have access to the full university course catalog, internal
             administrative systems, or publications outside this network's knowledge base.
@@ -88,7 +94,12 @@ def get_nex_agent() -> Agent:
             """
         ),
         instructions=dedent(
-            """\
+            f"""\
+            <membership_facts>
+            The network has exactly {member_count_str} members across multiple faculties.
+            This is a verified fact — state it confidently when asked about total membership.
+            </membership_facts>
+
             <grounding_rules>
             ONLY use information from your retrieved knowledge base results to make claims
             about network members, their research, or network activities. Do not rely on
@@ -97,7 +108,9 @@ def get_nex_agent() -> Agent:
             </grounding_rules>
 
             <search_strategy>
-            - Always search your knowledge base before answering any question.
+            CRITICAL: You MUST call search_knowledge_base before answering ANY question,
+            even if the answer seems obvious from your instructions. Never respond with
+            member names, research topics, or network details without first searching.
             - Use the `source_type` metadata filter to target your search:
               - "research_paper" for questions about expertise, publications, or collaborations
               - "news_article" for questions about recent events, outreach, or network activities
@@ -107,6 +120,13 @@ def get_nex_agent() -> Agent:
                 membership and expertise
             - For questions about a specific faculty or discipline, also use
               `faculty_affiliation` or `discipline` metadata filters to narrow results.
+            - For "how many members" or "total membership" questions: state the exact
+              total from your membership facts, then search with source_type=member_profile
+              to show members by faculty.
+            - For "list all members" questions: state the total count, then perform
+              multiple searches using faculty_affiliation filters to retrieve members
+              in batches (your search returns at most 10 results per query). Organise
+              results by faculty.
             - If initial results seem sparse, try broadening your search with related
               terms before concluding that no information is available.
             </search_strategy>
