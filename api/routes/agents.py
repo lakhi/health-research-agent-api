@@ -1,4 +1,5 @@
 import json
+import time
 from logging import getLogger
 from typing import AsyncGenerator, Optional
 
@@ -17,6 +18,7 @@ from knowledge_base.marhinovirus_knowledge_base import (
     get_simple_catalog_knowledge,
 )
 from services.budget_service import check_budget_available, record_usage
+from services.metrics_service import record_agent_metrics
 
 logger = getLogger(__name__)
 
@@ -27,7 +29,9 @@ logger = getLogger(__name__)
 agents_router = APIRouter(prefix="/agents", tags=["Agents"])
 
 
-async def chat_response_streamer(agent: Agent, message: str, is_nex: bool = False) -> AsyncGenerator:
+async def chat_response_streamer(
+    agent: Agent, message: str, is_nex: bool = False, session_id: Optional[str] = None
+) -> AsyncGenerator:
     """
     Stream agent responses chunk by chunk.
 
@@ -35,6 +39,7 @@ async def chat_response_streamer(agent: Agent, message: str, is_nex: bool = Fals
         agent: The agent instance to interact with
         message: User message to process
         is_nex: Whether this is the nex agent (for metrics recording)
+        session_id: Anonymous session identifier for metrics tracking
 
     Yields:
         Text chunks from the agent response
@@ -43,6 +48,10 @@ async def chat_response_streamer(agent: Agent, message: str, is_nex: bool = Fals
 
     input_tokens = 0
     output_tokens = 0
+    total_tokens = 0
+    duration_seconds: Optional[float] = None
+    time_to_first_token: Optional[float] = None
+    start_time = time.monotonic()
 
     async for chunk in run_response:
         try:
@@ -58,13 +67,34 @@ async def chat_response_streamer(agent: Agent, message: str, is_nex: bool = Fals
                 input_tokens = chunk_metrics.input_tokens
             if hasattr(chunk_metrics, "output_tokens") and chunk_metrics.output_tokens:
                 output_tokens = chunk_metrics.output_tokens
+            if hasattr(chunk_metrics, "total_tokens") and chunk_metrics.total_tokens:
+                total_tokens = chunk_metrics.total_tokens
+            if hasattr(chunk_metrics, "duration") and chunk_metrics.duration:
+                duration_seconds = chunk_metrics.duration
+            if hasattr(chunk_metrics, "time_to_first_token") and chunk_metrics.time_to_first_token:
+                time_to_first_token = chunk_metrics.time_to_first_token
 
-    # Record usage after stream completes (for nex agent only)
+    # Fallback: use wall-clock duration if agno didn't report it
+    if duration_seconds is None:
+        duration_seconds = time.monotonic() - start_time
+
+    # Record budget usage after stream completes (for nex agent only)
     if is_nex and (input_tokens > 0 or output_tokens > 0):
         try:
             record_usage(input_tokens=input_tokens, output_tokens=output_tokens)
         except Exception as e:
             logger.error(f"Failed to record streaming usage metrics: {e}")
+
+    # Record anonymous usage metrics (for nex agent only)
+    if is_nex:
+        record_agent_metrics(
+            session_id=session_id,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            total_tokens=total_tokens,
+            duration_seconds=duration_seconds,
+            time_to_first_token=time_to_first_token,
+        )
 
 
 class RunRequest(BaseModel):
@@ -131,6 +161,10 @@ async def create_agent_run(
         available, _, reset_time = check_budget_available()
 
         if not available:
+            record_agent_metrics(
+                session_id=run_request.session_id,
+                response_status="budget_exceeded",
+            )
             return JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 content={
@@ -160,12 +194,14 @@ async def create_agent_run(
             headers["X-Budget-Remaining-EUR"] = f"{remaining_eur:.4f}"
 
         return StreamingResponse(
-            chat_response_streamer(agent, run_request.message, is_nex=is_nex),
+            chat_response_streamer(agent, run_request.message, is_nex=is_nex, session_id=run_request.session_id),
             media_type="text/event-stream",
             headers=headers,
         )
     else:
+        start_time = time.monotonic()
         response = await agent.arun(run_request.message, stream=False)
+        fallback_duration = time.monotonic() - start_time
 
         response_payload = response.to_dict() if hasattr(response, "to_dict") else None
         if not isinstance(response_payload, dict):
@@ -177,18 +213,39 @@ async def create_agent_run(
         if is_nex:
             input_tokens = 0
             output_tokens = 0
+            total_tokens = 0
+            duration_seconds: Optional[float] = None
+            time_to_first_token: Optional[float] = None
 
             if hasattr(response, "metrics") and response.metrics is not None:
                 if hasattr(response.metrics, "input_tokens") and response.metrics.input_tokens:
                     input_tokens = response.metrics.input_tokens
                 if hasattr(response.metrics, "output_tokens") and response.metrics.output_tokens:
                     output_tokens = response.metrics.output_tokens
+                if hasattr(response.metrics, "total_tokens") and response.metrics.total_tokens:
+                    total_tokens = response.metrics.total_tokens
+                if hasattr(response.metrics, "duration") and response.metrics.duration:
+                    duration_seconds = response.metrics.duration
+                if hasattr(response.metrics, "time_to_first_token") and response.metrics.time_to_first_token:
+                    time_to_first_token = response.metrics.time_to_first_token
+
+            if duration_seconds is None:
+                duration_seconds = fallback_duration
 
             if input_tokens > 0 or output_tokens > 0:
                 try:
                     record_usage(input_tokens=input_tokens, output_tokens=output_tokens)
                 except Exception as e:
                     logger.error(f"Failed to record usage metrics: {e}")
+
+            record_agent_metrics(
+                session_id=run_request.session_id,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                total_tokens=total_tokens,
+                duration_seconds=duration_seconds,
+                time_to_first_token=time_to_first_token,
+            )
 
             # Get updated remaining budget after recording
             _, remaining_eur, _ = check_budget_available()
