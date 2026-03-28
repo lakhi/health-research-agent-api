@@ -18,7 +18,8 @@
 --   - marhino_catalog_contents
 --   - nex_embeddings
 --   - nex_contents
---   - daily_nex_agent_usage
+--   - daily_agent_usage        (renamed from daily_nex_agent_usage)
+--   - agent_usage_metrics      (renamed from nex_agent_usage_metrics)
 --
 -- UNUSED TABLES (TO BE DELETED):
 --   - virus_knowledge
@@ -111,6 +112,21 @@ SELECT drop_table_if_exists('hrn_contents');
 
 
 -- =============================================================================
+-- PHASE 5: Rename budget/metrics tables to generic names
+-- =============================================================================
+-- These were renamed from NEX-specific to deployment-agnostic names when
+-- SSC-PSYCH was added as a second budgeted project.
+
+ALTER TABLE IF EXISTS daily_nex_agent_usage RENAME TO daily_agent_usage;
+ALTER TABLE IF EXISTS nex_agent_usage_metrics RENAME TO agent_usage_metrics;
+
+-- Rename indexes to match new table names
+ALTER INDEX IF EXISTS ix_daily_nex_usage_date RENAME TO ix_daily_agent_usage_date;
+ALTER INDEX IF EXISTS ix_nex_usage_metrics_date RENAME TO ix_agent_usage_metrics_date;
+ALTER INDEX IF EXISTS ix_nex_usage_metrics_session RENAME TO ix_agent_usage_metrics_session;
+
+
+-- =============================================================================
 -- Cleanup: Drop the helper function
 -- =============================================================================
 
@@ -128,4 +144,4 @@ FROM pg_tables
 WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
 ORDER BY schemaname, tablename;
 
-COMMENT ON DATABASE postgres IS 'Cleanup completed: Removed 14 unused tables from health research agent API';
+COMMENT ON DATABASE postgres IS 'Cleanup completed: Removed 21 unused tables and renamed 2 budget/metrics tables in health research agent API';
