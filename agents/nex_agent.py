@@ -143,7 +143,7 @@ def get_nex_agent(member_count: int | None = None) -> Agent:
             When referencing network news:
             - Include the article title and its link URL from metadata
             - Include the pub_date to give temporal context
-            - Format: "[Article Title]" (published [date]) — [link](url)
+            - Format: **[Article Title]** (published [date]) — [link](url)
 
             When referencing a network member from member profiles:
             - Always include their full name, academic position, and faculty
