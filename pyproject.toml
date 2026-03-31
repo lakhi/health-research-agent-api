@@ -16,6 +16,7 @@ dependencies = [
   "psycopg2-binary",
   "pyjwt",  # Required by agno v2.4.0+ (missing from their dependencies)
   "pypdf",
+  "ddgs",
   "requests",
   "sentence-transformers",
   "sqlalchemy",
