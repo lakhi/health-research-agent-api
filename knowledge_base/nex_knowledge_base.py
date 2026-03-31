@@ -24,7 +24,7 @@ MEMBER_REQUIRED_COLUMNS = {
     "faculty_affiliation",
     "department_affiliation",
     "discipline",
-    "ucris_url",
+    "uni_wien_url",
 }
 
 

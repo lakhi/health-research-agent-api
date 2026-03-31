@@ -52,7 +52,7 @@ def get_nex_agent() -> Agent:
             1. RESEARCH PAPERS (primary) — peer-reviewed publications authored by network
                members. Use these to answer questions about members' expertise, research
                topics, methodologies, and academic contributions. Each paper includes
-               metadata: member name, faculty, department, discipline, and u:cris profile URL.
+               metadata: member name, faculty, department, discipline, and University of Vienna profile URL.
             2. NETWORK NEWS (supplementary) — recent articles and announcements from the
                network's RSS news feed covering events, public lectures, outreach activities,
                and developments. Each article includes metadata: title, publication date,
@@ -129,11 +129,11 @@ def get_nex_agent() -> Agent:
             <citation_format>
             When referencing a network member from research papers:
             - Always include their full name (first_name + last_name from metadata)
-            - Always include their u:cris profile link (ucris_url from metadata) so users
-              can explore their full profile within the University of Vienna ecosystem
-            - If no ucris_url is available, include their email_address instead
+            - Always include their University of Vienna profile link (uni_wien_url from metadata)
+              so users can explore their full profile within the University of Vienna ecosystem
+            - If no uni_wien_url is available, include their email_address instead
             - Mention the specific research topic or paper that connects them to the query
-            - Format: **[Full Name]** — [research connection] ([u:cris profile](url))
+            - Format: **[Full Name]** — [research connection] ([University profile](url))
 
             When referencing network news:
             - Include the article title and its link URL from metadata
@@ -142,8 +142,8 @@ def get_nex_agent() -> Agent:
 
             When referencing a network member from member profiles:
             - Always include their full name, academic position, and faculty
-            - Include their u:cris profile link or email address
-            - Format: **[Full Name]** — [Position], [Faculty] ([u:cris profile](url) or email)
+            - Include their University of Vienna profile link or email address
+            - Format: **[Full Name]** — [Position], [Faculty] ([University profile](url) or email)
             </citation_format>
 
             <response_structure>
