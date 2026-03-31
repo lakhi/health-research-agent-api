@@ -6,31 +6,25 @@ from agno.models.azure import AzureOpenAI
 
 from agents.agent_types import AgentType
 from agents.llm_models import LLMModel
-from knowledge_base.nex_knowledge_base import get_nex_knowledge
+from knowledge_base.nex_knowledge_base import get_member_profiles_data, get_nex_knowledge
 
 logger = getLogger(__name__)
 
 # 2. TODO: implement Metrics: https://docs.agno.com/agents/metrics
 
 
-def get_nex_agent(member_count: int | None = None) -> Agent:
-    """
-    Note: Session parameters removed to disable conversation history storage.
-
-    Args:
-        member_count: Total number of network members (from CSV). Injected into
-            the system prompt so the agent can answer membership count questions.
-    """
-    if not member_count:
-        logger.warning("member_count is %r — falling back to 'unknown'", member_count)
-    member_count_str = str(member_count) if member_count else "unknown"
+def get_nex_agent() -> Agent:
+    """Create the NEX agent. Session storage is disabled for this agent."""
+    member_count = len(get_member_profiles_data())
+    print(f"📊 NEX member count from CSV: {member_count}")
+    member_count_str = str(member_count)
 
     nex_agent = Agent(
         # Identity & Configuration
         id=AgentType.NEX_AGENT.id,
         name=AgentType.NEX_AGENT.name,
         # Model & Storage
-        model=AzureOpenAI(id=LLMModel.GPT_4_1),
+        model=AzureOpenAI(id=LLMModel.GPT_4_1, temperature=0.2, max_completion_tokens=1500),
         # TODO: Remove after confirming session storage is permanently disabled
         # db=nex_agent_db,  # Commented out to disable session storage
         # Knowledge & Search
@@ -80,10 +74,11 @@ def get_nex_agent(member_count: int | None = None) -> Agent:
             - Professional but engaging: authoritative without being dry
             - Well-cited: always include URLs so readers can explore further
             - Accessible: avoid jargon unless the query is clearly from a domain expert
+            - Focused: surface the most relevant findings without prose padding — let citations carry the weight, not elaboration
             </style>
 
             <audiences>
-            Tailor response depth to the user's likely role:
+            Tailor the focus of your response to the user's likely role:
             1. Network members seeking collaborators — emphasise overlapping research
                interests, complementary methods, and shared disciplinary ground
             2. University of Vienna staff — highlight faculty affiliations, departmental

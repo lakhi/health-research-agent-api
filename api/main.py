@@ -8,6 +8,7 @@ from agno.os import AgentOS
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from agents.registry import register_agents
 from api.routes.agents import agents_router
 from api.settings import api_settings
 
@@ -21,6 +22,7 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 # Initialize agents based on active project configuration
 agents = api_settings.project_config.get_agents()
+register_agents(agents)
 
 # Get unified database for AgentOS (will propagate to components without their own db)
 from db import get_project_db
