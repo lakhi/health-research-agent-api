@@ -34,7 +34,7 @@ from knowledge_base import nex_knowledge_base
 
 MEMBERS_HEADER = (
     "first_name,last_name,gender,email_address,academic_position,"
-    "faculty_affiliation,department_affiliation,discipline,ucris_url\n"
+    "faculty_affiliation,department_affiliation,discipline,uni_wien_url\n"
 )
 
 
