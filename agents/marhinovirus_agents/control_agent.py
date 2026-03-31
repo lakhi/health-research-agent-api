@@ -1,5 +1,4 @@
 from logging import getLogger
-from typing import Optional
 
 from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
@@ -21,15 +20,8 @@ logger = getLogger(__name__)
 # TODO #1: impl the search and retrieval best practices: https://docs.agno.com/basics/knowledge/search-and-retrieval/overview
 
 
-def get_control_marhinovirus_agent(
-    model_id: str = VAX_STUDY_GPT_MODEL,
-    user_id: Optional[str] = None,
-    session_id: Optional[str] = None,
-    debug_mode: bool = True,
-) -> Agent:
-    """
-    Control condition Marhinovirus agent using normal catalog and standard language instructions.
-    """
+def get_control_marhinovirus_agent() -> Agent:
+    """Control condition Marhinovirus agent using normal catalog and standard language instructions."""
     if (
         marhinovirus_knowledge_base.NORMAL_DESCRIPTION is None
         or marhinovirus_knowledge_base.NORMAL_INSTRUCTIONS is None
@@ -41,9 +33,7 @@ def get_control_marhinovirus_agent(
     control_agent = Agent(
         id=AgentType.CONTROL_MARHINOVIRUS.id,
         name=AgentType.CONTROL_MARHINOVIRUS.name,
-        model=AzureOpenAI(id=model_id),
-        user_id=user_id,
-        session_id=session_id,
+        model=AzureOpenAI(id=VAX_STUDY_GPT_MODEL),
         db=control_agent_db,
         description=marhinovirus_knowledge_base.NORMAL_DESCRIPTION,
         instructions=[
@@ -59,7 +49,7 @@ def get_control_marhinovirus_agent(
         store_history_messages=True,
         add_history_to_context=True,
         num_history_runs=5,
-        debug_mode=debug_mode,
+        debug_mode=True,
     )
 
     return control_agent

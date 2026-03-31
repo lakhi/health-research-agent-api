@@ -1,5 +1,4 @@
 from logging import getLogger
-from typing import Optional
 
 from agno.agent import Agent
 from agno.models.azure import AzureOpenAI
@@ -16,15 +15,8 @@ from knowledge_base.marhinovirus_knowledge_base import (
 logger = getLogger(__name__)
 
 
-def get_simple_catalog_language_marhinovirus_agent(
-    model_id: str = VAX_STUDY_GPT_MODEL,
-    user_id: Optional[str] = None,
-    session_id: Optional[str] = None,
-    debug_mode: bool = True,
-) -> Agent:
-    """
-    Simple catalog and language Marhinovirus agent using simple catalog with simplified language instructions.
-    """
+def get_simple_catalog_language_marhinovirus_agent() -> Agent:
+    """Simple catalog and language Marhinovirus agent using simple catalog with simplified language instructions."""
     if (
         marhinovirus_knowledge_base.SIMPLE_DESCRIPTION is None
         or marhinovirus_knowledge_base.SIMPLE_INSTRUCTIONS is None
@@ -36,7 +28,7 @@ def get_simple_catalog_language_marhinovirus_agent(
     simple_catalog_language_agent = Agent(
         id=AgentType.SIMPLE_CATALOG_LANGUAGE_MARHINOVIRUS.id,
         name=AgentType.SIMPLE_CATALOG_LANGUAGE_MARHINOVIRUS.name,
-        model=AzureOpenAI(id=model_id),
+        model=AzureOpenAI(id=VAX_STUDY_GPT_MODEL),
         db=simple_cat_lg_db,
         description=marhinovirus_knowledge_base.SIMPLE_DESCRIPTION,
         instructions=[
@@ -52,7 +44,7 @@ def get_simple_catalog_language_marhinovirus_agent(
         store_history_messages=True,
         add_history_to_context=True,
         num_history_runs=5,
-        # debug_mode=True,
+        debug_mode=True,
     )
 
     return simple_catalog_language_agent

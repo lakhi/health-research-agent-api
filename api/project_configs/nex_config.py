@@ -26,9 +26,7 @@ class NexConfig(ProjectConfig):
 
     def get_agents(self) -> List[Agent]:
         """Initialize nex agent."""
-        member_count = len(get_member_profiles_data())
-        print(f"📊 NEX member count from CSV: {member_count}")
-        return [get_nex_agent(member_count=member_count)]
+        return [get_nex_agent()]
 
     async def load_knowledge(self, agents: List[Agent]) -> None:
         """Load Network Explorer knowledge from u:Cloud and RSS into the nex agent."""

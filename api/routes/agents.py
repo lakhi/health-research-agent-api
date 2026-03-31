@@ -10,8 +10,8 @@ from fastapi import APIRouter, Body, Form, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
-from agents.llm_models import LLMModel
-from agents.selector import AgentType, get_agent
+from agents.agent_types import AgentType
+from agents.registry import get_agent
 from api.settings import api_settings
 from knowledge_base.marhinovirus_knowledge_base import (
     get_normal_catalog_knowledge,
@@ -44,7 +44,7 @@ async def chat_response_streamer(
     Yields:
         Text chunks from the agent response
     """
-    run_response = agent.arun(message, stream=True, stream_events=True)
+    run_response = agent.arun(message, stream=True, stream_events=True, session_id=session_id)
 
     input_tokens = 0
     output_tokens = 0
@@ -98,13 +98,10 @@ async def chat_response_streamer(
 
 
 class RunRequest(BaseModel):
-    """Request model for an running an agent"""
+    """Request model for running an agent."""
 
-    # TODO: make the change at the FE to remove sending model_id and user_id
     message: str
     stream: bool = True
-    model: Optional[LLMModel] = None
-    user_id: Optional[str] = None
     session_id: Optional[str] = None
 
 
@@ -114,8 +111,6 @@ async def create_agent_run(
     body: Optional[RunRequest] = Body(default=None),
     message: Optional[str] = Form(default=None),
     stream: Optional[bool] = Form(default=None),
-    model: Optional[LLMModel] = Form(default=None),
-    user_id: Optional[str] = Form(default=None),
     session_id: Optional[str] = Form(default=None),
 ):
     """
@@ -129,17 +124,14 @@ async def create_agent_run(
         Either a streaming response or the complete agent response
 
     Raises:
-        HTTPException 429: If daily budget is exceeded (nex agent only)
+        HTTPException 429: If daily budget is exceeded
         HTTPException 404: If agent is not found
     """
     run_request = body
     if run_request is None and message is not None:
-        # TODO: make the change at the FE to remove sending model_id and user_id
         run_request = RunRequest(
             message=message,
             stream=True if stream is None else stream,
-            model=None,
-            user_id=user_id,
             session_id=session_id,
         )
 
@@ -175,13 +167,7 @@ async def create_agent_run(
             )
 
     try:
-        agent: Agent = get_agent(
-            # TODO: make the change at the FE to remove sending model_id and user_id
-            model_id=None,  # Ignored since model is set at agent level, not per-run.
-            agent_id=agent_id,
-            user_id=run_request.user_id,
-            session_id=run_request.session_id,
-        )
+        agent: Agent = get_agent(agent_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -202,7 +188,7 @@ async def create_agent_run(
         )
     else:
         start_time = time.monotonic()
-        response = await agent.arun(run_request.message, stream=False)
+        response = await agent.arun(run_request.message, stream=False, session_id=run_request.session_id)
         fallback_duration = time.monotonic() - start_time
 
         response_payload = response.to_dict() if hasattr(response, "to_dict") else None

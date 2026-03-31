@@ -43,13 +43,13 @@ async def vax_agent(request):
     """
     initialize_agent_configs()
     if request.param == "control":
-        agent = get_control_marhinovirus_agent(debug_mode=False)
+        agent = get_control_marhinovirus_agent()
         await load_normal_catalog(agent.knowledge, skip_if_exists=True)
     elif request.param == "simple_language":
-        agent = get_simple_language_marhinovirus_agent(debug_mode=False)
+        agent = get_simple_language_marhinovirus_agent()
         await load_normal_catalog(agent.knowledge, skip_if_exists=True)
     elif request.param == "simple_catalog_language":
-        agent = get_simple_catalog_language_marhinovirus_agent(debug_mode=False)
+        agent = get_simple_catalog_language_marhinovirus_agent()
         await load_simple_catalog(agent.knowledge, skip_if_exists=True)
     else:
         raise ValueError(f"Unknown agent condition: {request.param!r}")
