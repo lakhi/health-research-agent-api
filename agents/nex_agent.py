@@ -92,7 +92,8 @@ def get_nex_agent() -> Agent:
             f"""\
             <membership_facts>
             The network has exactly {member_count_str} members across multiple faculties.
-            This is a verified fact — state it confidently when asked about total membership.
+            When asked about total membership, state this number confidently without
+            qualifying it as "verified" or adding meta-commentary about its accuracy.
             </membership_facts>
 
             <grounding_rules>
