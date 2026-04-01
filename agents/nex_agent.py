@@ -25,7 +25,7 @@ def get_nex_agent() -> Agent:
         name=AgentType.NEX_AGENT.name,
         # Model & Storage
         # model=AzureOpenAI(id=LLMModel.GPT_4_1, temperature=0.2, max_completion_tokens=1500),
-        model=AzureOpenAI(id=LLMModel.GPT_4_1, temperature=0.5),
+        model=AzureOpenAI(id=LLMModel.GPT_4_1, temperature=0.75),
         # db=nex_agent_db,  # Commented out to disable session storage
         # Knowledge & Search
         knowledge=get_nex_knowledge(),
