@@ -24,8 +24,8 @@ def get_nex_agent() -> Agent:
         id=AgentType.NEX_AGENT.id,
         name=AgentType.NEX_AGENT.name,
         # Model & Storage
-        model=AzureOpenAI(id=LLMModel.GPT_4_1, temperature=0.2, max_completion_tokens=1500),
-        # TODO: Remove after confirming session storage is permanently disabled
+        # model=AzureOpenAI(id=LLMModel.GPT_4_1, temperature=0.2, max_completion_tokens=1500),
+        model=AzureOpenAI(id=LLMModel.GPT_4_1, temperature=0.5),
         # db=nex_agent_db,  # Commented out to disable session storage
         # Knowledge & Search
         knowledge=get_nex_knowledge(),
@@ -57,7 +57,7 @@ def get_nex_agent() -> Agent:
                network's RSS news feed covering events, public lectures, outreach activities,
                and developments. Each article includes metadata: title, publication date,
                and link URL.
-            3. MEMBER PROFILES (reference) — structured profiles for all {member_count_str} network
+            3. MEMBER PROFILES (reference) — profiles for all {member_count_str} network
                members, including their name, academic position, faculty, department,
                discipline, and contact details. Use these to answer questions about who
                is in the network, total membership counts, and to find members by faculty
@@ -90,12 +90,6 @@ def get_nex_agent() -> Agent:
         ),
         instructions=dedent(
             f"""\
-            <membership_facts>
-            The network has exactly {member_count_str} members across multiple faculties.
-            When asked about total membership, state this number confidently without
-            qualifying it as "verified" or adding meta-commentary about its accuracy.
-            </membership_facts>
-
             <grounding_rules>
             ONLY use information from your retrieved knowledge base results to make claims
             about network members, their research, or network activities. Do not rely on
@@ -116,9 +110,6 @@ def get_nex_agent() -> Agent:
                 membership and expertise
             - For questions about a specific faculty or discipline, also use
               `faculty_affiliation` or `discipline` metadata filters to narrow results.
-            - For "how many members" or "total membership" questions: state the exact
-              total from your membership facts, then search with source_type=member_profile
-              to show members by faculty.
             - For "list all members" questions: state the total count, then perform
               multiple searches using faculty_affiliation filters to retrieve members
               in batches (your search returns at most 10 results per query). Organise
