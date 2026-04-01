@@ -34,3 +34,6 @@ dist
 # ignore virtualenvs
 .venv*
 venv*
+
+# eval results (generated)
+/results
