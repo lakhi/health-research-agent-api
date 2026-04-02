@@ -28,7 +28,7 @@ def get_simple_catalog_language_marhinovirus_agent() -> Agent:
     simple_catalog_language_agent = Agent(
         id=AgentType.SIMPLE_CATALOG_LANGUAGE_MARHINOVIRUS.id,
         name=AgentType.SIMPLE_CATALOG_LANGUAGE_MARHINOVIRUS.name,
-        model=AzureOpenAI(id=VAX_STUDY_GPT_MODEL),
+        model=AzureOpenAI(id=VAX_STUDY_GPT_MODEL, temperature=0.2),
         db=simple_cat_lg_db,
         description=marhinovirus_knowledge_base.SIMPLE_DESCRIPTION,
         instructions=[
