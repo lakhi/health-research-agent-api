@@ -33,7 +33,7 @@ def get_control_marhinovirus_agent() -> Agent:
     control_agent = Agent(
         id=AgentType.CONTROL_MARHINOVIRUS.id,
         name=AgentType.CONTROL_MARHINOVIRUS.name,
-        model=AzureOpenAI(id=VAX_STUDY_GPT_MODEL),
+        model=AzureOpenAI(id=VAX_STUDY_GPT_MODEL, temperature=0.2),
         db=control_agent_db,
         description=marhinovirus_knowledge_base.NORMAL_DESCRIPTION,
         instructions=[
