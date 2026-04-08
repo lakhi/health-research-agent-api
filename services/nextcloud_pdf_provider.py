@@ -1,14 +1,20 @@
 """Discovers and downloads research PDFs from a Nextcloud public share."""
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+
+import httpx
 
 from services.nextcloud_client import NextcloudClient
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_DOWNLOAD_DIR = Path("/tmp/nex_pdfs")
+_MAX_DOWNLOAD_RETRIES = 3
+_RETRY_BASE_DELAY_S = 2.0  # doubles each attempt: 2s, 4s, 8s
+
+DEFAULT_DOWNLOAD_DIR = Path("/app/nex_pdfs_cache")
 
 
 @dataclass
@@ -44,8 +50,25 @@ class NextcloudPDFProvider:
             for filename in pdf_files:
                 local_path = self._download_dir / folder / filename
                 if not local_path.exists():
-                    await self._client.download_file(f"/{folder}/{filename}", local_path)
-                    logger.info("Downloaded: %s/%s", folder, filename)
+                    for attempt in range(1, _MAX_DOWNLOAD_RETRIES + 1):
+                        try:
+                            await self._client.download_file(f"/{folder}/{filename}", local_path)
+                            logger.info("Downloaded: %s/%s", folder, filename)
+                            break
+                        except (httpx.RemoteProtocolError, httpx.ConnectError, httpx.ReadError) as exc:
+                            if attempt == _MAX_DOWNLOAD_RETRIES:
+                                raise
+                            delay = _RETRY_BASE_DELAY_S * (2 ** (attempt - 1))
+                            logger.warning(
+                                "Download failed (%s/%s), attempt %d/%d — retrying in %.0fs: %s",
+                                folder,
+                                filename,
+                                attempt,
+                                _MAX_DOWNLOAD_RETRIES,
+                                delay,
+                                exc,
+                            )
+                            await asyncio.sleep(delay)
                 discovered.append(
                     DiscoveredPDF(
                         local_path=local_path,

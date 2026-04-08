@@ -1,7 +1,10 @@
 import csv
 import logging
+import re
 import unicodedata
 from pathlib import Path
+
+from pypdf import PdfReader as _PdfReader
 
 from agno.db.postgres import PostgresDb
 from agno.knowledge import Knowledge
@@ -11,6 +14,9 @@ from db.session import get_db_url_cached
 from knowledge_base import get_azure_embedder
 
 logger = logging.getLogger(__name__)
+
+# Standard DOI pattern — matches "10.NNNN/suffix" anywhere in text
+_DOI_RE = re.compile(r"\b(10\.\d{4,9}/[^\s\],;:\'\"<>()]+)", re.IGNORECASE)
 
 NEX_KNOWLEDGE_DIR = Path(__file__).resolve().parent / "nex_knoweldge"
 NEX_MEMBERS_CSV = NEX_KNOWLEDGE_DIR / "nex_members_list.csv"
@@ -26,6 +32,35 @@ MEMBER_REQUIRED_COLUMNS = {
     "discipline",
     "uni_wien_url",
 }
+
+
+def _extract_doi_from_pdf(path: Path) -> str | None:
+    """Extract the first DOI found in a PDF's title/abstract and reference pages.
+
+    Reads the first 3 pages and last 2 pages — sufficient to capture the DOI
+    from the title page header/footer, abstract, or reference list without
+    loading the full document into memory.
+
+    Returns a full https://doi.org/... URL, or None if no DOI is found or extraction fails.
+    """
+    try:
+        reader = _PdfReader(str(path))
+        pages = reader.pages
+        n = len(pages)
+        # Indices: first 3 + last 2, deduplicated, clamped to actual page count
+        indices = list(dict.fromkeys([0, 1, 2, max(0, n - 2), max(0, n - 1)]))
+        text_parts = []
+        for i in indices:
+            if i < n:
+                text_parts.append(pages[i].extract_text() or "")
+        text = "\n".join(text_parts)
+        match = _DOI_RE.search(text)
+        if match:
+            doi = match.group(1).rstrip(".")  # strip trailing period from sentence end
+            return f"https://doi.org/{doi}"
+    except Exception:
+        logger.warning("Could not extract DOI from PDF: %s", path)
+    return None
 
 
 def get_nex_knowledge() -> Knowledge:
@@ -224,9 +259,11 @@ def get_research_articles_from_ucloud(discovered_pdfs: list) -> list[dict]:
         ).strip()
         member_metadata["network_member_name"] = member_name or "Unknown"
 
+        doi_url = _extract_doi_from_pdf(pdf.local_path)
         metadata = {
             **member_metadata,
             "source_type": "research_paper",
+            **({"doi": doi_url} if doi_url else {}),
         }
 
         kb_data.append(

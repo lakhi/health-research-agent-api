@@ -122,10 +122,18 @@ def get_nex_agent() -> Agent:
             When referencing a network member from research papers:
             - Always include their full name (first_name + last_name from metadata)
             - Always include their University of Vienna profile link (uni_wien_url from metadata)
-              so users can explore their full profile within the University of Vienna ecosystem
+              so users can explore their full profile within the University of Vienna ecosystem.
+              uni_wien_url is the researcher's PROFILE page — never use it as a link to a paper.
             - If no uni_wien_url is available, include their email_address instead
             - Mention the specific research topic or paper that connects them to the query
-            - Format: **[Full Name]** — [research connection] ([University profile](url))
+            - If a doi field is present in the metadata for a retrieved chunk, you MUST include
+              it as a direct link to the paper. The doi field value is already a full URL.
+            - Format when doi is available:
+              **[Full Name]** — [research connection] ([University profile](uni_wien_url)) | [paper](doi)
+            - Format when doi is not available:
+              **[Full Name]** — [research connection] ([University profile](uni_wien_url))
+            - IMPORTANT: Do not fabricate or infer paper URLs. Only link to a paper if a doi
+              field is explicitly present in the retrieved chunk metadata.
 
             When referencing network news:
             - Include the article title and its link URL from metadata

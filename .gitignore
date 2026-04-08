@@ -26,6 +26,9 @@
 
 # ignore storage dir
 /storage
+
+# PDF cache for NEX knowledge base (persisted across container restarts via bind mount)
+/nex_pdfs_cache
 db/sqlite_data.db
 
 # ignore dist dir
