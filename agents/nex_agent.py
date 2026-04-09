@@ -2,6 +2,7 @@ from logging import getLogger
 from textwrap import dedent
 
 from agno.agent import Agent
+from agno.db.in_memory import InMemoryDb
 from agno.models.azure import AzureOpenAI
 
 from agents.agent_types import AgentType
@@ -14,7 +15,13 @@ logger = getLogger(__name__)
 
 
 def get_nex_agent() -> Agent:
-    """Create the NEX agent. Session storage is disabled for this agent."""
+    """Create the NEX agent.
+
+    Sessions are held in process memory only (InMemoryDb) — nothing is written
+    to Postgres or disk. Recent turns are injected into the model context so
+    follow-up questions (e.g. "yes" after a clarification prompt) retain their
+    meaning. Session state is wiped on container restart.
+    """
     member_count = len(get_member_profiles_data())
     print(f"📊 NEX member count from CSV: {member_count}")
     member_count_str = str(member_count)
@@ -26,15 +33,16 @@ def get_nex_agent() -> Agent:
         # Model & Storage
         # model=AzureOpenAI(id=LLMModel.GPT_4_1, temperature=0.2, max_completion_tokens=1500),
         model=AzureOpenAI(id=LLMModel.GPT_4_1, temperature=0.75),
-        # db=nex_agent_db,  # Commented out to disable session storage
+        # In-memory only: provides conversational context for follow-ups,
+        # nothing persisted to Postgres/disk. Wiped on container restart.
+        db=InMemoryDb(),
         # Knowledge & Search
         knowledge=get_nex_knowledge(),
         search_knowledge=True,
         enable_agentic_knowledge_filters=True,
-        # Context & Memory (disabled - no session storage)
-        # read_chat_history=True,  # Commented out - requires session storage
-        # add_history_to_context=True,  # Commented out - requires session storage
-        # num_history_runs=5,  # Ineffective without session storage
+        # Context & Memory — RAM-backed, so history injection is safe
+        add_history_to_context=True,
+        num_history_runs=3,
         # Behavior & Instructions
         description=dedent(
             f"""\
