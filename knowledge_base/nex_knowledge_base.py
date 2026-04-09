@@ -56,7 +56,17 @@ def _extract_doi_from_pdf(path: Path) -> str | None:
         text = "\n".join(text_parts)
         match = _DOI_RE.search(text)
         if match:
-            doi = match.group(1).rstrip(".")  # strip trailing period from sentence end
+            doi = match.group(1).rstrip(".")
+            # Strip trailing "doi"/"DOI" label — PDF text extraction artifact (e.g. "...609825doi")
+            doi = re.sub(r"(?i)doi$", "", doi).rstrip(".")
+            # Strip supplemental URL path suffix (e.g. /-/DCSupplemental)
+            doi = re.sub(r"/-/.*$", "", doi)
+            # Discard DOIs with very short suffixes — likely truncated by a line break in the PDF
+            # (e.g. "10.1371/j" or "10.5061/dry"). A broken link is worse than no link.
+            suffix = doi.split("/", 1)[1] if "/" in doi else doi
+            if len(suffix) < 5:
+                logger.warning("Discarding likely truncated DOI from %s: %s", path.name, doi)
+                return None
             return f"https://doi.org/{doi}"
     except Exception:
         logger.warning("Could not extract DOI from PDF: %s", path)
