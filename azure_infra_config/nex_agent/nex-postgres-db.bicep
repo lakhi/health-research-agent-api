@@ -1,5 +1,8 @@
 param flexibleServers_nex_postgres_db_name string = 'nex-postgres-db'
 
+@secure()
+param administratorLoginPassword string
+
 resource flexibleServers_nex_postgres_db_name_resource 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   name: flexibleServers_nex_postgres_db_name
   location: 'Sweden Central'
@@ -14,7 +17,7 @@ resource flexibleServers_nex_postgres_db_name_resource 'Microsoft.DBforPostgreSQ
   }
   properties: {
     administratorLogin: 'postgres'
-    administratorLoginPassword: 'REPLACE_WITH_SECURE_PASSWORD'
+    administratorLoginPassword: administratorLoginPassword
     storage: {
       storageSizeGB: 32
       autoGrow: 'Disabled'
@@ -47,8 +50,8 @@ resource flexibleServers_nex_postgres_db_firewall_akshay 'Microsoft.DBforPostgre
   parent: flexibleServers_nex_postgres_db_name_resource
   name: 'akshays_macbookpro'
   properties: {
-    startIpAddress: '77.80.3.180'
-    endIpAddress: '77.80.3.180'
+    startIpAddress: '41.66.98.130'
+    endIpAddress: '41.66.98.130'
   }
 }
 

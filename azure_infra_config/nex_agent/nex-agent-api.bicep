@@ -18,20 +18,8 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
     environmentId: managedEnvironments_nex_apps_env_externalid
     workloadProfileName: 'Consumption'
     configuration: {
-      secrets: [
-        {
-          name: 'agno-api-key'
-        }
-        {
-          name: 'azure-openai-api-key'
-        }
-        {
-          name: 'azure-embedder-openai-api-key'
-        }
-        {
-          name: 'db-password'
-        }
-      ]
+      // Secrets are added manually via Portal in Phase 2 (agno-api-key, azure-openai-api-key,
+      // azure-embedder-openai-api-key, db-password). secretRef env vars below are added at that point.
       activeRevisionsMode: 'Single'
       ingress: {
         external: true
@@ -52,7 +40,7 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
       }
       registries: [
         {
-          server: 'nex-acr.azurecr.io'
+          server: 'nexacr.azurecr.io'
           identity: 'system-environment'
         }
       ]
@@ -62,7 +50,7 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
     template: {
       containers: [
         {
-          image: 'nex-acr.azurecr.io/nex-agent-api:latest'
+          image: 'nexacr.azurecr.io/nex-agent-api:latest'
           imageType: 'ContainerImage'
           name: containerapps_nex_agent_api_name
           env: [
@@ -94,22 +82,6 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
               name: 'AZURE_EMBEDDER_OPENAI_ENDPOINT'
               value: 'https://az-openai-nex.openai.azure.com/openai/deployments/embedding-large-nex/embeddings?api-version=2023-05-15'
             }
-            {
-              name: 'DB_PASS'
-              secretRef: 'db-password'
-            }
-            {
-              name: 'AGNO_API_KEY'
-              secretRef: 'agno-api-key'
-            }
-            {
-              name: 'AZURE_OPENAI_API_KEY'
-              secretRef: 'azure-openai-api-key'
-            }
-            {
-              name: 'AZURE_EMBEDDER_OPENAI_API_KEY'
-              secretRef: 'azure-embedder-openai-api-key'
-            }
           ]
           resources: {
             cpu: json('1.25')
@@ -119,7 +91,7 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
         }
       ]
       scale: {
-        minReplicas: 0
+        minReplicas: 1
         maxReplicas: 2
         cooldownPeriod: 300
         pollingInterval: 30
