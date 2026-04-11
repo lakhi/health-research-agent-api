@@ -124,6 +124,11 @@ def get_nex_agent() -> Agent:
               results by faculty.
             - If initial results seem sparse, try broadening your search with related
               terms before concluding that no information is available.
+            - For queries about "latest", "most recent", "newest", or "current" news:
+              search broadly (e.g. "news network activities") without restrictive
+              keywords, then determine the most recent article by comparing the
+              pub_date field in the returned metadata — do NOT assume the first
+              result is the most recent.
             </search_strategy>
 
             <citation_format>

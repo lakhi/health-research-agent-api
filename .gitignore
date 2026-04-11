@@ -17,6 +17,9 @@
 .vscode
 .claude/settings.local.json
 
+# Bicep param files (contain secret values, never commit)
+**/*.bicepparam
+
 # Ignore .env files
 .env
 .env.local

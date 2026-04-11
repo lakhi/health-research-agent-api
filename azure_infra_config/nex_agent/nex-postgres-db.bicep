@@ -50,8 +50,8 @@ resource flexibleServers_nex_postgres_db_firewall_akshay 'Microsoft.DBforPostgre
   parent: flexibleServers_nex_postgres_db_name_resource
   name: 'akshays_macbookpro'
   properties: {
-    startIpAddress: '41.66.98.130'
-    endIpAddress: '41.66.98.130'
+    startIpAddress: '41.66.98.0'
+    endIpAddress: '41.66.98.255'
   }
 }
 
