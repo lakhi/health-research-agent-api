@@ -164,6 +164,11 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
               name: 'UCLOUD_SHARE_TOKEN'
               value: 'Aey6ydCDrBfigyX'
             }
+            // ── Knowledge loading ────────────────────────────────────────────
+            {
+              name: 'LOAD_NEX_KNOWLEDGE'
+              value: 'false'
+            }
           ]
           resources: {
             cpu: json('1.25')
