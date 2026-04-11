@@ -37,6 +37,18 @@ class NexConfig(ProjectConfig):
             print("⏭️  Skipping NEX knowledge loading (LOAD_NEX_KNOWLEDGE=false)")
             return
 
+        from knowledge_base import get_azure_embedder
+
+        embedder = get_azure_embedder()
+        try:
+            test_result = embedder.get_embedding("test")
+            if not test_result:
+                raise ValueError("Embedder returned empty result")
+            print("✅ Azure embedder verified")
+        except Exception as e:
+            print(f"❌ Azure embedder check failed — aborting knowledge load: {e}")
+            raise
+
         from agno.knowledge.chunking.semantic import SemanticChunking
 
         pdf_reader = PDFReader(

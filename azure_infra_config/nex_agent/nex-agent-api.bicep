@@ -82,6 +82,14 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
               name: 'AZURE_EMBEDDER_OPENAI_ENDPOINT'
               value: 'https://az-openai-nex.openai.azure.com/openai/deployments/embedding-large-nex/embeddings?api-version=2023-05-15'
             }
+            {
+              name: 'AZURE_EMBEDDER_OPENAI_API_VERSION'
+              value: '2023-05-15'
+            }
+            {
+              name: 'AZURE_EMBEDDER_DEPLOYMENT'
+              value: 'embedding-large-nex'
+            }
           ]
           resources: {
             cpu: json('1.25')
