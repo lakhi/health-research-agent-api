@@ -118,14 +118,18 @@ docker logs -f health-research-agent-api-api-1
 
 ### Azure Deployment
 
-View Azure Container App logs:
+Redeploy NEX (Container App + infrastructure):
 
 ```sh
-az containerapp logs show --name health-research-api --resource-group health_research_network --type console --follow
+az deployment group create \
+    --resource-group healthsociety \
+    --template-file azure_infra_config/nex_agent/nex-agent-api.bicep \
+    --parameters azure_infra_config/nex_agent/nex-agent-api.bicepparam \
+    --mode Incremental
 ```
 
-View logs for a specific revision:
+View NEX Container App logs:
 
 ```sh
-az containerapp logs show --name marhinovirus-study-api --resource-group socialeconpsyresearch --type console --revision marhinovirus-study-api--v1-1i --tail 300
+az containerapp logs show --name nex-agent-api --resource-group healthsociety --type console --follow --tail 300
 ```
