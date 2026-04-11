@@ -17,6 +17,22 @@ Useful commands for Azure Container Apps CI/CD:
 
 ### NEX Agent (`nex-agent-api`, resource group `healthsociety`)
 
+**Update infrastructure / env vars** — Bicep incremental deploy. Does NOT pull a new image if the tag is unchanged:
+   az deployment group create \
+   --resource-group healthsociety \
+   --template-file azure_infra_config/nex_agent/nex-agent-api.bicep \
+   --parameters azure_infra_config/nex_agent/nex-agent-api.bicepparam \
+   --mode Incremental
+
+**Deploy the latest ACR image** — forces a new revision even if the image tag string is unchanged:
+   az containerapp update \
+   --name nex-agent-api \
+   --resource-group healthsociety \
+   --image nexacr.azurecr.io/nex-agent-api:latest \
+   --revision-suffix "$(date +%d | tr -d '\n')$(date +%b | tr '[:upper:]' '[:lower:]')"
+
+> For a full redeploy (infra changes + new image), run both in order.
+
 0. Check the new revision's detailed status
    az containerapp revision list \
    --name nex-agent-api \
