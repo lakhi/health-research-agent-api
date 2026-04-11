@@ -8,7 +8,7 @@ from agno.knowledge import Knowledge
 from agno.os.utils import format_sse_event
 from fastapi import APIRouter, Body, Form, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from agents.agent_types import AgentType
 from agents.registry import get_agent
@@ -103,6 +103,11 @@ class RunRequest(BaseModel):
     message: str
     stream: bool = True
     session_id: Optional[str] = None
+
+    @field_validator("session_id")
+    @classmethod
+    def normalize_session_id(cls, v: Optional[str]) -> Optional[str]:
+        return v or None  # coerce "" → None so Agno auto-generates a UUID per new conversation
 
 
 @agents_router.post("/{agent_id}/runs", status_code=status.HTTP_200_OK)
