@@ -40,6 +40,10 @@ Useful commands for Azure Container Apps CI/CD:
 
 > For a full redeploy (infra changes + new image), run both in order.
 
+**Before fresh deployment, verify model pricing:**
+   Check the latest Azure OpenAI pricing: https://azure.microsoft.com/en-us/pricing/details/azure-openai/#pricing
+   Update `MODEL_PRICING_INPUT_EUR` and `MODEL_PRICING_OUTPUT_EUR` in `.env` and Bicep parameters if rates have changed.
+
 ### VAX Study (`marhinovirus-study-api`, resource group `socialeconpsyresearch`)
 
 0. Check the new revision's detailed status
