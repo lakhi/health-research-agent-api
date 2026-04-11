@@ -1,6 +1,21 @@
 param containerapps_nex_agent_api_name string = 'nex-agent-api'
 param managedEnvironments_nex_apps_env_externalid string = '/subscriptions/444c1e5c-ac0d-4420-94ea-d4a5414d20e1/resourceGroups/healthsociety/providers/Microsoft.App/managedEnvironments/nex-apps-env'
 
+// ── Secrets (passed at deploy time, never stored in repo) ────────────────────
+// Deploy with: az deployment group create ... \
+//   --parameters dbPassword='...' agnoApiKey='...' azureOpenAiApiKey='...' azureEmbedderOpenAiApiKey='...'
+@secure()
+param dbPassword string
+
+@secure()
+param agnoApiKey string
+
+@secure()
+param azureOpenAiApiKey string
+
+@secure()
+param azureEmbedderOpenAiApiKey string
+
 resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@2025-02-02-preview' = {
   name: containerapps_nex_agent_api_name
   location: 'Sweden Central'
@@ -18,8 +33,24 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
     environmentId: managedEnvironments_nex_apps_env_externalid
     workloadProfileName: 'Consumption'
     configuration: {
-      // Secrets are added manually via Portal in Phase 2 (agno-api-key, azure-openai-api-key,
-      // azure-embedder-openai-api-key, db-password). secretRef env vars below are added at that point.
+      secrets: [
+        {
+          name: 'db-password'
+          value: dbPassword
+        }
+        {
+          name: 'agno-api-key'
+          value: agnoApiKey
+        }
+        {
+          name: 'azure-openai-api-key'
+          value: azureOpenAiApiKey
+        }
+        {
+          name: 'azure-embedder-openai-api-key'
+          value: azureEmbedderOpenAiApiKey
+        }
+      ]
       activeRevisionsMode: 'Single'
       ingress: {
         external: true
@@ -58,6 +89,12 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
               name: 'PYTHONUNBUFFERED'
               value: '1'
             }
+            // ── Project ──────────────────────────────────────────────────────
+            {
+              name: 'PROJECT_NAME'
+              value: 'nex'
+            }
+            // ── Database ─────────────────────────────────────────────────────
             {
               name: 'DB_HOST'
               value: 'nex-postgres-db.postgres.database.azure.com'
@@ -75,9 +112,19 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
               value: 'postgres'
             }
             {
+              name: 'DB_PASS'
+              secretRef: 'db-password'
+            }
+            // ── Azure OpenAI (LLM) ───────────────────────────────────────────
+            {
               name: 'AZURE_OPENAI_ENDPOINT'
               value: 'https://az-openai-nex.openai.azure.com/openai/deployments/gpt-41-nex/chat/completions?api-version=2025-01-01-preview'
             }
+            {
+              name: 'AZURE_OPENAI_API_KEY'
+              secretRef: 'azure-openai-api-key'
+            }
+            // ── Azure OpenAI (Embedder) ──────────────────────────────────────
             {
               name: 'AZURE_EMBEDDER_OPENAI_ENDPOINT'
               value: 'https://az-openai-nex.openai.azure.com/openai/deployments/embedding-large-nex/embeddings?api-version=2023-05-15'
@@ -89,6 +136,33 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
             {
               name: 'AZURE_EMBEDDER_DEPLOYMENT'
               value: 'embedding-large-nex'
+            }
+            {
+              name: 'AZURE_EMBEDDER_OPENAI_API_KEY'
+              secretRef: 'azure-embedder-openai-api-key'
+            }
+            // ── Agno ─────────────────────────────────────────────────────────
+            {
+              name: 'AGNO_API_KEY'
+              secretRef: 'agno-api-key'
+            }
+            // ── Budget enforcement ───────────────────────────────────────────
+            {
+              name: 'DAILY_BUDGET_EUR'
+              value: '3.0'
+            }
+            {
+              name: 'MODEL_PRICING_INPUT_EUR'
+              value: '1.91'
+            }
+            {
+              name: 'MODEL_PRICING_OUTPUT_EUR'
+              value: '7.64'
+            }
+            // ── u:Cloud (Nextcloud) — research paper source ──────────────────
+            {
+              name: 'UCLOUD_SHARE_TOKEN'
+              value: 'Aey6ydCDrBfigyX'
             }
           ]
           resources: {
