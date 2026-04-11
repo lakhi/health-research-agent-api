@@ -2,6 +2,9 @@
 
 .DS_Store
 
+# Generated reports
+reports/
+
 # Cache
 .mypy_cache
 *__pycache__*
