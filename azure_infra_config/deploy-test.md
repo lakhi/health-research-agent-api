@@ -29,38 +29,9 @@ Useful commands for Azure Container Apps CI/CD:
    --name nex-agent-api \
    --resource-group healthsociety \
    --image nexacr.azurecr.io/nex-agent-api:latest \
-   --revision-suffix "$(date +%d | tr -d '\n')$(date +%b | tr '[:upper:]' '[:lower:]')"
+   --revision-suffix "$(date +%d)-$(date +%b | tr '[:upper:]' '[:lower:]')-$((RANDOM % 10))"
 
 > For a full redeploy (infra changes + new image), run both in order.
-
-0. Check the new revision's detailed status
-   az containerapp revision list \
-   --name nex-agent-api \
-   --resource-group healthsociety \
-   --query "[0].{revisionName:name,provisioningState:properties.provisioningState,healthState:properties.healthState,runningState:properties.runningState,replicas:properties.replicas,lastActiveTime:properties.lastActiveTime}" \
-   --output table
-
-1. Deploy with env variable
-   az containerapp update \
-   --name nex-agent-api \
-   --resource-group healthsociety \
-   --image nex-acr.azurecr.io/nex-agent-api:<git-sha> \
-   --set-env-vars PROJECT_NAME=nex \
-   --revision-suffix "$(date +%d | tr -d '\n')$(date +%b | tr '[:upper:]' '[:lower:]')"
-
-2. Verify revisions are healthy
-   az containerapp revision list \
-   --name nex-agent-api \
-   --resource-group healthsociety \
-   --output table
-
-3. Deactivate older revisions
-   az containerapp revision deactivate \
-   --name nex-agent-api \
-   --resource-group healthsociety \
-   --revision <old-revision-name>
-
----
 
 ### VAX Study (`marhinovirus-study-api`, resource group `socialeconpsyresearch`)
 
@@ -77,7 +48,7 @@ Useful commands for Azure Container Apps CI/CD:
    --resource-group socialeconpsyresearch \
    --image socialeconpsy-drdfgfb2g7aadtgk.azurecr.io/health-research-api:latest \
    --set-env-vars PROJECT_NAME=vax-study \
-   --revision-suffix "$(date +%d | tr -d '\n')$(date +%b | tr '[:upper:]' '[:lower:]')"
+   --revision-suffix "$(date +%d)-$(date +%b | tr '[:upper:]' '[:lower:]')-$((RANDOM % 10))"
 
 2. verify the revisions are healthy
    az containerapp revision list \
