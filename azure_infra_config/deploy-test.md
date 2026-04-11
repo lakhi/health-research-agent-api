@@ -31,6 +31,13 @@ Useful commands for Azure Container Apps CI/CD:
    --image nexacr.azurecr.io/nex-agent-api:latest \
    --revision-suffix "$(date +%d)-$(date +%b | tr '[:upper:]' '[:lower:]')-$((RANDOM % 10))"
 
+**Tail live logs**:
+   az containerapp logs show \
+   --name nex-agent-api \
+   --resource-group healthsociety \
+   --tail 300 \
+   --follow
+
 > For a full redeploy (infra changes + new image), run both in order.
 
 ### VAX Study (`marhinovirus-study-api`, resource group `socialeconpsyresearch`)
