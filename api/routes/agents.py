@@ -2,6 +2,7 @@ import json
 import time
 from logging import getLogger
 from typing import AsyncGenerator, Optional
+from uuid import uuid4
 
 from agno.agent import Agent
 from agno.knowledge import Knowledge
@@ -107,7 +108,7 @@ class RunRequest(BaseModel):
     @field_validator("session_id")
     @classmethod
     def normalize_session_id(cls, v: Optional[str]) -> Optional[str]:
-        return v or None  # coerce "" → None so Agno auto-generates a UUID per new conversation
+        return v if v else str(uuid4())  # generate a fresh UUID so each new conversation gets its own session
 
 
 @agents_router.post("/{agent_id}/runs", status_code=status.HTTP_200_OK)
