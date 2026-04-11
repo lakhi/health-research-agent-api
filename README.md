@@ -118,7 +118,7 @@ docker logs -f health-research-agent-api-api-1
 
 ### Azure Deployment
 
-Redeploy NEX (Container App + infrastructure):
+**Update infrastructure / env vars** (Bicep incremental deploy — does NOT pull a new image if the tag hasn't changed):
 
 ```sh
 az deployment group create \
@@ -127,6 +127,17 @@ az deployment group create \
     --parameters azure_infra_config/nex_agent/nex-agent-api.bicepparam \
     --mode Incremental
 ```
+
+**Deploy the latest ACR image** (forces a new Container App revision and pulls `nexacr.azurecr.io/nex-agent-api:latest`):
+
+```sh
+az containerapp update \
+    --name nex-agent-api \
+    --resource-group healthsociety \
+    --image nexacr.azurecr.io/nex-agent-api:latest
+```
+
+> For a full redeploy (infra changes + new image), run both commands in order.
 
 View NEX Container App logs:
 
