@@ -141,7 +141,6 @@ Filter by agent condition:
 ```sh
 pytest tests/evals/ -v -m "integration and evals" -k "control"
 pytest tests/evals/ -v -m "integration and evals" -k "simple_language"
-pytest tests/evals/ -v -m "integration and evals" -k "simple_catalog_language"
 ```
 
 Filter by eval case:

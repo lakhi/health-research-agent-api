@@ -121,38 +121,9 @@ def get_contents_db(contents_db_name: str = "marhino_normal_contents"):
     return marhino_catalog_contents
 
 
-def get_simple_catalog_knowledge(
-    knowledge_name: str = "Marhinovirus Simple Language Catalog",
-    contents_db_name: str = "marhino_simple_contents",
-) -> Knowledge:
-    """
-    Creates and returns the Knowledge object for the simple language Marhinovirus catalog.
-    Uses separate PgVector table: virus_knowledge_simple
-    """
-    db_url = get_db_url_cached()
-
-    simple_catalog_knowledge = Knowledge(
-        name=knowledge_name,
-        vector_db=PgVector(
-            db_url=db_url,
-            table_name="marhino_simple_catalog",
-            search_type=SearchType.hybrid,
-            embedder=get_azure_embedder(),
-        ),
-        max_results=5,
-        contents_db=get_contents_db(contents_db_name=contents_db_name),
-    )
-    return simple_catalog_knowledge
-
-
 def get_normal_catalog_url() -> str:
     """Returns the URL for the normal Marhinovirus catalog PDF."""
     return "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/Marhinovirus-information-catalog_normal.pdf"
-
-
-def get_simple_catalog_url() -> str:
-    """Returns the URL for the simple language Marhinovirus catalog PDF."""
-    return "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/Marhinovirus-information-catalog_simple-language.pdf"
 
 
 async def load_normal_catalog(
@@ -169,25 +140,6 @@ async def load_normal_catalog(
     await knowledge.ainsert(
         name="Marhinovirus Normal Catalog",
         url=get_normal_catalog_url(),
-        reader=pdf_reader,
-        skip_if_exists=skip_if_exists,
-    )
-
-
-async def load_simple_catalog(
-    knowledge: Knowledge,
-    *,
-    skip_if_exists: bool = False,
-) -> None:
-    pdf_reader = PDFReader(
-        chunking_strategy=AgenticChunking(
-            model=AzureOpenAI(id=LLMModel.GPT_4_1),
-            max_chunk_size=3000,
-        )
-    )
-    await knowledge.ainsert(
-        name="Marhinovirus Simple Catalog",
-        url=get_simple_catalog_url(),
         reader=pdf_reader,
         skip_if_exists=skip_if_exists,
     )

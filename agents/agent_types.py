@@ -16,12 +16,5 @@ class AgentType(Enum):
 
     NEX_AGENT = ("nex_agent", "Network Explorer")
     SSC_PSYCH_AGENT = ("ssc_psych_agent", "SSC Psychologie Assistant")
-    CONTROL_MARHINOVIRUS = ("control_agent", "Control Marhinovirus Agent")
-    SIMPLE_LANGUAGE_MARHINOVIRUS = (
-        "simple_lg_agent",
-        "Simple Language Marhinovirus Agent",
-    )
-    SIMPLE_CATALOG_LANGUAGE_MARHINOVIRUS = (
-        "simple_catalog_lg_agent",
-        "Simple Catalog and Language Marhinovirus Agent",
-    )
+    CONTROL_MARHINOVIRUS = ("c", "Agent C")
+    SIMPLE_LANGUAGE_MARHINOVIRUS = ("sl", "Agent SL")

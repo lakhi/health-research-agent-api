@@ -19,12 +19,10 @@ from agno.models.azure import AzureOpenAI
 
 from agents.llm_models import VAX_STUDY_GPT_MODEL
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
-from agents.marhinovirus_agents.simple_catalog_language_agent import get_simple_catalog_language_marhinovirus_agent
 from agents.marhinovirus_agents.simple_language_agent import get_simple_language_marhinovirus_agent
 from knowledge_base.marhinovirus_knowledge_base import (
     initialize_agent_configs,
     load_normal_catalog,
-    load_simple_catalog,
 )
 
 JUDGE_MODEL_ID = VAX_STUDY_GPT_MODEL
@@ -33,7 +31,6 @@ JUDGE_MODEL_ID = VAX_STUDY_GPT_MODEL
 @pytest.fixture(
     scope="session",
     params=["control"],
-    # params=["control", "simple_language", "simple_catalog_language"],
 )
 async def vax_agent(request):
     """
@@ -48,9 +45,6 @@ async def vax_agent(request):
     elif request.param == "simple_language":
         agent = get_simple_language_marhinovirus_agent()
         await load_normal_catalog(agent.knowledge, skip_if_exists=True)
-    elif request.param == "simple_catalog_language":
-        agent = get_simple_catalog_language_marhinovirus_agent()
-        await load_simple_catalog(agent.knowledge, skip_if_exists=True)
     else:
         raise ValueError(f"Unknown agent condition: {request.param!r}")
     return agent

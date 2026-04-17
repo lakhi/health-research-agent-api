@@ -71,7 +71,7 @@ TODO: Deferred until mock database config is setup.
 #         mock_get_agent.return_value = mock_agent
 #
 #         response = client.post(
-#             "/agents/control_agent/runs", json={"message": "Hello", "stream": False}
+#             "/agents/c/runs", json={"message": "Hello", "stream": False}
 #         )
 #
 #         # Should succeed but without budget header
@@ -154,7 +154,7 @@ TODO: Deferred until mock database config is setup.
 #
 #         # Call a non-nex agent
 #         response = client.post(
-#             "/agents/control_agent/runs", json={"message": "Hello", "stream": False}
+#             "/agents/c/runs", json={"message": "Hello", "stream": False}
 #         )
 #
 #         # check_budget_available should not be called

@@ -14,10 +14,7 @@ from pydantic import BaseModel, field_validator
 from agents.agent_types import AgentType
 from agents.registry import get_agent
 from api.settings import api_settings
-from knowledge_base.marhinovirus_knowledge_base import (
-    get_normal_catalog_knowledge,
-    get_simple_catalog_knowledge,
-)
+from knowledge_base.marhinovirus_knowledge_base import get_normal_catalog_knowledge
 from services.budget_service import check_budget_available, record_usage
 from services.metrics_service import record_agent_metrics
 
@@ -269,12 +266,8 @@ async def load_agent_knowledge(agent_id: AgentType):
     """
     agent_knowledge: Optional[Knowledge] = None
 
-    if agent_id == AgentType.CONTROL_MARHINOVIRUS:
+    if agent_id in (AgentType.CONTROL_MARHINOVIRUS, AgentType.SIMPLE_LANGUAGE_MARHINOVIRUS):
         agent_knowledge = get_normal_catalog_knowledge()
-    elif agent_id == AgentType.SIMPLE_LANGUAGE_MARHINOVIRUS:
-        agent_knowledge = get_normal_catalog_knowledge()
-    elif agent_id == AgentType.SIMPLE_CATALOG_LANGUAGE_MARHINOVIRUS:
-        agent_knowledge = get_simple_catalog_knowledge()
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

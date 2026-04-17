@@ -26,8 +26,6 @@ control_agent_db = _LazyPostgresDb(session_table="control_agent_sessions")
 
 simple_language_db = _LazyPostgresDb(session_table="simple_language_sessions")
 
-simple_cat_lg_db = _LazyPostgresDb(session_table="simple_cat_lg_sessions")
-
 # TODO: Remove after confirming session storage is permanently disabled
 # nex_agent_db = PostgresDb(
 #     db_url=db_url,

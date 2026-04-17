@@ -10,11 +10,9 @@
 --   USED TABLES (DO NOT DELETE):
 --   - control_agent_sessions
 --   - simple_language_sessions
---   - simple_cat_lg_sessions
 --   - vax-study_agentos_sessions
 --   - nex_agentos_sessions
 --   - marhino_normal_catalog
---   - marhino_simple_catalog
 --   - marhino_catalog_contents
 --   - nex_embeddings
 --   - nex_contents
@@ -43,6 +41,8 @@
 --   - agno_sessions
 --   - normal_catalog_contents
 --   - virus_knowledge_simple
+--   - simple_cat_lg_sessions   (deleted: simple_catalog_language agent removed)
+--   - marhino_simple_catalog   (deleted: simple_catalog_language agent removed)
 --
 -- Usage:
 --   psql -d <database_name> -f cleanup_unused_tables.sql
@@ -112,6 +112,14 @@ SELECT drop_table_if_exists('hrn_contents');
 
 
 -- =============================================================================
+-- PHASE 4b: Drop tables orphaned by removing the simple_catalog_language agent
+-- =============================================================================
+
+SELECT drop_table_if_exists('simple_cat_lg_sessions');
+SELECT drop_table_if_exists('marhino_simple_catalog');
+
+
+-- =============================================================================
 -- PHASE 5: Rename budget/metrics tables to generic names
 -- =============================================================================
 -- These were renamed from NEX-specific to deployment-agnostic names when
@@ -144,4 +152,4 @@ FROM pg_tables
 WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
 ORDER BY schemaname, tablename;
 
-COMMENT ON DATABASE postgres IS 'Cleanup completed: Removed 21 unused tables and renamed 2 budget/metrics tables in health research agent API';
+COMMENT ON DATABASE postgres IS 'Cleanup completed: Removed 23 unused tables and renamed 2 budget/metrics tables in health research agent API';
