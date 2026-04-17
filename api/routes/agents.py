@@ -5,7 +5,6 @@ from typing import AsyncGenerator, Optional
 from uuid import uuid4
 
 from agno.agent import Agent
-from agno.knowledge import Knowledge
 from agno.os.utils import format_sse_event
 from fastapi import APIRouter, Body, Form, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -264,8 +263,6 @@ async def load_agent_knowledge(agent_id: AgentType):
     Returns:
         A success message if the knowledge base is loaded.
     """
-    agent_knowledge: Optional[Knowledge] = None
-
     if agent_id in (AgentType.CONTROL_MARHINOVIRUS, AgentType.SIMPLE_LANGUAGE_MARHINOVIRUS):
         agent_knowledge = get_normal_catalog_knowledge()
     else:

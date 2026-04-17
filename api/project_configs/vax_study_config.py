@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 
 from agno.agent import Agent
@@ -41,9 +42,8 @@ class VaxStudyConfig(ProjectConfig):
     async def load_knowledge(self, agents: List[Agent]) -> None:
         """Load Marhinovirus research catalog into both agents."""
         try:
-            await load_normal_catalog(agents[0].knowledge, skip_if_exists=False)
-            await load_normal_catalog(agents[1].knowledge, skip_if_exists=False)
-            print("✅ Knowledge loaded successfully for 2 vax-study agents")
+            await asyncio.gather(*(load_normal_catalog(agent.knowledge, skip_if_exists=False) for agent in agents))
+            print(f"✅ Knowledge loaded successfully for {len(agents)} vax-study agents")
         except Exception as e:
             print(f"❌ Error loading Marhinovirus knowledge: {e}")
             raise
