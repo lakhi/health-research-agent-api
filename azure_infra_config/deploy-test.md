@@ -17,14 +17,19 @@ Useful commands for Azure Container Apps CI/CD:
 
 ### NEX Agent (`nex-agent-api`, resource group `healthsociety`)
 
-**Update infrastructure / env vars** — Bicep incremental deploy. Does NOT pull a new image if the tag is unchanged:
+**Update infrastructure / env vars** — Bicep incremental deploy. Creates a new revision only if the
+`template` section changed (env vars, image tag string, resources). Does NOT pull a new image digest
+even if `:latest` on ACR has been updated. Does NOT create a new revision if nothing in the template
+changed (e.g. re-running with identical values):
    az deployment group create \
    --resource-group healthsociety \
    --template-file azure_infra_config/nex_agent/nex-agent-api.bicep \
    --parameters azure_infra_config/nex_agent/nex-agent-api.bicepparam \
    --mode Incremental
 
-**Deploy the latest ACR image** — forces a new revision even if the image tag string is unchanged:
+**Deploy the latest ACR image** — forces a new revision and pulls the current `:latest` digest from ACR,
+even if the tag string is unchanged. Use this after a `docker push` or when you need a guaranteed
+new revision (e.g. to pick up a knowledge-load run):
    az containerapp update \
    --name nex-agent-api \
    --resource-group healthsociety \
@@ -39,6 +44,9 @@ Useful commands for Azure Container Apps CI/CD:
    --follow
 
 > For a full redeploy (infra changes + new image), run both in order.
+> To force a new revision without changing the image (e.g. env var change only), run just the
+> `az containerapp update` command — the Bicep deploy alone won't guarantee a new revision if
+> the template section is already identical to the deployed state.
 
 **Before fresh deployment, verify model pricing:**
    Check the latest Azure OpenAI pricing: https://azure.microsoft.com/en-us/pricing/details/azure-openai/#pricing
