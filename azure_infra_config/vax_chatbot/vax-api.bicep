@@ -13,6 +13,9 @@ param azureOpenAiApiKey string
 @secure()
 param azureEmbedderOpenAiApiKey string
 
+@secure()
+param acrPassword string
+
 resource containerapps_vax_api_resource 'Microsoft.App/containerapps@2025-02-02-preview' = {
   name: containerapps_vax_api_name
   location: 'Sweden Central'
@@ -47,6 +50,10 @@ resource containerapps_vax_api_resource 'Microsoft.App/containerapps@2025-02-02-
           name: 'azure-embedder-openai-api-key'
           value: azureEmbedderOpenAiApiKey
         }
+        {
+          name: 'acr-password'
+          value: acrPassword
+        }
       ]
       activeRevisionsMode: 'Single'
       ingress: {
@@ -69,7 +76,8 @@ resource containerapps_vax_api_resource 'Microsoft.App/containerapps@2025-02-02-
       registries: [
         {
           server: 'vaxacr.azurecr.io'
-          identity: 'system-environment'
+          username: 'vaxacr'
+          passwordSecretRef: 'acr-password'
         }
       ]
       identitySettings: []
@@ -92,7 +100,7 @@ resource containerapps_vax_api_resource 'Microsoft.App/containerapps@2025-02-02-
             }
             {
               name: 'DB_HOST'
-              value: 'vax-postgres-db.postgres.database.azure.com'
+              value: 'vax-db.postgres.database.azure.com'
             }
             {
               name: 'DB_PORT'

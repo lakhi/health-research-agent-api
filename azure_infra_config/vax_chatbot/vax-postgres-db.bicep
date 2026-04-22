@@ -1,4 +1,4 @@
-param flexibleServers_vax_postgres_db_name string = 'vax-postgres-db'
+param flexibleServers_vax_postgres_db_name string = 'vax-db'
 
 @secure()
 param administratorLoginPassword string
