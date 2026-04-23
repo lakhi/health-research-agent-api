@@ -6,7 +6,6 @@ from agno.models.azure import AzureOpenAI
 from agents.agent_types import AgentType
 from agents.llm_models import VAX_STUDY_GPT_MODEL
 from agents.marhinovirus_agents.shared_instructions import SHARED_MARHINOVIRUS_INSTRUCTIONS
-from db import control_agent_db
 from knowledge_base import marhinovirus_knowledge_base
 from knowledge_base.marhinovirus_knowledge_base import (
     get_normal_catalog_knowledge,
@@ -34,7 +33,6 @@ def get_control_marhinovirus_agent() -> Agent:
         id=AgentType.CONTROL_MARHINOVIRUS.id,
         name=AgentType.CONTROL_MARHINOVIRUS.name,
         model=AzureOpenAI(id=VAX_STUDY_GPT_MODEL, temperature=0.2),
-        db=control_agent_db,
         description=marhinovirus_knowledge_base.NORMAL_DESCRIPTION,
         instructions=[
             marhinovirus_knowledge_base.NORMAL_INSTRUCTIONS,
