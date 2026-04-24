@@ -1,0 +1,49 @@
+# SETUP REQUIRED before this workflow can run:
+#
+# 1. Create a service principal scoped to the healthsociety RG:
+#
+#    az ad sp create-for-rbac --name "nex-postgres-stop-sp" --role "Contributor" \
+#      --scopes "/subscriptions/444c1e5c-ac0d-4420-94ea-d4a5414d20e1/resourceGroups/healthsociety" \
+#      --sdk-auth
+#
+# 2. Copy the entire JSON output and save it as a GitHub secret named:
+#    AZURE_CREDENTIALS_SOCIALECONPSY
+#    (Settings → Secrets and variables → Actions → New repository secret)
+#
+# 3. Trigger manually from the GitHub Actions UI whenever nex-postgres-db auto-restarts.
+#    To enable automatic weekly prevention, uncomment the schedule block below.
+
+name: Keep NEX PostgreSQL paused
+
+on:
+  # Uncomment the schedule below if Azure auto-restarts the server (it does so every 7 days):
+  # schedule:
+  #   - cron: "0 3 */6 * *"   # every 6 days at 03:00 UTC
+  workflow_dispatch: # Run manually from GitHub Actions UI
+
+jobs:
+  stop-postgres:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_SOCIALECONPSY }}
+
+      - name: Stop nex-postgres-db if running
+        run: |
+          STATE=$(az postgres flexible-server show \
+            --name nex-postgres-db \
+            --resource-group healthsociety \
+            --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
+            --query "state" -o tsv)
+          echo "Current state: $STATE"
+          if [ "$STATE" = "Ready" ]; then
+            az postgres flexible-server stop \
+              --name nex-postgres-db \
+              --resource-group healthsociety \
+              --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
+            echo "Stopped."
+          else
+            echo "Already stopped — no action."
+          fi
