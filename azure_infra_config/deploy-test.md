@@ -96,6 +96,54 @@ new revision (e.g. to pick up a knowledge-load run):
 6. deactivate older revisions
    az containerapp revision deactivate --name marhinovirus-study-api --resource-group socialeconpsyresearch --revision marhinovirus-study-api--v1-a
 
+### Pause / Unpause NEX (`healthsociety`, `socialeconpsy` subscription)
+
+NEX is paused when not in active use to reduce costs (~$135/month saving). All data and images
+are preserved — resume takes ~1 minute.
+
+**Pause (scale to zero + stop DB):**
+```sh
+az containerapp update \
+  --name nex-agent-api \
+  --resource-group healthsociety \
+  --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
+  --min-replicas 0 --max-replicas 1
+
+az containerapp update \
+  --name nex-agent-ui \
+  --resource-group healthsociety \
+  --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
+  --min-replicas 0 --max-replicas 1
+
+az postgres flexible-server stop \
+  --name nex-postgres-db \
+  --resource-group healthsociety \
+  --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
+```
+
+> ⚠️ Azure auto-restarts stopped PostgreSQL Flexible Servers after 7 days. Re-run the stop
+> command if that happens, or trigger the `pause-nex-postgres` GitHub Actions workflow manually.
+
+**Resume (start DB + scale back up):**
+```sh
+az postgres flexible-server start \
+  --name nex-postgres-db \
+  --resource-group healthsociety \
+  --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
+
+az containerapp update \
+  --name nex-agent-api \
+  --resource-group healthsociety \
+  --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
+  --min-replicas 1 --max-replicas 2
+
+az containerapp update \
+  --name nex-agent-ui \
+  --resource-group healthsociety \
+  --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
+  --min-replicas 1 --max-replicas 3
+```
+
 ## Testing
 
 ### Setup
