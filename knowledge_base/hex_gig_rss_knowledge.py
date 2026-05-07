@@ -87,7 +87,7 @@ def _parse_rss_item(item: ET.Element) -> dict | None:  # type: ignore[type-arg]
         image_url = enclosure_el.get("url", "")
 
     return {
-        "name": f"NEX News - {title}",
+        "name": f"HeX News - {title}",
         "text_content": plain_content,
         "metadata": {
             "guid": guid,
@@ -129,7 +129,7 @@ def parse_rss_feed(xml_str: str) -> list[dict]:  # type: ignore[type-arg]
 
 
 def get_rss_news_data() -> list[dict]:  # type: ignore[type-arg]
-    """Fetch and parse the NEX RSS news feed.
+    """Fetch and parse the HeX RSS news feed.
 
     Returns a list of dicts with keys: ``name``, ``text_content``, ``metadata``.
     """

@@ -11,11 +11,11 @@
 --   - control_agent_sessions
 --   - simple_language_sessions
 --   - vax-study_agentos_sessions
---   - nex_agentos_sessions
+--   - hex_gig_agentos_sessions
 --   - marhino_normal_catalog
 --   - marhino_catalog_contents
---   - nex_embeddings
---   - nex_contents
+--   - hex_gig_embeddings
+--   - hex_gig_contents
 --   - daily_agent_usage        (renamed from daily_nex_agent_usage)
 --   - agent_usage_metrics      (renamed from nex_agent_usage_metrics)
 --

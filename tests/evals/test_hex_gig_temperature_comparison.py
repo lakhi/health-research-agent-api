@@ -1,27 +1,25 @@
 """
-Model comparison evals for the NEX agent.
+Temperature comparison evals for the HeX-GiG agent.
 
-Compares GPT-4.1 vs GPT-5-mini at temperature 0.75 (settled from temperature comparison)
-across the same curated question bank used in the temperature comparison.
+Compares temperature settings across a curated question bank.
 
-Phase 1 (side-by-side): One run per model per question → Markdown comparison file.
-Phase 2 (scoring): AccuracyEval with num_iterations=10 per (model, question) → CSV + summary.
+Phase 1 (side-by-side): One run per temperature per question → Markdown comparison file.
+Phase 2 (scoring): AccuracyEval with num_iterations=10 per (temp, question) → CSV + summary.
 
 Pre-requisites:
   - docker compose up pgvector -d
-  - NEX knowledge already loaded in pgvector (run the app once with LOAD_NEX_KNOWLEDGE=true)
-  - Azure OpenAI credentials in environment, including AZURE_OPENAI_ENDPOINT_GPT_5_MINI
+  - HeX-GiG knowledge already loaded in pgvector (run the app once with LOAD_HEX_GIG_KNOWLEDGE=true)
+  - Azure OpenAI credentials in environment
 
 Run all:
-  pytest tests/evals/test_nex_model_comparison.py -v -m "integration and evals"
+  pytest tests/evals/test_hex_gig_temperature_comparison.py -v -m "integration and evals"
 
 Run phases separately:
-  pytest tests/evals/test_nex_model_comparison.py -v -m "integration and evals" -k "SideBySide"
-  pytest tests/evals/test_nex_model_comparison.py -v -m "integration and evals" -k "Scoring"
+  pytest tests/evals/test_hex_gig_temperature_comparison.py -v -m "integration and evals" -k "SideBySide"
+  pytest tests/evals/test_hex_gig_temperature_comparison.py -v -m "integration and evals" -k "Scoring"
 """
 
 import csv
-import os
 import statistics
 from collections import defaultdict
 from dataclasses import dataclass
@@ -34,28 +32,14 @@ from agno.eval.accuracy import AccuracyEval
 from agno.models.azure import AzureOpenAI
 
 from agents.llm_models import LLMModel
-from agents.nex_agent import get_nex_agent
+from agents.hex_gig_agent import get_hex_gig_agent
 
 # ─── Configuration ────────────────────────────────────────────────────────────
 
-TEMPERATURE = 0.75  # settled from temperature comparison
+TEMPERATURES = [0.5, 0.75, 1.0]
 NUM_ITERATIONS = 10
 JUDGE_MODEL_ID = LLMModel.GPT_4_1
-RESULTS_DIR = Path(__file__).resolve().parent.parent.parent / "results" / "nex_model_comparison"
-
-
-@dataclass
-class ModelConfig:
-    id: str
-    label: str
-    endpoint_env: str  # name of the env var holding the Azure endpoint URL
-    temperature: float = TEMPERATURE  # GPT-5-mini only supports temperature=1
-
-
-MODELS = [
-    ModelConfig(id=LLMModel.GPT_4_1, label="GPT-4.1", endpoint_env="AZURE_OPENAI_ENDPOINT"),
-    ModelConfig(id=LLMModel.GPT_5_MINI, label="GPT-5-mini", endpoint_env="AZURE_OPENAI_ENDPOINT_GPT_5_MINI", temperature=1.0),
-]
+RESULTS_DIR = Path(__file__).resolve().parent.parent.parent / "results" / "hex_gig_temperature"
 
 
 # ─── Question bank ────────────────────────────────────────────────────────────
@@ -203,11 +187,10 @@ EVAL_QUESTIONS = [
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 
-def _make_nex_agent(model: ModelConfig):
-    """Create a NEX agent wired to the given model configuration."""
-    agent = get_nex_agent()
-    azure_endpoint = os.environ[model.endpoint_env]
-    agent.model = AzureOpenAI(id=model.id, azure_endpoint=azure_endpoint, temperature=model.temperature)
+def _make_hex_gig_agent(temperature: float):
+    """Create a HeX-GiG agent at a specific temperature."""
+    agent = get_hex_gig_agent()
+    agent.model = AzureOpenAI(id=LLMModel.GPT_4_1, temperature=temperature)
     return agent
 
 
@@ -220,23 +203,23 @@ def _ensure_results_dir():
 
 @pytest.mark.integration
 @pytest.mark.evals
-class TestNexModelSideBySide:
-    """Run each question once with each model, write Markdown comparison file."""
+class TestNexTemperatureSideBySide:
+    """Run each question once at each temperature, write Markdown comparison file."""
 
     def test_side_by_side(self):
         _ensure_results_dir()
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
         lines = [
-            "# NEX Model Side-by-Side Comparison",
+            "# HeX-GiG Temperature Side-by-Side Comparison",
             "",
             f"Generated: {timestamp}",
             "",
-            f"Models: {', '.join(f'{m.label} (temp={m.temperature})' for m in MODELS)}",
+            f"Temperatures: {', '.join(str(t) for t in TEMPERATURES)}",
             "",
         ]
 
-        agents = {m.id: _make_nex_agent(m) for m in MODELS}
+        agents = {t: _make_hex_gig_agent(t) for t in TEMPERATURES}
 
         for q in EVAL_QUESTIONS:
             lines.append("---")
@@ -244,13 +227,13 @@ class TestNexModelSideBySide:
             lines.append(f"## {q.id}: {q.input}")
             lines.append("")
 
-            for model in MODELS:
-                agent = agents[model.id]
+            for temp in TEMPERATURES:
+                agent = agents[temp]
                 response = agent.run(q.input, stream=False)
                 content = response.content if response.content else "(empty response)"
                 char_count = len(str(content))
 
-                lines.append(f"### {model.label} ({char_count} chars)")
+                lines.append(f"### Temperature {temp} ({char_count} chars)")
                 lines.append("")
                 lines.append(str(content))
                 lines.append("")
@@ -264,8 +247,7 @@ class TestNexModelSideBySide:
 
 
 _CSV_FIELDNAMES = [
-    "model_id",
-    "model_label",
+    "temperature",
     "question_id",
     "question_text",
     "iteration",
@@ -303,20 +285,20 @@ def _scoring_lifecycle():
 
 @pytest.mark.integration
 @pytest.mark.evals
-class TestNexModelScoring:
-    """Run AccuracyEval for each (model, question) pair → CSV + summary."""
+class TestNexTemperatureScoring:
+    """Run AccuracyEval for each (temperature, question) pair → CSV + summary."""
 
-    @pytest.fixture(scope="class", params=MODELS, ids=[m.label for m in MODELS])
-    def nex_agent_for_model(self, request):
-        return (request.param, _make_nex_agent(request.param))
+    @pytest.fixture(scope="class", params=TEMPERATURES, ids=[f"temp_{t}" for t in TEMPERATURES])
+    def hex_gig_agent_at_temp(self, request):
+        return _make_hex_gig_agent(request.param)
 
     @pytest.mark.parametrize("question", EVAL_QUESTIONS, ids=[q.id for q in EVAL_QUESTIONS])
-    def test_model_accuracy(self, nex_agent_for_model, question):
-        model_config, agent = nex_agent_for_model
+    def test_temperature_accuracy(self, hex_gig_agent_at_temp, question):
+        temperature = hex_gig_agent_at_temp.model.temperature
 
         eval_case = AccuracyEval(
             model=AzureOpenAI(id=JUDGE_MODEL_ID, temperature=0.1),
-            agent=agent,
+            agent=hex_gig_agent_at_temp,
             input=question.input,
             expected_output=question.expected_output,
             additional_guidelines=question.additional_guidelines,
@@ -325,12 +307,12 @@ class TestNexModelScoring:
         result = eval_case.run(print_results=True)
         assert result is not None, "Eval returned None"
 
+        # Write rows to CSV immediately
         rows = []
         for i, evaluation in enumerate(result.results):
             rows.append(
                 {
-                    "model_id": model_config.id,
-                    "model_label": model_config.label,
+                    "temperature": temperature,
                     "question_id": question.id,
                     "question_text": question.input,
                     "iteration": i + 1,
@@ -349,7 +331,9 @@ def _write_summary_from_csv(csv_path: Path):
         reader = csv.DictReader(f)
         results = list(reader)
 
+    # Convert types from CSV strings
     for r in results:
+        r["temperature"] = float(r["temperature"])
         r["judge_score"] = int(r["judge_score"])
         r["response_length"] = int(r["response_length"])
 
@@ -363,29 +347,30 @@ def _write_summary_from_csv(csv_path: Path):
 def _write_summary(results: list[dict]):
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    by_model: dict[str, list[dict]] = defaultdict(list)
+    # Group by temperature
+    by_temp: dict[float, list[dict]] = defaultdict(list)
     for r in results:
-        by_model[r["model_label"]].append(r)
+        by_temp[r["temperature"]].append(r)
 
-    by_model_q: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    # Group by (temperature, question)
+    by_temp_q: dict[tuple[float, str], list[dict]] = defaultdict(list)
     for r in results:
-        by_model_q[(r["model_label"], r["question_id"])].append(r)
+        by_temp_q[(r["temperature"], r["question_id"])].append(r)
 
     lines = [
-        "# NEX Model Scoring Summary",
+        "# HeX-GiG Temperature Scoring Summary",
         "",
         f"Generated: {timestamp}  ",
-        f"Temperature: {TEMPERATURE} (fixed)  ",
         f"Iterations per cell: {NUM_ITERATIONS}",
         "",
-        "## Overall by Model",
+        "## Overall by Temperature",
         "",
-        "| Model | Avg Score | Std Dev | Min | Max | Avg Response Length |",
+        "| Temperature | Avg Score | Std Dev | Min | Max | Avg Response Length |",
         "|---|---|---|---|---|---|",
     ]
 
-    for model in MODELS:
-        rows = by_model.get(model.label, [])
+    for temp in TEMPERATURES:
+        rows = by_temp.get(temp, [])
         if not rows:
             continue
         scores = [r["judge_score"] for r in rows]
@@ -395,22 +380,22 @@ def _write_summary(results: list[dict]):
         mn = min(scores)
         mx = max(scores)
         avg_len = statistics.mean(lengths)
-        lines.append(f"| {model.label} | {avg:.2f} | {std:.2f} | {mn} | {mx} | {avg_len:.0f} |")
+        lines.append(f"| {temp} | {avg:.2f} | {std:.2f} | {mn} | {mx} | {avg_len:.0f} |")
 
     lines.extend(
         [
             "",
             "## Breakdown by Question",
             "",
-            "| Question | Model | Avg Score | Std Dev | Min | Max |",
+            "| Question | Temp | Avg Score | Std Dev | Min | Max |",
             "|---|---|---|---|---|---|",
         ]
     )
 
     question_ids = [q.id for q in EVAL_QUESTIONS]
     for qid in question_ids:
-        for model in MODELS:
-            rows = by_model_q.get((model.label, qid), [])
+        for temp in TEMPERATURES:
+            rows = by_temp_q.get((temp, qid), [])
             if not rows:
                 continue
             scores = [r["judge_score"] for r in rows]
@@ -418,7 +403,7 @@ def _write_summary(results: list[dict]):
             std = statistics.stdev(scores) if len(scores) > 1 else 0
             mn = min(scores)
             mx = max(scores)
-            lines.append(f"| {qid} | {model.label} | {avg:.2f} | {std:.2f} | {mn} | {mx} |")
+            lines.append(f"| {qid} | {temp} | {avg:.2f} | {std:.2f} | {mn} | {mx} |")
 
     output_path = RESULTS_DIR / "summary.md"
     output_path.write_text("\n".join(lines), encoding="utf-8")

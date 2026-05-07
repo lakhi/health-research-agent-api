@@ -6,10 +6,10 @@ Import the factory function to get the active project configuration:
 
     from api.project_configs import get_project_config
 
-    config = get_project_config()  # Returns VaxStudyConfig or NexConfig based on PROJECT_NAME env var
+    config = get_project_config()  # Returns VaxStudyConfig or HexGigConfig based on PROJECT_NAME env var
 """
 
-from api.project_configs.nex_config import NexConfig
+from api.project_configs.hex_gig_config import HexGigConfig
 from api.project_configs.project_config import (
     ProjectConfig,
     ProjectName,
@@ -23,6 +23,6 @@ __all__ = [
     "ProjectConfig",
     "get_project_config",
     "VaxStudyConfig",
-    "NexConfig",
+    "HexGigConfig",
     "SscPsychConfig",
 ]

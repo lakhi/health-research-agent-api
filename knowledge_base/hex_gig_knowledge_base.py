@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 # Standard DOI pattern — matches "10.NNNN/suffix" anywhere in text
 _DOI_RE = re.compile(r"\b(10\.\d{4,9}/[^\s\],;:\'\"<>()]+)", re.IGNORECASE)
 
-NEX_KNOWLEDGE_DIR = Path(__file__).resolve().parent / "nex_knoweldge"
-NEX_MEMBERS_CSV = NEX_KNOWLEDGE_DIR / "nex_members_list.csv"
+HEX_GIG_KNOWLEDGE_DIR = Path(__file__).resolve().parent / "hex_gig_knowledge"
+HEX_GIG_MEMBERS_CSV = HEX_GIG_KNOWLEDGE_DIR / "hex_gig_members_list.csv"
 
 MEMBER_REQUIRED_COLUMNS = {
     "first_name",
@@ -73,33 +73,33 @@ def _extract_doi_from_pdf(path: Path) -> str | None:
     return None
 
 
-def get_nex_knowledge() -> Knowledge:
+def get_hex_gig_knowledge() -> Knowledge:
     db_url = get_db_url_cached()
 
-    nex_knowledge = Knowledge(
+    hex_gig_knowledge = Knowledge(
         name="Health in Society Research Network Knowledge",
         vector_db=PgVector(
             db_url=db_url,
             search_type=SearchType.hybrid,
-            table_name="nex_embeddings",
+            table_name="hex_gig_embeddings",
             embedder=get_azure_embedder(),
         ),
-        contents_db=get_nex_contents_db(),
+        contents_db=get_hex_gig_contents_db(),
     )
 
-    return nex_knowledge
+    return hex_gig_knowledge
 
 
-def get_nex_contents_db():
+def get_hex_gig_contents_db():
     db_url = get_db_url_cached()
 
-    nex_contents = PostgresDb(
+    hex_gig_contents = PostgresDb(
         db_url,
-        id="nex_contents",
-        knowledge_table="nex_contents",
+        id="hex_gig_contents",
+        knowledge_table="hex_gig_contents",
     )
 
-    return nex_contents
+    return hex_gig_contents
 
 
 def _normalize_cell(value: str | None) -> str:
@@ -160,8 +160,8 @@ def _build_member_name_index() -> dict[str, dict[str, str]]:
 
     Reads from the members CSV. Used for matching u:Cloud folder names to members.
     """
-    members_rows = _read_csv_rows(NEX_MEMBERS_CSV)
-    _validate_required_columns(MEMBER_REQUIRED_COLUMNS, NEX_MEMBERS_CSV)
+    members_rows = _read_csv_rows(HEX_GIG_MEMBERS_CSV)
+    _validate_required_columns(MEMBER_REQUIRED_COLUMNS, HEX_GIG_MEMBERS_CSV)
 
     members_by_name: dict[str, dict[str, str]] = {}
     for index, member in enumerate(members_rows, start=2):
@@ -170,12 +170,12 @@ def _build_member_name_index() -> dict[str, dict[str, str]]:
         full_name = _normalize_name(f"{first_name} {last_name}")
 
         if not full_name:
-            logger.warning("Empty name in %s at row %d, skipping", NEX_MEMBERS_CSV.name, index)
+            logger.warning("Empty name in %s at row %d, skipping", HEX_GIG_MEMBERS_CSV.name, index)
             continue
 
         if full_name in members_by_name:
             logger.warning(
-                "Duplicate name in %s: '%s' (row %d), keeping first occurrence", NEX_MEMBERS_CSV.name, full_name, index
+                "Duplicate name in %s: '%s' (row %d), keeping first occurrence", HEX_GIG_MEMBERS_CSV.name, full_name, index
             )
             continue
 
@@ -225,7 +225,7 @@ def get_member_profiles_data() -> list[dict]:
 
         profiles.append(
             {
-                "name": f"NEX Member - {full_name}",
+                "name": f"HeX Member - {full_name}",
                 "text_content": text_content,
                 "metadata": metadata,
             }
@@ -254,7 +254,7 @@ def get_research_articles_from_ucloud(discovered_pdfs: list) -> list[dict]:
             logger.warning(
                 "u:Cloud folder '%s' does not match any member in %s, skipping",
                 pdf.member_folder_name,
-                NEX_MEMBERS_CSV.name,
+                HEX_GIG_MEMBERS_CSV.name,
             )
             continue
 
@@ -279,7 +279,7 @@ def get_research_articles_from_ucloud(discovered_pdfs: list) -> list[dict]:
         kb_data.append(
             {
                 "path": pdf.local_path,
-                "name": f"NEX Research - {member_name}",
+                "name": f"HeX Research - {member_name}",
                 "metadata": metadata,
             }
         )

@@ -1,5 +1,5 @@
-param containerapps_nex_agent_api_name string = 'nex-agent-api'
-param managedEnvironments_nex_apps_env_externalid string = '/subscriptions/444c1e5c-ac0d-4420-94ea-d4a5414d20e1/resourceGroups/healthsociety/providers/Microsoft.App/managedEnvironments/nex-apps-env'
+param containerapps_hex_gig_agent_api_name string = 'hex-gig-agent-api'
+param managedEnvironments_hex_gig_apps_env_externalid string = '/subscriptions/444c1e5c-ac0d-4420-94ea-d4a5414d20e1/resourceGroups/healthsociety/providers/Microsoft.App/managedEnvironments/hex-gig-apps-env'
 
 // ── Secrets (passed at deploy time, never stored in repo) ────────────────────
 // Deploy with: az deployment group create ... \
@@ -16,8 +16,8 @@ param azureOpenAiApiKey string
 @secure()
 param azureEmbedderOpenAiApiKey string
 
-resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@2025-02-02-preview' = {
-  name: containerapps_nex_agent_api_name
+resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containerapps@2025-02-02-preview' = {
+  name: containerapps_hex_gig_agent_api_name
   location: 'Sweden Central'
   tags: {
     Kostenstelle: 'FG473001'
@@ -29,8 +29,8 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
     type: 'None'
   }
   properties: {
-    managedEnvironmentId: managedEnvironments_nex_apps_env_externalid
-    environmentId: managedEnvironments_nex_apps_env_externalid
+    managedEnvironmentId: managedEnvironments_hex_gig_apps_env_externalid
+    environmentId: managedEnvironments_hex_gig_apps_env_externalid
     workloadProfileName: 'Consumption'
     configuration: {
       secrets: [
@@ -71,7 +71,7 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
       }
       registries: [
         {
-          server: 'nexacr.azurecr.io'
+          server: 'hexgigacr.azurecr.io'
           identity: 'system-environment'
         }
       ]
@@ -81,9 +81,9 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
     template: {
       containers: [
         {
-          image: 'nexacr.azurecr.io/nex-agent-api:latest'
+          image: 'hexgigacr.azurecr.io/hex-gig-agent-api:latest'
           imageType: 'ContainerImage'
-          name: containerapps_nex_agent_api_name
+          name: containerapps_hex_gig_agent_api_name
           env: [
             {
               name: 'PYTHONUNBUFFERED'
@@ -92,12 +92,12 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
             // ── Project ──────────────────────────────────────────────────────
             {
               name: 'PROJECT_NAME'
-              value: 'nex'
+              value: 'hex_gig'
             }
             // ── Database ─────────────────────────────────────────────────────
             {
               name: 'DB_HOST'
-              value: 'nex-postgres-db.postgres.database.azure.com'
+              value: 'hex-gig-postgres-db.postgres.database.azure.com'
             }
             {
               name: 'DB_PORT'
@@ -166,7 +166,7 @@ resource containerapps_nex_agent_api_name_resource 'Microsoft.App/containerapps@
             }
             // ── Knowledge loading ────────────────────────────────────────────
             {
-              name: 'LOAD_NEX_KNOWLEDGE'
+              name: 'LOAD_HEX_GIG_KNOWLEDGE'
               value: 'false'
             }
           ]

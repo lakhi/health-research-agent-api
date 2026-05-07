@@ -16,8 +16,8 @@ CURR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WS_ROOT="$(dirname ${CURR_DIR})"
 DOCKER_FILE="Dockerfile.azure"
 # Updated for Azure Container Registry
-ACR_NAME="nex-acr"
-IMAGE_NAME="${ACR_NAME}.azurecr.io/nex-agent-api"
+ACR_NAME="hexgigacr"
+IMAGE_NAME="${ACR_NAME}.azurecr.io/hex-gig-agent-api"
 IMAGE_TAG="latest"
 
 echo "Logging into Azure Container Registry..."

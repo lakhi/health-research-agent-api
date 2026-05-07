@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fill empty uni_wien_url values in the NEX members CSV using DuckDuckGo search.
+"""Fill empty uni_wien_url values in the HeX-GiG members CSV using DuckDuckGo search.
 
 Uses a three-pass fallback chain per member:
   1. Department/faculty page on any *.univie.ac.at subdomain
@@ -9,9 +9,9 @@ Uses a three-pass fallback chain per member:
 No API key required. Requires the `ddgs` package: pip install ddgs
 
 Usage:
-    python scripts/fill_nex_uni_wien_urls.py                      # dry-run: print candidates
-    python scripts/fill_nex_uni_wien_urls.py --write              # write to CSV
-    python scripts/fill_nex_uni_wien_urls.py --write --overwrite  # replace existing values too
+    python scripts/fill_hex_gig_uni_wien_urls.py                      # dry-run: print candidates
+    python scripts/fill_hex_gig_uni_wien_urls.py --write              # write to CSV
+    python scripts/fill_hex_gig_uni_wien_urls.py --write --overwrite  # replace existing values too
 """
 
 import argparse
@@ -26,7 +26,7 @@ from ddgs import DDGS
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-NEX_MEMBERS_CSV = _PROJECT_ROOT / "knowledge_base" / "nex_knoweldge" / "nex_members_list.csv"
+HEX_GIG_MEMBERS_CSV = _PROJECT_ROOT / "knowledge_base" / "hex_gig_knowledge" / "hex_gig_members_list.csv"
 _SEARCH_DELAY_SECONDS = 0.5
 
 # URL path segments that indicate a non-profile page — skip these
@@ -224,7 +224,7 @@ def _write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) ->
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Fill empty uni_wien_url values in the NEX members CSV using DuckDuckGo."
+        description="Fill empty uni_wien_url values in the HeX-GiG members CSV using DuckDuckGo."
     )
     parser.add_argument("--write", action="store_true", help="Write found URLs back to the CSV.")
     parser.add_argument(
@@ -237,10 +237,10 @@ def main() -> None:
     if args.overwrite:
         args.write = True
 
-    fieldnames, rows = _read_csv(NEX_MEMBERS_CSV)
+    fieldnames, rows = _read_csv(HEX_GIG_MEMBERS_CSV)
 
     if "uni_wien_url" not in fieldnames:
-        print(f"ERROR: 'uni_wien_url' column not found in {NEX_MEMBERS_CSV.name}", file=sys.stderr)
+        print(f"ERROR: 'uni_wien_url' column not found in {HEX_GIG_MEMBERS_CSV.name}", file=sys.stderr)
         sys.exit(1)
 
     Result = tuple[str, str | None]  # (full_name, found_url)
@@ -292,8 +292,8 @@ def main() -> None:
         print("All members already have a uni_wien_url. Use --overwrite to re-search.")
 
     if args.write:
-        _write_csv(NEX_MEMBERS_CSV, fieldnames, rows)
-        print(f"✓ Updated {updated} row(s) in {NEX_MEMBERS_CSV.name}")
+        _write_csv(HEX_GIG_MEMBERS_CSV, fieldnames, rows)
+        print(f"✓ Updated {updated} row(s) in {HEX_GIG_MEMBERS_CSV.name}")
     else:
         print("Dry-run — no changes written. Run with --write to save.")
 

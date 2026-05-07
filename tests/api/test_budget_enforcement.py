@@ -50,7 +50,7 @@ TODO: Deferred until mock database config is setup.
 #         mock_get_agent.return_value = mock_agent
 #
 #         response = client.post(
-#             "/agents/nex_agent/runs",
+#             "/agents/hex_gig_agent/runs",
 #             data={"message": "Hello", "stream": "false"},
 #         )
 #
@@ -62,7 +62,7 @@ TODO: Deferred until mock database config is setup.
 #
 #     @patch("api.routes.agents.check_budget_available")
 #     @patch("api.routes.agents.get_agent")
-#     def test_non_nex_agent_has_no_budget_header(
+#     def test_non_hex_gig_agent_has_no_budget_header(
 #         self, mock_get_agent, mock_check, client
 #     ):
 #         """Non-nex agents should not have budget headers."""
@@ -77,7 +77,7 @@ TODO: Deferred until mock database config is setup.
 #         # Should succeed but without budget header
 #         assert response.status_code == 200
 #         assert "X-Budget-Remaining-EUR" not in response.headers
-#         # check_budget_available should not be called for non-nex agents
+#         # check_budget_available should not be called for non-hex_gig agents
 #         mock_check.assert_not_called()
 #
 #
@@ -91,7 +91,7 @@ TODO: Deferred until mock database config is setup.
 #         mock_check.return_value = (False, 0.0, reset_time)
 #
 #         response = client.post(
-#             "/agents/nex_agent/runs", json={"message": "Hello", "stream": False}
+#             "/agents/hex_gig_agent/runs", json={"message": "Hello", "stream": False}
 #         )
 #
 #         assert response.status_code == 429
@@ -103,7 +103,7 @@ TODO: Deferred until mock database config is setup.
 #         mock_check.return_value = (False, 0.0, reset_time)
 #
 #         response = client.post(
-#             "/agents/nex_agent/runs", json={"message": "Hello", "stream": False}
+#             "/agents/hex_gig_agent/runs", json={"message": "Hello", "stream": False}
 #         )
 #
 #         body = response.json()
@@ -116,7 +116,7 @@ TODO: Deferred until mock database config is setup.
 #         mock_check.return_value = (False, 0.0, reset_time)
 #
 #         response = client.post(
-#             "/agents/nex_agent/runs", json={"message": "Hello", "stream": False}
+#             "/agents/hex_gig_agent/runs", json={"message": "Hello", "stream": False}
 #         )
 #
 #         body = response.json()
@@ -130,7 +130,7 @@ TODO: Deferred until mock database config is setup.
 #         mock_check.return_value = (False, 0.0, reset_time)
 #
 #         response = client.post(
-#             "/agents/nex_agent/runs", json={"message": "Hello", "stream": False}
+#             "/agents/hex_gig_agent/runs", json={"message": "Hello", "stream": False}
 #         )
 #
 #         body = response.json()
@@ -138,21 +138,21 @@ TODO: Deferred until mock database config is setup.
 #         assert body["daily_budget_eur"] == api_settings.daily_budget_eur
 #
 #
-# class TestBudgetOnlyAppliesToNex:
-#     """Tests ensuring budget enforcement only applies to nex agent."""
+# class TestBudgetOnlyAppliesToHexGig:
+#     """Tests ensuring budget enforcement only applies to hex_gig agent."""
 #
 #     @patch("api.routes.agents.check_budget_available")
 #     @patch("api.routes.agents.get_agent")
-#     def test_budget_only_applies_to_nex_agent(
+#     def test_budget_only_applies_to_hex_gig_agent(
 #         self, mock_get_agent, mock_check, client
 #     ):
-#         """Budget check should only apply to nex_agent."""
+#         """Budget check should only apply to hex_gig_agent."""
 #         # Mock agent to avoid actual LLM calls
 #         mock_agent = MagicMock()
 #         mock_agent.arun = AsyncMock(return_value=MagicMock(content="Test response"))
 #         mock_get_agent.return_value = mock_agent
 #
-#         # Call a non-nex agent
+#         # Call a non-hex_gig agent
 #         response = client.post(
 #             "/agents/c/runs", json={"message": "Hello", "stream": False}
 #         )
@@ -163,8 +163,8 @@ TODO: Deferred until mock database config is setup.
 #
 #     @patch("api.routes.agents.check_budget_available")
 #     @patch("api.routes.agents.get_agent")
-#     def test_nex_agent_checks_budget(self, mock_get_agent, mock_check, client):
-#         """nex_agent should always check budget availability."""
+#     def test_hex_gig_agent_checks_budget(self, mock_get_agent, mock_check, client):
+#         """hex_gig_agent should always check budget availability."""
 #         reset_time = datetime.now(ZoneInfo("UTC")) + timedelta(hours=5)
 #         mock_check.return_value = (True, 1.50, reset_time)
 #
@@ -178,7 +178,7 @@ TODO: Deferred until mock database config is setup.
 #         mock_get_agent.return_value = mock_agent
 #
 #         response = client.post(
-#             "/agents/nex_agent/runs", json={"message": "Hello", "stream": False}
+#             "/agents/hex_gig_agent/runs", json={"message": "Hello", "stream": False}
 #         )
 #
 #         mock_check.assert_called_once()
@@ -207,7 +207,7 @@ TODO: Deferred until mock database config is setup.
 #         mock_get_agent.return_value = mock_agent
 #
 #         response = client.post(
-#             "/agents/nex_agent/runs", json={"message": "Hello", "stream": False}
+#             "/agents/hex_gig_agent/runs", json={"message": "Hello", "stream": False}
 #         )
 #
 #         assert response.status_code == 200

@@ -1,10 +1,10 @@
-param flexibleServers_nex_postgres_db_name string = 'nex-postgres-db'
+param flexibleServers_hex_gig_postgres_db_name string = 'hex-gig-postgres-db'
 
 @secure()
 param administratorLoginPassword string
 
-resource flexibleServers_nex_postgres_db_name_resource 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
-  name: flexibleServers_nex_postgres_db_name
+resource flexibleServers_hex_gig_postgres_db_name_resource 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
+  name: flexibleServers_hex_gig_postgres_db_name
   location: 'Sweden Central'
   tags: {
     Kostenstelle: 'FG473001'
@@ -46,8 +46,8 @@ resource flexibleServers_nex_postgres_db_name_resource 'Microsoft.DBforPostgreSQ
   }
 }
 
-resource flexibleServers_nex_postgres_db_firewall_akshay 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
-  parent: flexibleServers_nex_postgres_db_name_resource
+resource flexibleServers_hex_gig_postgres_db_firewall_akshay 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
+  parent: flexibleServers_hex_gig_postgres_db_name_resource
   name: 'akshays_macbookpro'
   properties: {
     startIpAddress: '41.66.98.0'
@@ -55,8 +55,8 @@ resource flexibleServers_nex_postgres_db_firewall_akshay 'Microsoft.DBforPostgre
   }
 }
 
-resource flexibleServers_nex_postgres_db_firewall_azure 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
-  parent: flexibleServers_nex_postgres_db_name_resource
+resource flexibleServers_hex_gig_postgres_db_firewall_azure 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
+  parent: flexibleServers_hex_gig_postgres_db_name_resource
   name: 'AllowAllAzureServicesAndResourcesWithinAzureIps'
   properties: {
     startIpAddress: '0.0.0.0'
@@ -64,8 +64,8 @@ resource flexibleServers_nex_postgres_db_firewall_azure 'Microsoft.DBforPostgreS
   }
 }
 
-resource flexibleServers_nex_postgres_db_config 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2024-08-01' = {
-  parent: flexibleServers_nex_postgres_db_name_resource
+resource flexibleServers_hex_gig_postgres_db_config 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2024-08-01' = {
+  parent: flexibleServers_hex_gig_postgres_db_name_resource
   name: 'azure.extensions'
   properties: {
     value: 'vector'

@@ -1,6 +1,6 @@
 # CLAUDE.md — health-research-agent-api
 
-FastAPI-based multi-project health research agent platform for the University of Vienna Health Research Network. Supports three projects: **vax-study**, **nex**, and **ssc-psych**.
+FastAPI-based multi-project health research agent platform for the University of Vienna Health Research Network. Supports three projects: **vax-study**, **hex_gig**, and **ssc-psych**.
 
 ## Commands
 
@@ -49,18 +49,18 @@ mypy . --config-file pyproject.toml
 ## Architecture
 
 ### Multi-project factory pattern
-`PROJECT_NAME` env var → `ProjectConfigFactory` (in `api/project_configs/project_config_factory.py`) → returns `VaxStudyConfig`, `NexConfig`, or `SscPsychConfig`. Each config class handles agent initialisation, knowledge loading, and CORS origins for its project.
+`PROJECT_NAME` env var → `ProjectConfigFactory` (in `api/project_configs/project_config_factory.py`) → returns `VaxStudyConfig`, `HexGigConfig`, or `SscPsychConfig`. Each config class handles agent initialisation, knowledge loading, and CORS origins for its project.
 
 ### Agent dispatch
-`agents/selector.py` maps `AgentType` enum values to concrete agent instances. Agents are constructed with project-specific settings from the active config.
+`agents/registry.py` holds startup-built agents keyed by `AgentType` id. Agents are constructed with project-specific settings from the active config.
 
 ### Knowledge / RAG
-- **NEX**: CSV member profiles + u:Cloud research PDFs + RSS news, hybrid search (BM25 + semantic) via Agno + pgvector.
+- **HeX-GiG**: CSV member profiles + u:Cloud research PDFs + RSS news, hybrid search (BM25 + semantic) via Agno + pgvector.
 - **VAX**: PDF vaccine-information catalogs, semantic search via Agno + pgvector.
 - **SSC-PSYCH**: Web-scraped SSC website pages + downloaded PDF forms/regulations, hybrid search via Agno + pgvector.
 
 ### Budget enforcement
-`services/budget_service.py` enforces a daily EUR spend limit per deployment. Timezone is `Europe/Vienna`. Applies to projects with budget env vars configured (NEX, SSC-PSYCH).
+`services/budget_service.py` enforces a daily EUR spend limit per deployment. Timezone is `Europe/Vienna`. Applies to projects with budget env vars configured (HeX-GiG, SSC-PSYCH).
 
 ### Database
 - Lazy initialisation via `_LazyPostgresDb` in `db/__init__.py` — connection is not opened until first use.

@@ -1,7 +1,7 @@
-param registries_nex_acr_name string = 'nexacr'
+param registries_hex_gig_acr_name string = 'hexgigacr'
 
-resource registries_nex_acr_name_resource 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
-  name: registries_nex_acr_name
+resource registries_hex_gig_acr_name_resource 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
+  name: registries_hex_gig_acr_name
   location: 'swedencentral'
   tags: {
     Kostenstelle: 'FG473001'

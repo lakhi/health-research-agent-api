@@ -7,15 +7,15 @@ from agno.models.azure import AzureOpenAI
 
 from agents.agent_types import AgentType
 from agents.llm_models import LLMModel
-from knowledge_base.nex_knowledge_base import get_member_profiles_data, get_nex_knowledge
+from knowledge_base.hex_gig_knowledge_base import get_hex_gig_knowledge, get_member_profiles_data
 
 logger = getLogger(__name__)
 
 # 2. TODO: implement Metrics: https://docs.agno.com/agents/metrics
 
 
-def get_nex_agent() -> Agent:
-    """Create the NEX agent.
+def get_hex_gig_agent() -> Agent:
+    """Create the HeX agent.
 
     Sessions are held in process memory only (InMemoryDb) — nothing is written
     to Postgres or disk. Recent turns are injected into the model context so
@@ -23,13 +23,13 @@ def get_nex_agent() -> Agent:
     meaning. Session state is wiped on container restart.
     """
     member_count = len(get_member_profiles_data())
-    print(f"📊 NEX member count from CSV: {member_count}")
+    print(f"📊 HeX member count from CSV: {member_count}")
     member_count_str = str(member_count)
 
-    nex_agent = Agent(
+    hex_gig_agent = Agent(
         # Identity & Configuration
-        id=AgentType.NEX_AGENT.id,
-        name=AgentType.NEX_AGENT.name,
+        id=AgentType.HEX_GIG_AGENT.id,
+        name=AgentType.HEX_GIG_AGENT.name,
         # Model & Storage
         # model=AzureOpenAI(id=LLMModel.GPT_4_1, temperature=0.2, max_completion_tokens=1500),
         model=AzureOpenAI(id=LLMModel.GPT_4_1, temperature=0.75),
@@ -37,7 +37,7 @@ def get_nex_agent() -> Agent:
         # nothing persisted to Postgres/disk. Wiped on container restart.
         db=InMemoryDb(),
         # Knowledge & Search
-        knowledge=get_nex_knowledge(),
+        knowledge=get_hex_gig_knowledge(),
         search_knowledge=True,
         enable_agentic_knowledge_filters=True,
         # Context & Memory — RAM-backed, so history injection is safe
@@ -47,7 +47,7 @@ def get_nex_agent() -> Agent:
         description=dedent(
             f"""\
             <role>
-            You are NEX, the AI research discovery assistant for the Health in Society
+            You are HeX, the AI research discovery assistant for the Health in Society
             Research Network (GiG) at the University of Vienna: https://gig.univie.ac.at/en/
 
             The network spans multiple faculties and disciplines. Your purpose is to help
@@ -204,4 +204,4 @@ def get_nex_agent() -> Agent:
         debug_mode=True,
     )
 
-    return nex_agent
+    return hex_gig_agent

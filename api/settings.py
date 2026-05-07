@@ -26,12 +26,12 @@ logger = logging.getLogger(__name__)
 class ApiSettings(BaseSettings):
     cors_origin_list: Optional[List[str]] = Field(None, validate_default=True)
 
-    # Budget configuration (shared across budgeted projects: nex, ssc-psych)
+    # Budget configuration (shared across budgeted projects: hex_gig, ssc-psych)
     daily_budget_eur: Optional[float] = None
     model_pricing_input_eur: Optional[float] = None
     model_pricing_output_eur: Optional[float] = None
 
-    # u:Cloud (Nextcloud) configuration for nex project research papers
+    # u:Cloud (Nextcloud) configuration for hex_gig project research papers
     ucloud_share_token: Optional[str] = None
     ucloud_share_password: str = ""
 
@@ -58,7 +58,7 @@ class ApiSettings(BaseSettings):
     def validate_project_settings(self):
         """Require budget env vars for projects that enforce budgets, and project-specific vars."""
         project = self.project_config.project_name
-        budgeted_projects = {ProjectName.NEX.value, ProjectName.SSC_PSYCH.value}
+        budgeted_projects = {ProjectName.HEX_GIG.value, ProjectName.SSC_PSYCH.value}
 
         if project in budgeted_projects:
             missing_vars = []
@@ -75,9 +75,9 @@ class ApiSettings(BaseSettings):
                     f"Missing required budget environment variables for PROJECT_NAME={project}: {missing}"
                 )
 
-        # NEX-specific: u:Cloud token required for research paper downloads
-        if project == ProjectName.NEX.value and not self.ucloud_share_token:
-            raise ValueError("Missing required environment variable for PROJECT_NAME=nex: UCLOUD_SHARE_TOKEN")
+        # HeX-specific: u:Cloud token required for research paper downloads
+        if project == ProjectName.HEX_GIG.value and not self.ucloud_share_token:
+            raise ValueError("Missing required environment variable for PROJECT_NAME=hex_gig: UCLOUD_SHARE_TOKEN")
 
         return self
 

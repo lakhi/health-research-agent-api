@@ -1,19 +1,19 @@
-# NEX Agent API — Azure Deployment Plan
+# HeX-GiG Agent API — Azure Deployment Plan
 
 Fresh deployment from scratch. Resource group: `healthsociety` (Sweden Central).
-Existing in RG: `az-openai-healthsociety` (not used for NEX).
+Existing in RG: `az-openai-healthsociety` (not used for HeX-GiG).
 
 ---
 
 ## Phase 1 — Provision Infrastructure (Azure Portal, in order)
 
-### 1a. Container Registry — `nex-acr.bicep`
+### 1a. Container Registry — `hex-gig-acr.bicep`
 Deploy via Azure Portal ("Deploy a custom template").
 
-> ⚠️ After deployment: Portal → ACR (`nexacr`) → Access keys → **enable admin user**.
+> ⚠️ After deployment: Portal → ACR (`hexgigacr`) → Access keys → **enable admin user**.
 > The Bicep sets `adminUserEnabled: false`, but GitHub Actions needs username/password credentials.
 
-### 1b. PostgreSQL Flexible Server — `nex-postgres-db.bicep`
+### 1b. PostgreSQL Flexible Server — `hex-gig-postgres-db.bicep`
 Deploy via Azure Portal.
 
 > ⚠️ The Bicep hardcodes IP `77.80.3.180` (MacBook Pro) for the DB firewall rule.
@@ -26,19 +26,19 @@ Deploy via Azure Portal. Creates:
 - Content filter: `nex-content-filter` (blocking, medium severity)
 
 ### 1d. Container App Environment — no Bicep, create manually
-`nex-agent-api.bicep` depends on `nex-apps-env` existing. Create it first:
+`hex-gig-agent-api.bicep` depends on `hex-gig-apps-env` existing. Create it first:
 
 ```sh
 az containerapp env create \
-  --name nex-apps-env \
+  --name hex-gig-apps-env \
   --resource-group healthsociety \
   --location swedencentral
 ```
 
-Or via Portal: Create a resource → Container App Environment → name `nex-apps-env`, region Sweden Central.
+Or via Portal: Create a resource → Container App Environment → name `hex-gig-apps-env`, region Sweden Central.
 
-### 1e. Container App — `nex-agent-api.bicep`
-Deploy only after `nex-apps-env` exists.
+### 1e. Container App — `hex-gig-agent-api.bicep`
+Deploy only after `hex-gig-apps-env` exists. Bicep param values default to `hex-gig-*` resource names.
 
 ---
 
@@ -49,12 +49,12 @@ Run the SQL migration files from the repo root:
 
 ```sh
 PGPASSWORD='<db-password>' psql \
-  -h nex-postgres-db.postgres.database.azure.com \
+  -h hex-gig-postgres-db.postgres.database.azure.com \
   -U postgres -d postgres \
   -f scripts/sql/create_daily_agent_usage.sql
 
 PGPASSWORD='<db-password>' psql \
-  -h nex-postgres-db.postgres.database.azure.com \
+  -h hex-gig-postgres-db.postgres.database.azure.com \
   -U postgres -d postgres \
   -f scripts/sql/create_agent_usage_metrics.sql
 ```
@@ -66,7 +66,7 @@ This creates:
 > Agno session tables are auto-created on first request — no manual SQL needed for those.
 
 ### 2b. Container App Secrets
-Portal → `nex-agent-api` → Secrets → add:
+Portal → `hex-gig-agent-api` → Secrets → add:
 
 | Secret name | Source |
 |---|---|
@@ -76,11 +76,11 @@ Portal → `nex-agent-api` → Secrets → add:
 | `db-password` | Password set during PostgreSQL provisioning |
 
 ### 2c. Container App Environment Variables
-Portal → `nex-agent-api` → Configuration → Environment variables:
+Portal → `hex-gig-agent-api` → Configuration → Environment variables:
 
 | Variable | Value |
 |---|---|
-| `PROJECT_NAME` | `nex` |
+| `PROJECT_NAME` | `hex_gig` |
 | `DAILY_BUDGET_EUR` | e.g. `2.0` |
 | `MODEL_PRICING_INPUT_EUR` | current gpt-4.1 input rate (EUR per 1M tokens) |
 | `MODEL_PRICING_OUTPUT_EUR` | current gpt-4.1 output rate (EUR per 1M tokens) |
@@ -95,7 +95,7 @@ Repo → Settings → Secrets → Actions → add:
 
 | Secret | Value |
 |---|---|
-| `ACR_LOGIN_SERVER` | `nexacr.azurecr.io` |
+| `ACR_LOGIN_SERVER` | `hexgigacr.azurecr.io` |
 | `ACR_USERNAME` | From ACR → Access keys |
 | `ACR_PASSWORD` | From ACR → Access keys |
 
@@ -109,8 +109,8 @@ Commit any changes to `requirements-linux.txt`.
 GitHub → Actions → `build-and-push.yml` → **Run workflow** (manual dispatch).
 
 Pushes two tags to ACR:
-- `nexacr.azurecr.io/nex-agent-api:latest`
-- `nexacr.azurecr.io/nex-agent-api:<git-sha>`
+- `hexgigacr.azurecr.io/hex-gig-agent-api:latest`
+- `hexgigacr.azurecr.io/hex-gig-agent-api:<git-sha>`
 
 ---
 
@@ -119,17 +119,17 @@ Pushes two tags to ACR:
 ### 4a. Deploy with Specific Image Tag
 ```sh
 az containerapp update \
-  --name nex-agent-api \
+  --name hex-gig-agent-api \
   --resource-group healthsociety \
-  --image nexacr.azurecr.io/nex-agent-api:<git-sha> \
-  --set-env-vars PROJECT_NAME=nex \
+  --image hexgigacr.azurecr.io/hex-gig-agent-api:<git-sha> \
+  --set-env-vars PROJECT_NAME=hex_gig \
   --revision-suffix "$(date +%d | tr -d '\n')$(date +%b | tr '[:upper:]' '[:lower:]')"
 ```
 
 ### 4b. Check Revision Health
 ```sh
 az containerapp revision list \
-  --name nex-agent-api \
+  --name hex-gig-agent-api \
   --resource-group healthsociety \
   --query "[0].{revisionName:name,provisioningState:properties.provisioningState,healthState:properties.healthState,runningState:properties.runningState,replicas:properties.replicas}" \
   --output table
@@ -139,7 +139,7 @@ Expected: `provisioningState=Provisioned`, `healthState=Healthy`, `runningState=
 ### 4c. Deactivate Old Revisions (if any)
 ```sh
 az containerapp revision deactivate \
-  --name nex-agent-api \
+  --name hex-gig-agent-api \
   --resource-group healthsociety \
   --revision <old-revision-name>
 ```

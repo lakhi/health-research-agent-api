@@ -1,8 +1,8 @@
-"""Unit and integration tests for knowledge_base.nex_rss_knowledge."""
+"""Unit and integration tests for knowledge_base.hex_gig_rss_knowledge."""
 
 import pytest
 
-from knowledge_base.nex_rss_knowledge import (
+from knowledge_base.hex_gig_rss_knowledge import (
     _compute_content_hash,
     _strip_html,
     fetch_rss_feed,
@@ -187,7 +187,7 @@ def test_parse_rss_feed_empty_feed():
 
 def test_get_rss_news_data_structure(monkeypatch):
     """Returned dicts have required top-level keys."""
-    import knowledge_base.nex_rss_knowledge as rss_mod
+    import knowledge_base.hex_gig_rss_knowledge as rss_mod
 
     monkeypatch.setattr(rss_mod, "fetch_rss_feed", lambda url=rss_mod.RSS_FEED_URL: FIXTURE_XML)
     results = get_rss_news_data()
@@ -200,7 +200,7 @@ def test_get_rss_news_data_structure(monkeypatch):
 
 def test_metadata_required_fields(monkeypatch):
     """Each metadata dict contains all required fields."""
-    import knowledge_base.nex_rss_knowledge as rss_mod
+    import knowledge_base.hex_gig_rss_knowledge as rss_mod
 
     monkeypatch.setattr(rss_mod, "fetch_rss_feed", lambda url=rss_mod.RSS_FEED_URL: FIXTURE_XML)
     results = get_rss_news_data()

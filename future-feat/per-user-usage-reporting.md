@@ -1,7 +1,7 @@
 # Future Feature — Per-user (anonymous) aggregation for /usage-report
 
 > Status: **design only — not yet implemented**
-> Related issue: [#27](https://github.com/lakhi/health-research-agent-api/issues/27) — NeX: Implement Anonymous Usage Based Metrics
+> Related issue: [#27](https://github.com/lakhi/health-research-agent-api/issues/27) — HeX-GiG: Implement Anonymous Usage Based Metrics
 
 ## Context
 

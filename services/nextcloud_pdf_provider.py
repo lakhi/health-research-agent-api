@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 _MAX_DOWNLOAD_RETRIES = 3
 _RETRY_BASE_DELAY_S = 2.0  # doubles each attempt: 2s, 4s, 8s
 
-DEFAULT_DOWNLOAD_DIR = Path("/app/nex_pdfs_cache")
+DEFAULT_DOWNLOAD_DIR = Path("/app/hex_gig_pdfs_cache")
 
 
 @dataclass

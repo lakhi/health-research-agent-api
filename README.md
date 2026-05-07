@@ -1,29 +1,29 @@
 # Health Research Agent API
 
-A FastAPI-based application for the **NEX (Network Explorer) Chatbot**, the **SSC Psychologie Assistant** (yet-to-be-developed), and the **Social Econ Psych research group studies** at Uni Wien.
+A FastAPI-based application for the **HeX-GiG (Health Network Explorer) Chatbot**, the **SSC Psychologie Assistant** (yet-to-be-developed), and the **Social Econ Psych research group studies** at Uni Wien.
 
-This platform powers three AI-assisted tools at the University of Vienna. **NEX** is a conversational agent for the Health in Society network that enables researchers to explore a curated knowledge base of literature on health and its intersections with society through natural language queries, backed by semantic search over PDF-embedded vector stores and GPT-4o. **SSC Psychologie** is a bilingual chatbot for the Student Service Center for Psychology, helping prospective students and the public find information about psychology study programs by drawing on scraped SSC website content and downloadable documents. **Vax Study** is a controlled-language chatbot designed for vaccine communication research, delivering factually accurate, regulation-compliant responses about vaccination side effects and outcomes. All tools share a FastAPI backend with project-specific RAG pipelines, pgvector storage, and Azure OpenAI, deployed as separate Azure Container Apps per project.
+This platform powers three AI-assisted tools at the University of Vienna. **HeX-GiG** is a conversational agent for the Health in Society research network (GiG) that enables researchers to explore a curated knowledge base of literature on health and its intersections with society through natural language queries, backed by semantic search over PDF-embedded vector stores and GPT-4o. **SSC Psychologie** is a bilingual chatbot for the Student Service Center for Psychology, helping prospective students and the public find information about psychology study programs by drawing on scraped SSC website content and downloadable documents. **Vax Study** is a controlled-language chatbot designed for vaccine communication research, delivering factually accurate, regulation-compliant responses about vaccination side effects and outcomes. All tools share a FastAPI backend with project-specific RAG pipelines, pgvector storage, and Azure OpenAI, deployed as separate Azure Container Apps per project.
 
 ## Architecture
 
 ```mermaid
 graph TB
     subgraph "Azure Container Apps Environment"
-        UI["🌐 nex-agent-ui<br/>(Next.js Frontend)<br/>Container App"]
-        API["⚙️ nex-api<br/>(Python Backend)<br/>Container App"]
+        UI["🌐 hex-gig-agent-ui<br/>(Next.js Frontend)<br/>Container App"]
+        API["⚙️ hex-gig-agent-api<br/>(Python Backend)<br/>Container App"]
     end
 
     subgraph "Azure Data Services"
-        DB[("💾 azure-db-nex<br/>(PostgreSQL Flexible Server)")]
+        DB[("💾 hex-gig-postgres-db<br/>(PostgreSQL Flexible Server)")]
         BLOB["📁 nexstorage<br/>(Azure Blob Storage)<br/>20 PDFs"]
-        subgraph "azure-openai-nex"
+        subgraph "az-openai-nex"
             AOAI["🤖 GPT-4o<br/>(Chat Model)"]
             EMBEDDER["🔢 Embedder<br/>(Embedding Model)"]
         end
     end
 
     subgraph "Azure Container Registry"
-        ACR["📦 nexdev<br/>(Container Images)"]
+        ACR["📦 hexgigacr<br/>(Container Images)"]
     end
 
     User["👤 User"] -->|HTTPS| UI
@@ -120,8 +120,8 @@ docker logs -f health-research-agent-api-api-1
 
 See [`azure_infra_config/deploy-test.md`](azure_infra_config/deploy-test.md) for full deployment commands.
 
-View NEX Container App logs:
+View HeX-GiG Container App logs:
 
 ```sh
-az containerapp logs show --name nex-agent-api --resource-group healthsociety --type console --follow --tail 300
+az containerapp logs show --name hex-gig-agent-api --resource-group healthsociety --type console --follow --tail 300
 ```

@@ -1,6 +1,6 @@
 import os
 
-from api.project_configs.nex_config import NexConfig
+from api.project_configs.hex_gig_config import HexGigConfig
 from api.project_configs.project_config import ProjectConfig, ProjectName
 from api.project_configs.ssc_psych_config import SscPsychConfig
 from api.project_configs.vax_study_config import VaxStudyConfig
@@ -25,8 +25,8 @@ def get_project_config() -> ProjectConfig:
 
     if project == ProjectName.VAX_STUDY.value:
         return VaxStudyConfig()
-    elif project == ProjectName.NEX.value:
-        return NexConfig()
+    elif project == ProjectName.HEX_GIG.value:
+        return HexGigConfig()
     elif project == ProjectName.SSC_PSYCH.value:
         return SscPsychConfig()
     else:
