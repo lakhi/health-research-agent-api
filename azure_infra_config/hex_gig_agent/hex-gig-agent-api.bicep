@@ -3,7 +3,7 @@ param managedEnvironments_hex_gig_apps_env_externalid string = '/subscriptions/4
 
 // ── Secrets (passed at deploy time, never stored in repo) ────────────────────
 // Deploy with: az deployment group create ... \
-//   --parameters dbPassword='...' agnoApiKey='...' azureOpenAiApiKey='...' azureEmbedderOpenAiApiKey='...'
+//   --parameters dbPassword='...' agnoApiKey='...' azureOpenAiApiKey='...' azureEmbedderOpenAiApiKey='...' acrPassword='...'
 @secure()
 param dbPassword string
 
@@ -15,6 +15,9 @@ param azureOpenAiApiKey string
 
 @secure()
 param azureEmbedderOpenAiApiKey string
+
+@secure()
+param acrPassword string
 
 resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containerapps@2025-02-02-preview' = {
   name: containerapps_hex_gig_agent_api_name
@@ -50,6 +53,10 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
           name: 'azure-embedder-openai-api-key'
           value: azureEmbedderOpenAiApiKey
         }
+        {
+          name: 'acr-password'
+          value: acrPassword
+        }
       ]
       activeRevisionsMode: 'Single'
       ingress: {
@@ -72,7 +79,8 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
       registries: [
         {
           server: 'hexgigacr.azurecr.io'
-          identity: 'system-environment'
+          username: 'hexgigacr'
+          passwordSecretRef: 'acr-password'
         }
       ]
       identitySettings: []

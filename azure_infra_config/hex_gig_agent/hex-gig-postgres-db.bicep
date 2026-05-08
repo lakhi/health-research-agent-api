@@ -50,8 +50,8 @@ resource flexibleServers_hex_gig_postgres_db_firewall_akshay 'Microsoft.DBforPos
   parent: flexibleServers_hex_gig_postgres_db_name_resource
   name: 'akshays_macbookpro'
   properties: {
-    startIpAddress: '41.66.98.0'
-    endIpAddress: '41.66.98.255'
+    startIpAddress: '41.66.96.0'
+    endIpAddress: '41.66.96.255'
   }
 }
 
