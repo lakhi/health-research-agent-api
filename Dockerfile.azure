@@ -18,6 +18,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && groupadd -g 61000 ${USER} \
     && useradd -g 61000 -u 61000 -ms /bin/bash -d ${APP_DIR} ${USER}
 
+# Strip setuid bits from binaries not needed by this app (CVE-2026-31431 mitigation)
+RUN chmod -s \
+  /usr/bin/newgrp /usr/bin/passwd /usr/bin/gpasswd \
+  /usr/bin/su /usr/bin/chfn /usr/bin/chsh \
+  /usr/bin/mount /usr/bin/umount \
+  /usr/lib/openssh/ssh-keysign 2>/dev/null || true
+
 WORKDIR ${APP_DIR}
 
 # Copy requirements-linux.txt

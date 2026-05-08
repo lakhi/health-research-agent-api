@@ -4,6 +4,13 @@ ARG USER=app
 ARG APP_DIR=/app
 ENV APP_DIR=${APP_DIR}
 
+# Strip setuid bits from binaries not needed by this app (CVE-2026-31431 mitigation)
+RUN chmod -s \
+  /usr/bin/newgrp /usr/bin/passwd /usr/bin/gpasswd \
+  /usr/bin/su /usr/bin/chfn /usr/bin/chsh \
+  /usr/bin/mount /usr/bin/umount \
+  /usr/lib/openssh/ssh-keysign 2>/dev/null || true
+
 # Create user and home directory
 RUN groupadd -g 61000 ${USER} \
   && useradd -g 61000 -u 61000 -ms /bin/bash -d ${APP_DIR} ${USER}
