@@ -22,8 +22,10 @@ class HexGigConfig(ProjectConfig):
 
     @property
     def cors_origins(self) -> List[str]:
-        # Public domain (provisioned by ZID); Azure-default FE FQDN to be added post-deploy.
-        return ["https://hex-gig.univie.ac.at"]
+        return [
+            "https://hex-gig.univie.ac.at",
+            "https://hex-gig-agent-ui.bravemeadow-0cb4208f.swedencentral.azurecontainerapps.io",  # remove after ZID CNAME is live
+        ]
 
     def get_agents(self) -> List[Agent]:
         """Initialize hex_gig agent."""
