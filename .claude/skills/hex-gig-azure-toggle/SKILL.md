@@ -1,21 +1,21 @@
 ---
-name: nex-azure-toggle
-description: "Toggle the NEX stack on Azure between paused (scale-to-zero + PostgreSQL stopped) and running (PostgreSQL started + Container Apps scaled up). Auto-detects current state and acts accordingly. Subscription: Project - socialeconpsy."
+name: hex-gig-azure-toggle
+description: "Toggle the HeX-GiG stack on Azure between paused (scale-to-zero + PostgreSQL stopped) and running (PostgreSQL started + Container Apps scaled up). Auto-detects current state and acts accordingly. Subscription: Project - socialeconpsy."
 argument-hint: ""
 user-invocable: true
 ---
 
-# NEX Azure Toggle
+# HeX-GiG Azure Toggle
 
-Toggle the NEX stack in the `healthsociety` resource group (subscription `444c1e5c-ac0d-4420-94ea-d4a5414d20e1`) between paused and running states. Auto-detects the current state and performs the opposite action.
+Toggle the HeX-GiG stack in the `healthsociety` resource group (subscription `444c1e5c-ac0d-4420-94ea-d4a5414d20e1`) between paused and running states. Auto-detects the current state and performs the opposite action.
 
 ## Resources Managed
 
 | Resource | Paused | Running |
 |---|---|---|
-| `nex-postgres-db` (PostgreSQL Flexible Server) | Stopped | Ready |
-| `nex-agent-api` (Container App) | minReplicas=0, maxReplicas=1 | minReplicas=1, maxReplicas=2 |
-| `nex-agent-ui` (Container App) | minReplicas=0, maxReplicas=1 | minReplicas=1, maxReplicas=3 |
+| `hex-gig-postgres-db` (PostgreSQL Flexible Server) | Stopped | Ready |
+| `hex-gig-agent-api` (Container App) | minReplicas=0, maxReplicas=1 | minReplicas=1, maxReplicas=3 |
+| `hex-gig-agent-ui` (Container App) | minReplicas=0, maxReplicas=1 | minReplicas=1, maxReplicas=3 |
 
 ## Procedure
 
@@ -25,7 +25,7 @@ Query PostgreSQL state as the source of truth:
 
 ```bash
 az postgres flexible-server show \
-  --name nex-postgres-db \
+  --name hex-gig-postgres-db \
   --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
   --query "state" -o tsv
@@ -42,19 +42,19 @@ Run all three commands. Container Apps can run in parallel with the PostgreSQL s
 
 ```bash
 az containerapp update \
-  --name nex-agent-api \
+  --name hex-gig-agent-api \
   --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
   --min-replicas 0 --max-replicas 1
 
 az containerapp update \
-  --name nex-agent-ui \
+  --name hex-gig-agent-ui \
   --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
   --min-replicas 0 --max-replicas 1
 
 az postgres flexible-server stop \
-  --name nex-postgres-db \
+  --name hex-gig-postgres-db \
   --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
 ```
@@ -65,18 +65,18 @@ Start PostgreSQL first (it takes ~2 min), then scale Container Apps up:
 
 ```bash
 az postgres flexible-server start \
-  --name nex-postgres-db \
+  --name hex-gig-postgres-db \
   --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
 
 az containerapp update \
-  --name nex-agent-api \
+  --name hex-gig-agent-api \
   --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
-  --min-replicas 1 --max-replicas 2
+  --min-replicas 1 --max-replicas 3
 
 az containerapp update \
-  --name nex-agent-ui \
+  --name hex-gig-agent-ui \
   --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
   --min-replicas 1 --max-replicas 3
@@ -88,12 +88,12 @@ Re-query PostgreSQL state and Container Apps replica config to confirm the trans
 
 ```bash
 az postgres flexible-server show \
-  --name nex-postgres-db \
+  --name hex-gig-postgres-db \
   --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
   --query "state" -o tsv
 
-az containerapp show --name nex-agent-api --resource-group healthsociety \
+az containerapp show --name hex-gig-agent-api --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
   --query "{minReplicas:properties.template.scale.minReplicas}" -o tsv
 ```
@@ -116,4 +116,4 @@ Report clearly:
 
 - **Paused**: ~$9/month (ACR Basic + storage only)
 - **Running**: ~$144/month
-- ⚠️ Azure auto-restarts stopped PostgreSQL Flexible Servers after 7 days. If this happens, run `/nex-azure-toggle` to re-pause, or trigger the `pause-nex-postgres` GitHub Actions workflow manually.
+- ⚠️ Azure auto-restarts stopped PostgreSQL Flexible Servers after 7 days. If this happens, run `/hex-gig-azure-toggle` to re-pause, or trigger the `pause-hex-gig-postgres` GitHub Actions workflow manually.
