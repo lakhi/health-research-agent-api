@@ -182,7 +182,20 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
             cpu: json('1.25')
             memory: '2.5Gi'
           }
-          probes: []
+          probes: [
+            // Knowledge loading from u:Cloud blocks HTTP startup for ~10 min.
+            // Wait 10 min before first probe, then allow 5 min of retries.
+            {
+              type: 'Startup'
+              tcpSocket: {
+                port: 8000
+              }
+              initialDelaySeconds: 600
+              periodSeconds: 10
+              failureThreshold: 30
+              timeoutSeconds: 5
+            }
+          ]
         }
       ]
       scale: {
