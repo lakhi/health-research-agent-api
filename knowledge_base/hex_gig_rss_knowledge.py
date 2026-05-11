@@ -4,6 +4,8 @@ import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 from urllib.request import urlopen
 
+from agno.knowledge import Knowledge
+
 logger = logging.getLogger(__name__)
 
 RSS_FEED_URL = "https://gig.univie.ac.at/en/about-us/news/feed.xml"
@@ -135,3 +137,20 @@ def get_rss_news_data() -> list[dict]:  # type: ignore[type-arg]
     """
     xml_str = fetch_rss_feed()
     return parse_rss_feed(xml_str)
+
+
+async def aload_rss_into_knowledge(knowledge: Knowledge) -> tuple[int, int]:
+    """Fetch the RSS feed and insert items into *knowledge*, skipping duplicates.
+
+    Uses ``skip_if_exists=True`` so previously-loaded articles (keyed by ``name``)
+    are not re-inserted. Returns ``(items_seen, items_attempted_insert)`` for logging.
+    """
+    items = get_rss_news_data()
+    for item in items:
+        await knowledge.ainsert(
+            name=item["name"],
+            text_content=item["text_content"],
+            metadata=item["metadata"],
+            skip_if_exists=True,
+        )
+    return len(items), len(items)

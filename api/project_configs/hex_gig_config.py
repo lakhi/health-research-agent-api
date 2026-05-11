@@ -6,7 +6,7 @@ from agno.knowledge.reader.pdf_reader import PDFReader
 from agents.hex_gig_agent import get_hex_gig_agent
 from api.project_configs.project_config import ProjectConfig, ProjectName
 from knowledge_base.hex_gig_knowledge_base import get_member_profiles_data, get_research_articles_from_ucloud
-from knowledge_base.hex_gig_rss_knowledge import get_rss_news_data
+from knowledge_base.hex_gig_rss_knowledge import aload_rss_into_knowledge
 from services.nextcloud_client import NextcloudClient
 from services.nextcloud_pdf_provider import NextcloudPDFProvider
 
@@ -94,15 +94,8 @@ class HexGigConfig(ProjectConfig):
             print(f"✅ Knowledge loaded from u:Cloud ({len(kb_data)} documents)")
 
             # Load RSS news
-            news_items = get_rss_news_data()
-            for item in news_items:
-                await hex_gig_agent.knowledge.ainsert(
-                    name=item["name"],
-                    text_content=item["text_content"],
-                    metadata=item["metadata"],
-                    skip_if_exists=True,
-                )
-            print(f"✅ RSS news loaded for hex_gig agent ({len(news_items)} articles)")
+            seen, _ = await aload_rss_into_knowledge(hex_gig_agent.knowledge)
+            print(f"✅ RSS news loaded for hex_gig agent ({seen} articles processed)")
 
             # Load member profiles from CSV
             member_profiles = get_member_profiles_data()

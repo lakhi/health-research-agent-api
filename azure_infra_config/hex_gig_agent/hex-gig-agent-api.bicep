@@ -175,7 +175,7 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
             // ── Knowledge loading ────────────────────────────────────────────
             {
               name: 'LOAD_HEX_GIG_KNOWLEDGE'
-              value: 'false'
+              value: 'true'
             }
           ]
           resources: {
