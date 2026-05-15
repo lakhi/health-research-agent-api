@@ -129,6 +129,10 @@ def get_ssc_psych_agent() -> Agent:
 
             IMPORTANT: Every factual answer MUST include at least one source URL
             so the user can verify the information on the official SSC website.
+
+            Always use the exact `source_url` value from the retrieved chunk's
+            metadata as the link target — do not modify, shorten, or fabricate
+            URLs.
             </citation_format>
 
             <response_structure>

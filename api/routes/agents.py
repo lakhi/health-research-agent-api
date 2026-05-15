@@ -15,6 +15,7 @@ from agents.registry import get_agent
 from api.settings import api_settings
 from knowledge_base.marhinovirus_knowledge_base import get_normal_catalog_knowledge
 from services.budget_service import check_budget_available, record_usage
+from services.citations_service import build_citations
 from services.metrics_service import record_agent_metrics
 
 logger = getLogger(__name__)
@@ -27,7 +28,11 @@ agents_router = APIRouter(prefix="/agents", tags=["Agents"])
 
 
 async def chat_response_streamer(
-    agent: Agent, message: str, has_budget: bool = False, session_id: Optional[str] = None
+    agent: Agent,
+    message: str,
+    has_budget: bool = False,
+    session_id: Optional[str] = None,
+    agent_id: Optional[str] = None,
 ) -> AsyncGenerator:
     """
     Stream agent responses chunk by chunk.
@@ -37,6 +42,7 @@ async def chat_response_streamer(
         message: User message to process
         has_budget: Whether this deployment enforces budget (for usage recording)
         session_id: Anonymous session identifier for metrics tracking
+        agent_id: The id of the agent being run (gates the final citations frame)
 
     Yields:
         Text chunks from the agent response
@@ -48,6 +54,7 @@ async def chat_response_streamer(
     total_tokens = 0
     duration_seconds: Optional[float] = None
     time_to_first_token: Optional[float] = None
+    latest_references = None
     start_time = time.monotonic()
 
     async for chunk in run_response:
@@ -70,6 +77,15 @@ async def chat_response_streamer(
                 duration_seconds = chunk_metrics.duration
             if hasattr(chunk_metrics, "time_to_first_token") and chunk_metrics.time_to_first_token:
                 time_to_first_token = chunk_metrics.time_to_first_token
+
+        chunk_refs = getattr(chunk, "references", None)
+        if chunk_refs:
+            latest_references = chunk_refs
+
+    # Issue #37 — emit inline-excerpt citations for SSC-Psych after content streams.
+    if agent_id == AgentType.SSC_PSYCH_AGENT.id:
+        citations = build_citations(latest_references, query=message)
+        yield f"event: citations\ndata: {json.dumps({'citations': citations})}\n\n"
 
     # Fallback: use wall-clock duration if agno didn't report it
     if duration_seconds is None:
@@ -183,7 +199,11 @@ async def create_agent_run(
 
         return StreamingResponse(
             chat_response_streamer(
-                agent, run_request.message, has_budget=has_budget, session_id=run_request.session_id
+                agent,
+                run_request.message,
+                has_budget=has_budget,
+                session_id=run_request.session_id,
+                agent_id=agent_id,
             ),
             media_type="text/event-stream",
             headers=headers,
@@ -198,6 +218,13 @@ async def create_agent_run(
             response_payload = {
                 "content": getattr(response, "content", ""),
             }
+
+        # Issue #37 — inline-excerpt citations for SSC-Psych.
+        if agent_id == AgentType.SSC_PSYCH_AGENT.id:
+            response_payload["citations"] = build_citations(
+                getattr(response, "references", None),
+                query=run_request.message,
+            )
 
         # Record usage for budgeted agents
         if has_budget:
