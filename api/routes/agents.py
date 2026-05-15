@@ -83,9 +83,11 @@ async def chat_response_streamer(
             latest_references = chunk_refs
 
     # Issue #37 — emit inline-excerpt citations for SSC-Psych after content streams.
+    # Wire name follows Agno's PascalCase SSE convention (e.g. RunStarted, RunCompleted)
+    # so the FE RunEvent enum can stay internally consistent.
     if agent_id == AgentType.SSC_PSYCH_AGENT.id:
         citations = build_citations(latest_references, query=message)
-        yield f"event: citations\ndata: {json.dumps({'citations': citations})}\n\n"
+        yield f"event: Citations\ndata: {json.dumps({'citations': citations})}\n\n"
 
     # Fallback: use wall-clock duration if agno didn't report it
     if duration_seconds is None:
