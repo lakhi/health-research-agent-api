@@ -178,26 +178,33 @@ def scrape_ssc_web_pages() -> list[dict]:
 
 def scrape_ssc_downloads() -> list[dict]:
     """
-    Scrape the SSC Psychologie /downloads/ section and download all linked PDFs.
+    Scrape the SSC Psychologie /downloads/ section and download all linked PDFs and Word docs.
+
+    The TYPO3 filelist extension serves every folder view at /downloads/ with a
+    tx_filelist_filelist[path] query param. Both the visited-page key and the link-dedup
+    key must include the query string, otherwise all subfolder pages collapse to the same
+    normalized path and are skipped after the first visit.
 
     Returns a list of dicts, each with:
         - name: Document name for the knowledge base
-        - path: Path to the downloaded PDF file
-        - metadata: Dict with source_type, source_url, document_title
+        - path: Path to the downloaded file
+        - metadata: Dict with source_type, source_url, document_title, language
     """
     session = _get_session()
     visited_pages: set[str] = set()
-    pdf_urls: set[str] = set()
+    doc_urls: set[str] = set()
     results: list[dict] = []
 
-    # Crawl /downloads/ pages to find PDF links
+    # Crawl /downloads/ pages to find document links
     queue: list[str] = [f"{BASE_URL}{path}" for path in DOWNLOADS_PATHS]
     allowed_prefixes = DOWNLOADS_PATHS.copy()
 
     while queue:
         url = queue.pop(0)
         parsed = urlparse(url)
-        normalized = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+        # Include query string — TYPO3 folder nav uses tx_filelist_filelist[path] params
+        qs = f"?{parsed.query}" if parsed.query else ""
+        normalized = f"{parsed.scheme}://{parsed.netloc}{parsed.path}{qs}"
 
         if normalized in visited_pages:
             continue
@@ -216,30 +223,31 @@ def scrape_ssc_downloads() -> list[dict]:
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Collect PDF links
+        # Collect PDF and Word document links
         for link in soup.find_all("a", href=True):
             href = link["href"]
             full_url = urljoin(url, href)
 
-            if full_url.lower().endswith(".pdf"):
-                pdf_urls.add(full_url)
+            if full_url.lower().endswith((".pdf", ".docx")):
+                doc_urls.add(full_url)
 
-            # Follow internal links within /downloads/
+            # Follow internal links within /downloads/ (includes query-param subfolder pages)
             full_parsed = urlparse(full_url)
-            full_normalized = f"{full_parsed.scheme}://{full_parsed.netloc}{full_parsed.path}"
+            full_qs = f"?{full_parsed.query}" if full_parsed.query else ""
+            full_normalized = f"{full_parsed.scheme}://{full_parsed.netloc}{full_parsed.path}{full_qs}"
             if full_normalized not in visited_pages and _is_internal_link(full_url, allowed_prefixes):
                 queue.append(full_url)
 
-    # Download PDFs to temp directory
-    if not pdf_urls:
-        logger.warning("No PDF links found on SSC downloads pages")
+    # Download documents to temp directory
+    if not doc_urls:
+        logger.warning("No documents found on SSC downloads pages")
         return results
 
     tmp_dir = Path(tempfile.mkdtemp(prefix="ssc_psych_pdfs_"))
-    logger.info(f"Downloading {len(pdf_urls)} PDFs to {tmp_dir}")
+    logger.info(f"Downloading {len(doc_urls)} documents to {tmp_dir}")
 
-    for pdf_url in sorted(pdf_urls):
-        parsed = urlparse(pdf_url)
+    for doc_url in sorted(doc_urls):
+        parsed = urlparse(doc_url)
         filename = Path(parsed.path).name
 
         if not filename:
@@ -247,30 +255,36 @@ def scrape_ssc_downloads() -> list[dict]:
 
         try:
             time.sleep(REQUEST_DELAY_SECONDS)
-            response = session.get(pdf_url, timeout=REQUEST_TIMEOUT_SECONDS)
+            response = session.get(doc_url, timeout=REQUEST_TIMEOUT_SECONDS)
             response.raise_for_status()
         except requests.RequestException as e:
-            logger.warning(f"Failed to download {pdf_url}: {e}")
+            logger.warning(f"Failed to download {doc_url}: {e}")
             continue
 
         local_path = tmp_dir / filename
         local_path.write_bytes(response.content)
 
-        # Derive a human-readable title from the filename
-        document_title = filename.replace(".pdf", "").replace("_", " ").replace("-", " ")
+        filename_lower = filename.lower()
+        source_type = "pdf_document" if filename_lower.endswith(".pdf") else "word_document"
+        # Derive a human-readable title from the filename (strip extension)
+        document_title = filename.rsplit(".", 1)[0].replace("_", " ").replace("-", " ")
+        # Simple language heuristic: filenames containing _E_ or ending with E.pdf/E.docx are English
+        language = "en" if ("_E_" in filename or filename_lower.endswith(("e.pdf", "e.docx", "_en.pdf", "_en.docx"))) else "de"
+        file_label = "PDF" if source_type == "pdf_document" else "DOCX"
 
         results.append(
             {
-                "name": f"SSC PDF - {document_title}",
+                "name": f"SSC {file_label} - {document_title}",
                 "path": local_path,
                 "metadata": {
-                    "source_type": "pdf_document",
-                    "source_url": pdf_url,
+                    "source_type": source_type,
+                    "source_url": doc_url,
                     "document_title": document_title,
+                    "language": language,
                 },
             }
         )
-        logger.info(f"Downloaded: {filename} ��� {pdf_url}")
+        logger.info(f"Downloaded: {filename} → {doc_url}")
 
-    logger.info(f"Downloaded {len(results)} PDFs from SSC Psychologie website")
+    logger.info(f"Downloaded {len(results)} documents from SSC Psychologie website")
     return results

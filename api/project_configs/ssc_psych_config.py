@@ -1,6 +1,7 @@
 from typing import List
 
 from agno.agent import Agent
+from agno.knowledge.reader.docx_reader import DocxReader
 from agno.knowledge.reader.pdf_reader import PDFReader
 
 from agents.ssc_psych_agent import get_ssc_psych_agent
@@ -44,6 +45,8 @@ class SscPsychConfig(ProjectConfig):
                 similarity_window=3,
             )
         )
+        # DocxReader default DocumentChunking is appropriate for forms/templates (short, structured)
+        docx_reader = DocxReader()
 
         try:
             ssc_agent = agents[0]
@@ -60,18 +63,21 @@ class SscPsychConfig(ProjectConfig):
                 )
             print(f"✅ Web pages loaded ({len(web_pages)} pages)")
 
-            # Load PDF documents from SSC downloads section
-            pdf_docs = scrape_ssc_downloads()
-            for i, item in enumerate(pdf_docs, 1):
-                print(f"  [{i}/{len(pdf_docs)}] Embedding PDF: {item['name']}")
+            # Load PDF and Word documents from SSC downloads section
+            docs = scrape_ssc_downloads()
+            for i, item in enumerate(docs, 1):
+                is_pdf = str(item["path"]).lower().endswith(".pdf")
+                reader = pdf_reader if is_pdf else docx_reader
+                file_type = "PDF" if is_pdf else "Word doc"
+                print(f"  [{i}/{len(docs)}] Embedding {file_type}: {item['name']}")
                 await ssc_agent.knowledge.ainsert(
                     name=item["name"],
                     path=str(item["path"]),
-                    reader=pdf_reader,
+                    reader=reader,
                     metadata=item["metadata"],
                     skip_if_exists=True,
                 )
-            print(f"✅ PDF documents loaded ({len(pdf_docs)} documents)")
+            print(f"✅ Documents loaded ({len(docs)} total)")
 
         except Exception as e:
             print(f"❌ Error loading SSC Psych knowledge: {e}")
