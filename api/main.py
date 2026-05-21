@@ -69,6 +69,15 @@ agent_os = AgentOS(
 
 app = agent_os.get_app()
 
+# Compliance: the HeX-GiG agent uses an in-RAM InMemoryDb for follow-up
+# context. AgentOS auto-discovers that db and mounts /sessions routes that
+# would serve the in-memory chat content. Strip those routes for projects
+# that require chat history to be non-retrievable.
+if not api_settings.project_config.expose_session_history:
+    app.router.routes = [
+        route for route in app.router.routes if not getattr(route, "path", "").startswith("/sessions")
+    ]
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,

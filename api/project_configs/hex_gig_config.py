@@ -27,6 +27,10 @@ class HexGigConfig(ProjectConfig):
             "https://hex-gig-agent-ui.bravemeadow-0cb4208f.swedencentral.azurecontainerapps.io",  # remove after ZID CNAME is live
         ]
 
+    @property
+    def expose_session_history(self) -> bool:
+        return False
+
     def get_agents(self) -> List[Agent]:
         """Initialize hex_gig agent."""
         return [get_hex_gig_agent()]
