@@ -9,7 +9,7 @@ class ProjectName(str, Enum):
     """Supported project names for multi-project API."""
 
     VAX_STUDY = "vax-study"
-    HEX_GIG = "hex_gig"
+    HEX_GIG = "hex-gig"
     SSC_PSYCH = "ssc-psych"
 
 

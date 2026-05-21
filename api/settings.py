@@ -77,7 +77,7 @@ class ApiSettings(BaseSettings):
 
         # HeX-specific: u:Cloud token required for research paper downloads
         if project == ProjectName.HEX_GIG.value and not self.ucloud_share_token:
-            raise ValueError("Missing required environment variable for PROJECT_NAME=hex_gig: UCLOUD_SHARE_TOKEN")
+            raise ValueError("Missing required environment variable for PROJECT_NAME=hex-gig: UCLOUD_SHARE_TOKEN")
 
         return self
 
