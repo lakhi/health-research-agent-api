@@ -5,7 +5,10 @@ from agno.models.azure import AzureOpenAI
 
 from agents.agent_types import AgentType
 from agents.llm_models import VAX_STUDY_GPT_MODEL
-from agents.marhinovirus_agents.shared_instructions import SHARED_MARHINOVIRUS_INSTRUCTIONS
+from agents.marhinovirus_agents.shared_instructions import (
+    COMPLETENESS_INSTRUCTION,
+    SHARED_MARHINOVIRUS_INSTRUCTIONS,
+)
 from knowledge_base import marhinovirus_knowledge_base
 from knowledge_base.marhinovirus_knowledge_base import (
     get_normal_catalog_knowledge,
@@ -30,6 +33,7 @@ def get_simple_language_marhinovirus_agent() -> Agent:
         model=AzureOpenAI(id=VAX_STUDY_GPT_MODEL, temperature=0.2),
         description=marhinovirus_knowledge_base.SIMPLE_DESCRIPTION,
         instructions=[
+            COMPLETENESS_INSTRUCTION,
             marhinovirus_knowledge_base.SIMPLE_INSTRUCTIONS,
             *SHARED_MARHINOVIRUS_INSTRUCTIONS,
         ],

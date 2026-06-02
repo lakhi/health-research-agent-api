@@ -1,6 +1,6 @@
 import logging
+from pathlib import Path
 
-import requests
 from agno.db.postgres import PostgresDb
 from agno.knowledge import Knowledge
 from agno.knowledge.chunking.agentic import AgenticChunking
@@ -18,17 +18,11 @@ logger = logging.getLogger(__name__)
 # TODO 2: implement Search Retrieval best practices: https://docs.agno.com/basics/knowledge/search-and-retrieval/overview
 # TODO 3: implement a reranker and see if results are better
 
-# URLs for fetching agent configurations from cloud storage
-NORMAL_DESCRIPTION_URL = "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/normal-description.txt"
-NORMAL_INSTRUCTIONS_URL = (
-    "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/normal-instructions.txt"
-)
-SIMPLE_DESCRIPTION_URL = "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/simple-description.txt"
-SIMPLE_INSTRUCTIONS_URL = (
-    "https://socialeconpsystorage.blob.core.windows.net/marhinovirus-study/simple-instructions.txt"
-)
+# Repo-versioned agent instruction/description text (git-tracked).
+# Previously fetched from Azure Blob; moved in-repo so changes are version-controlled.
+INSTRUCTIONS_DIR = Path(__file__).parent / "marhinovirus_instructions"
 
-# Module-level variables populated at startup from cloud URLs
+# Module-level variables populated at startup by initialize_agent_configs() from repo files
 NORMAL_DESCRIPTION: str | None = None
 NORMAL_INSTRUCTIONS: str | None = None
 SIMPLE_DESCRIPTION: str | None = None
@@ -38,33 +32,31 @@ SIMPLE_INSTRUCTIONS: str | None = None
 _configs_initialized: bool = False
 
 
-def fetch_text_from_url(url: str) -> str:
+def _read_instruction_file(filename: str) -> str:
     """
-    Fetch text content from a URL using requests.
-    Raises exceptions on failure to allow app startup to fail fast.
+    Read agent instruction/description text from the repo-versioned
+    marhinovirus_instructions directory.
 
     Args:
-        url: The URL to fetch text from
+        filename: The instruction file name (e.g. "normal-instructions.txt").
 
     Returns:
-        The text content from the URL
+        The file's text content.
 
     Raises:
-        requests.HTTPError: On HTTP errors
-        requests.RequestException: On network errors
+        FileNotFoundError: If the file is missing, causing app startup to fail fast.
     """
-    response = requests.get(url, timeout=10)
-    response.raise_for_status()
-    return response.text
+    return (INSTRUCTIONS_DIR / filename).read_text(encoding="utf-8")
 
 
 def initialize_agent_configs() -> None:
     """
-    Initialize all agent configuration variables by fetching from cloud URLs.
-    Idempotent - safe to call multiple times (only fetches once).
+    Initialize all agent configuration variables by reading the repo-versioned
+    instruction/description text files. Idempotent - safe to call multiple times
+    (only reads once).
 
     Raises:
-        Exception: On any fetch failure, causing app startup to fail
+        FileNotFoundError: If an instruction file is missing, causing app startup to fail fast.
     """
     global NORMAL_DESCRIPTION, NORMAL_INSTRUCTIONS, SIMPLE_DESCRIPTION, SIMPLE_INSTRUCTIONS, _configs_initialized
 
@@ -72,10 +64,10 @@ def initialize_agent_configs() -> None:
     if _configs_initialized:
         return
 
-    NORMAL_DESCRIPTION = fetch_text_from_url(NORMAL_DESCRIPTION_URL)
-    NORMAL_INSTRUCTIONS = fetch_text_from_url(NORMAL_INSTRUCTIONS_URL)
-    SIMPLE_DESCRIPTION = fetch_text_from_url(SIMPLE_DESCRIPTION_URL)
-    SIMPLE_INSTRUCTIONS = fetch_text_from_url(SIMPLE_INSTRUCTIONS_URL)
+    NORMAL_DESCRIPTION = _read_instruction_file("normal-description.txt")
+    NORMAL_INSTRUCTIONS = _read_instruction_file("normal-instructions.txt")
+    SIMPLE_DESCRIPTION = _read_instruction_file("simple-description.txt")
+    SIMPLE_INSTRUCTIONS = _read_instruction_file("simple-instructions.txt")
 
     logger.info(f"SIMPLE_DESCRIPTION: \n{SIMPLE_DESCRIPTION}")
     logger.info(f"SIMPLE_INSTRUCTIONS: \n{SIMPLE_INSTRUCTIONS}")
