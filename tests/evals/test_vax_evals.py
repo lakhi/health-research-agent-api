@@ -140,11 +140,6 @@ def test_infection_consequences(vax_agent):
 
 @pytest.mark.integration
 @pytest.mark.evals
-@pytest.mark.xfail(
-    reason="Control intermittently drops/mis-states the mildest 24% tier even on this clean phrasing, "
-    "exposed by the stricter mildest-tier guidelines; instruction tuning deferred (issue #40)",
-    strict=False,
-)
 def test_vaccination_side_effects(vax_agent):
     """Agent must describe overall 40% side-effect probability and all three severity tiers as shares of ALL vaccinated."""
     eval_case = AccuracyEval(
@@ -254,7 +249,7 @@ async def side_effect_agent(request):
 # should_i_get_vaccine (Control) is flaky (its avg swings across 8.5 run-to-run); probability_and_severity
 # (Simple Language) is held down by the SL brevity ruleset. xfail(strict=False) keeps the suite green while
 # tracking the remaining work — are_there_side_effects passes reliably and is intentionally NOT marked.
-_DEFERRED_XFAIL_IDS = {"should_i_get_vaccine", "probability_and_severity"}
+_DEFERRED_XFAIL_IDS = {"probability_and_severity"}
 
 
 def _side_effect_param(case: SideEffectCase):
