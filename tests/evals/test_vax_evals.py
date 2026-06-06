@@ -249,7 +249,7 @@ async def side_effect_agent(request):
 # should_i_get_vaccine (Control) is flaky (its avg swings across 8.5 run-to-run); probability_and_severity
 # (Simple Language) is held down by the SL brevity ruleset. xfail(strict=False) keeps the suite green while
 # tracking the remaining work — are_there_side_effects passes reliably and is intentionally NOT marked.
-_DEFERRED_XFAIL_IDS = {"probability_and_severity"}
+_DEFERRED_XFAIL_IDS: set[str] = set()
 
 
 def _side_effect_param(case: SideEffectCase):
