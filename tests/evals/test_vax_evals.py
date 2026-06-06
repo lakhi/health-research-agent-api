@@ -248,11 +248,10 @@ async def side_effect_agent(request):
     return request.param, agent
 
 
-# These two cases are borderline: the agent instruction fix is correct and both score 8.0-8.25 on average
-# when the judge runs cold (no session history). The judge occasionally misreads a correct response due to
-# the SL agent's complement framing ("60% no reaction") or the no-reaction bullet layout, pulling the avg
-# below the 8.5 gate. xfail(strict=False) keeps them in the suite as aspirational checks without blocking CI.
-_DEFERRED_XFAIL_IDS: set[str] = {"should_i_get_vaccine", "probability_and_severity"}
+# should_i_get_vaccine (Control) is borderline: the question invites a broader answer and the judge
+# occasionally penalises the control agent's phrasing even when all three tiers are present, pulling
+# the avg below 8.5 at n=10 without session history. xfail(strict=False) tracks it without blocking CI.
+_DEFERRED_XFAIL_IDS: set[str] = {"should_i_get_vaccine"}
 
 
 def _side_effect_param(case: SideEffectCase):
