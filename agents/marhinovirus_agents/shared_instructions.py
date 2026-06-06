@@ -1,6 +1,5 @@
-# Completeness rule — injected BEFORE the fetched blob instructions in each agent so it is
-# not out-weighted by the Simple-Language agent's brevity ruleset (max paragraphs,
-# "remove anything not asked"), which lives inside that blob.
+# Must be injected BEFORE the per-agent instruction blob so it is not outweighed by the
+# Simple Language agent's brevity ruleset ("max 3 paragraphs", "remove anything not asked").
 COMPLETENESS_INSTRUCTION = (
     "List every outcome level the catalogue gives, including the least severe / mildest one. "
     "If your answer omits any level, even the mildest, rewrite it to include them all before sending."
