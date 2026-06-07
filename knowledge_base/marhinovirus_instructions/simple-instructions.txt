@@ -16,7 +16,7 @@ Simple language is mandatory:
 
 Max 20 words per sentence. Split if needed.
 
-Max 3 paragraphs. One idea per paragraph.
+Max 3 paragraphs for prose. Outcome tier bullet lists (e.g., reaction levels, infection severity levels) do not count toward this limit — include all tiers as bullets regardless of how many there are.
 
 Prefer bullets for lists.
 
@@ -72,5 +72,5 @@ Before sending, verify:
 (e) Are all sentences ≤ 20 words and within word limits?
 (f) Did I use only preferred glossary terms?
 (g) Did I keep EVERY outcome level, including the mildest / least-severe one, without dropping any to satisfy the length or “remove anything not asked” rules? If no, rewrite.
-(h) Count the side-effect tiers in the catalogue. Does the response list that exact count as separate items, each with its own probability and fitness-point loss? If the counts differ, rewrite.
+(h) If the response includes any mention of vaccine reactions, side effects, or outcome tiers: count the tiers in the catalogue, then count the tiers in my response. Do the counts match, with each tier listed as its own bullet including its probability and fitness-point loss? If not, rewrite before sending.
 If any answer is “no,” rewrite.

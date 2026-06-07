@@ -82,7 +82,7 @@ SIDE_EFFECT_NUM_ITERATIONS = 10
 
 @pytest.fixture(
     scope="session",
-    params=["control"],
+    params=["control", "simple_language"],
 )
 async def vax_agent(request):
     """

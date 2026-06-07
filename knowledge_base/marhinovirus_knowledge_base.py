@@ -94,7 +94,7 @@ def get_normal_catalog_knowledge(
             embedder=get_azure_embedder(),
             # reranker=CohereReranker(),
         ),
-        # max_results=5,
+        max_results=15,
         contents_db=get_contents_db(contents_db_name=contents_db_name),
     )
 
