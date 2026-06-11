@@ -25,7 +25,11 @@ services:
     volumes:
       - .:/app
     environment:
-      AGNO_MONITOR: "True"
+      # Agno telemetry/monitoring off by default — no session/run data leaves to
+      # app.agno.com / os-api.agno.com. Set AGNO_MONITOR=True only when actively
+      # using the Agno playground locally.
+      AGNO_MONITOR: "False"
+      AGNO_TELEMETRY: "false"
       AGNO_API_KEY: ${AGNO_API_KEY}
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}

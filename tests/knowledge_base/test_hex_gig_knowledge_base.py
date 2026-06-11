@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-
 def _install_agno_stubs() -> None:
     agno = types.ModuleType("agno")
 
@@ -33,7 +32,7 @@ _install_agno_stubs()
 from knowledge_base import hex_gig_knowledge_base
 
 MEMBERS_HEADER = (
-    "first_name,last_name,gender,email_address,academic_position,"
+    "first_name,last_name,email_address,academic_position,"
     "faculty_affiliation,department_affiliation,discipline,uni_wien_url\n"
 )
 
@@ -54,7 +53,7 @@ def test_get_research_articles_from_ucloud_matches_member(tmp_path, monkeypatch)
     _write_csv(
         members_csv,
         MEMBERS_HEADER
-        + "Ada,Lovelace,F,ada@univie.ac.at,Professor,Faculty X,Dept Y,Computing,https://ucris.example/ada\n",
+        + "Ada,Lovelace,ada@univie.ac.at,Professor,Faculty X,Dept Y,Computing,https://ucris.example/ada\n",
     )
     monkeypatch.setattr(hex_gig_knowledge_base, "HEX_GIG_MEMBERS_CSV", members_csv)
 
@@ -80,7 +79,7 @@ def test_get_research_articles_from_ucloud_handles_double_spaces(tmp_path, monke
     members_csv = tmp_path / "members.csv"
     _write_csv(
         members_csv,
-        MEMBERS_HEADER + "Dagmar ,Vorlicek,F,dagmar@univie.ac.at,PostDoc,Faculty S,Sociology,ISP,\n",
+        MEMBERS_HEADER + "Dagmar ,Vorlicek,dagmar@univie.ac.at,PostDoc,Faculty S,Sociology,ISP,\n",
     )
     monkeypatch.setattr(hex_gig_knowledge_base, "HEX_GIG_MEMBERS_CSV", members_csv)
 
@@ -99,7 +98,7 @@ def test_get_research_articles_from_ucloud_handles_umlauts(tmp_path, monkeypatch
     members_csv = tmp_path / "members.csv"
     _write_csv(
         members_csv,
-        MEMBERS_HEADER + "Laura Maria,König,F,laura@univie.ac.at,Professor,Faculty P,Dept C,Health,\n",
+        MEMBERS_HEADER + "Laura Maria,König,laura@univie.ac.at,Professor,Faculty P,Dept C,Health,\n",
     )
     monkeypatch.setattr(hex_gig_knowledge_base, "HEX_GIG_MEMBERS_CSV", members_csv)
 
@@ -118,7 +117,7 @@ def test_get_research_articles_from_ucloud_skips_unmatched_folder(tmp_path, monk
     members_csv = tmp_path / "members.csv"
     _write_csv(
         members_csv,
-        MEMBERS_HEADER + "Ada,Lovelace,F,ada@univie.ac.at,Professor,Faculty X,Dept Y,Computing,\n",
+        MEMBERS_HEADER + "Ada,Lovelace,ada@univie.ac.at,Professor,Faculty X,Dept Y,Computing,\n",
     )
     monkeypatch.setattr(hex_gig_knowledge_base, "HEX_GIG_MEMBERS_CSV", members_csv)
 
@@ -136,7 +135,7 @@ def test_get_research_articles_from_ucloud_multiple_pdfs_per_member(tmp_path, mo
     members_csv = tmp_path / "members.csv"
     _write_csv(
         members_csv,
-        MEMBERS_HEADER + "Ada,Lovelace,F,ada@univie.ac.at,Professor,Faculty X,Dept Y,Computing,\n",
+        MEMBERS_HEADER + "Ada,Lovelace,ada@univie.ac.at,Professor,Faculty X,Dept Y,Computing,\n",
     )
     monkeypatch.setattr(hex_gig_knowledge_base, "HEX_GIG_MEMBERS_CSV", members_csv)
 

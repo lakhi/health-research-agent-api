@@ -118,6 +118,18 @@ resource jobs_hex_gig_rss_refresh_resource 'Microsoft.App/jobs@2025-02-02-previe
               name: 'AZURE_EMBEDDER_OPENAI_API_KEY'
               secretRef: 'azure-embedder-openai-api-key'
             }
+            // ── Agno ─────────────────────────────────────────────────────────
+            {
+              name: 'AGNO_TELEMETRY'
+              value: 'false'
+            }
+            // ── Metrics retention ────────────────────────────────────────────
+            // This daily job also purges agent_usage_metrics rows older than N days
+            // (anonymous, content-free) to bound retention. See scripts/refresh_hex_gig_rss.py.
+            {
+              name: 'METRICS_RETENTION_DAYS'
+              value: '180'
+            }
           ]
           resources: {
             cpu: json('0.5')

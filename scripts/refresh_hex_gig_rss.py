@@ -9,6 +9,7 @@ Usage:
 
 import asyncio
 import logging
+import os
 import sys
 import time
 
@@ -17,6 +18,25 @@ from knowledge_base.hex_gig_rss_knowledge import aload_rss_into_knowledge
 
 logger = logging.getLogger("hex_gig_rss_refresh")
 
+# Retention window for the anonymous agent_usage_metrics table. Read directly from
+# the environment (not api.settings) so this lightweight job avoids the budget-var
+# validation that ApiSettings enforces for the hex_gig project.
+_DEFAULT_METRICS_RETENTION_DAYS = 180
+
+
+def _purge_old_metrics() -> None:
+    """Best-effort retention enforcement; never fails the RSS refresh job."""
+    try:
+        days = int(os.getenv("METRICS_RETENTION_DAYS", str(_DEFAULT_METRICS_RETENTION_DAYS)))
+    except ValueError:
+        days = _DEFAULT_METRICS_RETENTION_DAYS
+        logger.warning("Invalid METRICS_RETENTION_DAYS; falling back to %d days", days)
+
+    from services.metrics_retention import purge_metrics_older_than
+
+    deleted = purge_metrics_older_than(days)
+    logger.info("Metrics retention: purged %d rows older than %d days", deleted, days)
+
 
 async def _main() -> int:
     knowledge = get_hex_gig_knowledge()
@@ -24,6 +44,9 @@ async def _main() -> int:
     seen, _ = await aload_rss_into_knowledge(knowledge)
     elapsed = time.monotonic() - started
     logger.info("RSS refresh: %d items processed in %.1fs", seen, elapsed)
+
+    # Piggyback the daily metrics-retention purge on this scheduled run.
+    _purge_old_metrics()
     return 0
 
 

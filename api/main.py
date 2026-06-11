@@ -65,6 +65,10 @@ agent_os = AgentOS(
     lifespan=app_lifecycle,
     base_app=app,
     on_route_conflict="preserve_base_app",
+    # Telemetry off: suppress the once-per-launch OSLaunch event to os-api.agno.com.
+    # This is the ONLY switch for the OS-level event — AGNO_TELEMETRY (env) covers
+    # per-run Agent telemetry but is ignored by AgentOS.
+    telemetry=False,
 )
 
 app = agent_os.get_app()
@@ -74,9 +78,7 @@ app = agent_os.get_app()
 # would serve the in-memory chat content. Strip those routes for projects
 # that require chat history to be non-retrievable.
 if not api_settings.project_config.expose_session_history:
-    app.router.routes = [
-        route for route in app.router.routes if not getattr(route, "path", "").startswith("/sessions")
-    ]
+    app.router.routes = [route for route in app.router.routes if not getattr(route, "path", "").startswith("/sessions")]
 
 # Add CORS middleware
 app.add_middleware(

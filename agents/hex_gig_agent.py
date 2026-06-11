@@ -200,8 +200,12 @@ def get_hex_gig_agent() -> Agent:
             </grounding_reminder>
             """
         ),
-        # Debug & Development
-        debug_mode=True,
+        # Telemetry — off: no per-run metadata events to Agno's API (os-api.agno.com).
+        # Reinforced at runtime by AGNO_TELEMETRY=false and at the OS level in api/main.py.
+        telemetry=False,
+        # Debug & Development — off in production: debug_mode echoes prompts/responses
+        # to stdout (→ Log Analytics). Kept off so no conversation content is logged.
+        debug_mode=False,
     )
 
     return hex_gig_agent

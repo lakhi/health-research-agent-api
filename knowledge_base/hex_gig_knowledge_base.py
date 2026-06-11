@@ -24,7 +24,6 @@ HEX_GIG_MEMBERS_CSV = HEX_GIG_KNOWLEDGE_DIR / "hex_gig_members_list.csv"
 MEMBER_REQUIRED_COLUMNS = {
     "first_name",
     "last_name",
-    "gender",
     "email_address",
     "academic_position",
     "faculty_affiliation",
@@ -32,6 +31,11 @@ MEMBER_REQUIRED_COLUMNS = {
     "discipline",
     "uni_wien_url",
 }
+
+# Data minimisation (GDPR): columns never persisted to embeddings/metadata even if
+# present in the source CSV. `gender` is not required for research discovery, so it
+# is dropped here as a safeguard in addition to being removed from the CSV.
+MEMBER_EXCLUDED_METADATA_FIELDS = {"gender"}
 
 
 def _extract_doi_from_pdf(path: Path) -> str | None:
@@ -175,11 +179,16 @@ def _build_member_name_index() -> dict[str, dict[str, str]]:
 
         if full_name in members_by_name:
             logger.warning(
-                "Duplicate name in %s: '%s' (row %d), keeping first occurrence", HEX_GIG_MEMBERS_CSV.name, full_name, index
+                "Duplicate name in %s: '%s' (row %d), keeping first occurrence",
+                HEX_GIG_MEMBERS_CSV.name,
+                full_name,
+                index,
             )
             continue
 
-        member_metadata = {key: _normalize_cell(value) for key, value in member.items()}
+        member_metadata = {
+            key: _normalize_cell(value) for key, value in member.items() if key not in MEMBER_EXCLUDED_METADATA_FIELDS
+        }
         member_metadata["email_address"] = member_metadata.get("email_address", "").strip().lower()
         members_by_name[full_name] = member_metadata
 

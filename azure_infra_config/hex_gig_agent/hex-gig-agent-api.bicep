@@ -3,12 +3,12 @@ param managedEnvironments_hex_gig_apps_env_externalid string = '/subscriptions/4
 
 // ── Secrets (passed at deploy time, never stored in repo) ────────────────────
 // Deploy with: az deployment group create ... \
-//   --parameters dbPassword='...' agnoApiKey='...' azureOpenAiApiKey='...' azureEmbedderOpenAiApiKey='...' acrPassword='...'
+//   --parameters dbPassword='...' ucloudShareToken='...' azureOpenAiApiKey='...' azureEmbedderOpenAiApiKey='...' acrPassword='...'
 @secure()
 param dbPassword string
 
 @secure()
-param agnoApiKey string
+param ucloudShareToken string
 
 @secure()
 param azureOpenAiApiKey string
@@ -42,8 +42,8 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
           value: dbPassword
         }
         {
-          name: 'agno-api-key'
-          value: agnoApiKey
+          name: 'ucloud-share-token'
+          value: ucloudShareToken
         }
         {
           name: 'azure-openai-api-key'
@@ -150,9 +150,13 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
               secretRef: 'azure-embedder-openai-api-key'
             }
             // ── Agno ─────────────────────────────────────────────────────────
+            // Telemetry disabled: no per-run metadata events to os-api.agno.com.
+            // (OS-launch event is suppressed in api/main.py via AgentOS(telemetry=False).)
+            // AGNO_API_KEY intentionally removed — monitoring/telemetry are off, so the
+            // key was unused; dropping it removes a US-service credential from the app.
             {
-              name: 'AGNO_API_KEY'
-              secretRef: 'agno-api-key'
+              name: 'AGNO_TELEMETRY'
+              value: 'false'
             }
             // ── Budget enforcement ───────────────────────────────────────────
             {
@@ -168,9 +172,12 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
               value: '7.64'
             }
             // ── u:Cloud (Nextcloud) — research paper source ──────────────────
+            // Share token supplied as a deploy-time secret (never hard-coded in the
+            // repo, which is browsable by network members). Rotate the token in u:Cloud
+            // before deploying — the previously committed value is in git history.
             {
               name: 'UCLOUD_SHARE_TOKEN'
-              value: 'Aey6ydCDrBfigyX'
+              secretRef: 'ucloud-share-token'
             }
             // ── Knowledge loading ────────────────────────────────────────────
             {

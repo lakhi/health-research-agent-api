@@ -70,10 +70,13 @@ Portal → `hex-gig-agent-api` → Secrets → add:
 
 | Secret name | Source |
 |---|---|
-| `agno-api-key` | Your Agno account |
+| `ucloud-share-token` | u:Cloud public-share token (for research PDF downloads) — **rotate before deploy** |
 | `azure-openai-api-key` | `az-openai-nex` → Keys & Endpoints |
 | `azure-embedder-openai-api-key` | Same key as above |
 | `db-password` | Password set during PostgreSQL provisioning |
+
+> Agno telemetry/monitoring are disabled (`AGNO_TELEMETRY=false` env + `AgentOS(telemetry=False)`),
+> so **no `agno-api-key` secret is required** for the API app.
 
 ### 2c. Container App Environment Variables
 Portal → `hex-gig-agent-api` → Configuration → Environment variables:
@@ -84,7 +87,8 @@ Portal → `hex-gig-agent-api` → Configuration → Environment variables:
 | `DAILY_BUDGET_EUR` | e.g. `2.0` |
 | `MODEL_PRICING_INPUT_EUR` | current gpt-4.1 input rate (EUR per 1M tokens) |
 | `MODEL_PRICING_OUTPUT_EUR` | current gpt-4.1 output rate (EUR per 1M tokens) |
-| `UCLOUD_SHARE_TOKEN` | uCloud share token (for research PDF downloads) |
+| `UCLOUD_SHARE_TOKEN` | references the `ucloud-share-token` **secret** (no longer a plain value) |
+| `AGNO_TELEMETRY` | `false` (disables per-run Agno telemetry to os-api.agno.com) |
 
 ---
 
