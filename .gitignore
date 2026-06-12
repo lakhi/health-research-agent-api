@@ -19,6 +19,7 @@ reports/
 .idea
 .vscode
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 
 # Bicep param files (contain secret values, never commit)
 **/*.bicepparam

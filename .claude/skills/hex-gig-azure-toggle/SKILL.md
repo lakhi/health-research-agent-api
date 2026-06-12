@@ -16,6 +16,7 @@ Toggle the HeX-GiG stack in the `healthsociety` resource group (subscription `44
 | `hex-gig-postgres-db` (PostgreSQL Flexible Server) | Stopped | Ready |
 | `hex-gig-agent-api` (Container App) | minReplicas=0, maxReplicas=1 | minReplicas=1, maxReplicas=3 |
 | `hex-gig-agent-ui` (Container App) | minReplicas=0, maxReplicas=1 | minReplicas=1, maxReplicas=3 |
+| `hex-gig-rss-refresh` (Container Apps Job, daily 12:00 UTC) | Suspended | Enabled |
 
 ## Procedure
 
@@ -69,6 +70,12 @@ az postgres flexible-server start \
   --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
 
+# Re-enable the daily RSS-refresh job
+az containerapp job resume \
+  --name hex-gig-rss-refresh \
+  --resource-group healthsociety \
+  --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
+
 az containerapp update \
   --name hex-gig-agent-api \
   --resource-group healthsociety \
@@ -96,6 +103,10 @@ az postgres flexible-server show \
 az containerapp show --name hex-gig-agent-api --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
   --query "{minReplicas:properties.template.scale.minReplicas}" -o tsv
+
+az containerapp job show --name hex-gig-rss-refresh --resource-group healthsociety \
+  --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
+  --query "properties.runningState" -o tsv   # expect Suspended when paused, Ready when running
 ```
 
 ### Step 4 — Report
@@ -103,7 +114,7 @@ az containerapp show --name hex-gig-agent-api --resource-group healthsociety \
 Report clearly:
 - What state was detected
 - What action was taken
-- Final confirmed state of PostgreSQL and both Container Apps
+- Final confirmed state of PostgreSQL, both Container Apps, and the `hex-gig-rss-refresh` job
 - If unpausing: remind that PostgreSQL takes ~2 minutes to become fully `Ready` and Container Apps will be live once it does
 
 ## Decision Rules
