@@ -26,6 +26,12 @@ from services.budget_service import (
 class TestCalculateCostEur:
     """Unit tests for EUR cost calculation."""
 
+    @pytest.fixture(autouse=True)
+    def pinned_pricing(self, monkeypatch):
+        """Pin pricing so assertions don't drift with the live MODEL_PRICING_*_EUR env values."""
+        monkeypatch.setattr(api_settings, "model_pricing_input_eur", 1.87)
+        monkeypatch.setattr(api_settings, "model_pricing_output_eur", 7.48)
+
     def test_calculate_cost_input_only(self):
         """1M input tokens should cost €1.87 (default GPT-4.1 Data Zone rate)."""
         cost = calculate_cost_eur(input_tokens=1_000_000, output_tokens=0)

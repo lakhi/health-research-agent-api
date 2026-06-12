@@ -70,9 +70,15 @@ class TestRecordAgentMetrics:
 
     @patch("services.metrics_service.SessionLocal")
     @patch("services.metrics_service.get_today_vienna")
-    def test_calculates_cost_when_not_provided(self, mock_today, mock_session_local):
+    def test_calculates_cost_when_not_provided(self, mock_today, mock_session_local, monkeypatch):
         """cost_eur should be auto-calculated from tokens when not provided."""
         from datetime import date
+
+        from api.settings import api_settings
+
+        # Pin pricing so the assertion doesn't drift with the live MODEL_PRICING_*_EUR env values
+        monkeypatch.setattr(api_settings, "model_pricing_input_eur", 1.87)
+        monkeypatch.setattr(api_settings, "model_pricing_output_eur", 7.48)
 
         mock_today.return_value = date(2026, 3, 28)
         mock_db = MagicMock()
