@@ -1,6 +1,8 @@
 """Unit tests for services.citations_service."""
 
-from services.citations_service import build_citations, extract_excerpt
+import json
+
+from services.citations_service import build_citations, extract_excerpt, format_citations_sse
 
 
 class TestExtractExcerpt:
@@ -126,3 +128,22 @@ class TestBuildCitations:
         ]
         out = build_citations(refs, query="x")
         assert {c["source_url"] for c in out} == {url_a, url_b}
+
+
+class TestFormatCitationsSse:
+    """The agent-ui stream parser drops SSE framing lines and routes on the
+    `event` key inside the data JSON — these tests pin that contract."""
+
+    def test_event_key_embedded_in_payload(self):
+        citations = [{"source_url": "https://a.example/", "excerpt": "x", "score": 1.0}]
+        frame = format_citations_sse(citations)
+        assert frame.startswith("event: Citations\ndata: ")
+        assert frame.endswith("\n\n")
+        payload = json.loads(frame.split("data: ", 1)[1])
+        assert payload["event"] == "Citations"
+        assert payload["citations"] == citations
+
+    def test_empty_citations_still_carries_event_key(self):
+        frame = format_citations_sse([])
+        payload = json.loads(frame.split("data: ", 1)[1])
+        assert payload == {"event": "Citations", "citations": []}

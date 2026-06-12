@@ -10,6 +10,7 @@ which is equivalent because Agno returns chunks ordered by relevance.
 
 from __future__ import annotations
 
+import json
 import re
 from typing import Any, Iterable, Optional
 
@@ -246,3 +247,16 @@ def build_citations(
     for rank, citation in enumerate(ordered):
         citation["score"] = round(1.0 - (rank / total), 4)
     return ordered
+
+
+def format_citations_sse(citations: list[dict]) -> str:
+    """Render the terminal Citations SSE frame for the streaming response.
+
+    The agent-ui stream parser (useAIResponseStream.parseBuffer) does not parse
+    SSE framing — it extracts bare JSON objects from the byte stream and routes
+    on the `event` key *inside* the JSON, mirroring how Agno embeds the event
+    name in every frame's payload. The `event: Citations` header line alone is
+    discarded by that parser, so the payload must carry the key too.
+    """
+    payload = json.dumps({"event": "Citations", "citations": citations})
+    return f"event: Citations\ndata: {payload}\n\n"

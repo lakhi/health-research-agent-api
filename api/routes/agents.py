@@ -15,7 +15,7 @@ from agents.registry import get_agent
 from api.settings import api_settings
 from knowledge_base.marhinovirus_knowledge_base import get_normal_catalog_knowledge
 from services.budget_service import check_budget_available, record_usage
-from services.citations_service import build_citations
+from services.citations_service import build_citations, format_citations_sse
 from services.metrics_service import record_agent_metrics
 
 logger = getLogger(__name__)
@@ -87,7 +87,7 @@ async def chat_response_streamer(
     # so the FE RunEvent enum can stay internally consistent.
     if agent_id == AgentType.SSC_PSYCH_AGENT.id:
         citations = build_citations(latest_references, query=message)
-        yield f"event: Citations\ndata: {json.dumps({'citations': citations})}\n\n"
+        yield format_citations_sse(citations)
 
     # Fallback: use wall-clock duration if agno didn't report it
     if duration_seconds is None:
