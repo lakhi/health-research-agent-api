@@ -160,3 +160,83 @@ class TestScrapeWebPages:
         assert "page_title" in meta
         assert meta["language"] in ("de", "en")
         assert "content_hash" in meta
+
+
+class TestScrapeDownloads:
+    """Regression tests for issue #38 — subfolder traversal and Word-doc support
+    in scrape_ssc_downloads (mocked HTTP)."""
+
+    ROOT_HTML = """
+    <html><body><div class="content-main">
+        <a href="/downloads/?tx_filelist_filelist%5Bpath%5D=%2FDissertation%2F">Dissertation</a>
+        <a href="/fileadmin/root_form.pdf">Root Form</a>
+        <a href="/fileadmin/Vorlage_KI-Verwendungserklaerung.docx">KI Vorlage</a>
+    </div></body></html>
+    """
+    SUBFOLDER_HTML = """
+    <html><body><div class="content-main">
+        <a href="/fileadmin/diss_registration.pdf">Diss Registration</a>
+    </div></body></html>
+    """
+    EMPTY_HTML = "<html><body><div class='content-main'></div></body></html>"
+
+    def _fake_session(self):
+        def fake_get(url, timeout=None):
+            response = MagicMock()
+            response.raise_for_status = MagicMock()
+            if url.lower().endswith((".pdf", ".docx")):
+                response.headers = {"content-type": "application/octet-stream"}
+                response.content = b"fake file bytes"
+            else:
+                response.headers = {"content-type": "text/html; charset=utf-8"}
+                if "tx_filelist_filelist" in url:
+                    response.text = self.SUBFOLDER_HTML
+                elif "/en/downloads/" in url:
+                    response.text = self.EMPTY_HTML
+                else:
+                    response.text = self.ROOT_HTML
+            return response
+
+        session = MagicMock()
+        session.get.side_effect = fake_get
+        return session
+
+    @patch("services.ssc_web_scraper._get_session")
+    @patch("services.ssc_web_scraper.time.sleep")
+    def test_subfolder_pages_are_traversed(self, mock_sleep, mock_session):
+        """Bug 1: query-param subfolder pages must not collapse into the root visited key."""
+        from services.ssc_web_scraper import scrape_ssc_downloads
+
+        mock_session.return_value = self._fake_session()
+        results = scrape_ssc_downloads()
+
+        urls = {r["metadata"]["source_url"] for r in results}
+        assert any(u.endswith("diss_registration.pdf") for u in urls), (
+            "PDF linked only from the tx_filelist subfolder page was not collected"
+        )
+
+    @patch("services.ssc_web_scraper._get_session")
+    @patch("services.ssc_web_scraper.time.sleep")
+    def test_docx_files_are_collected(self, mock_sleep, mock_session):
+        """Bug 2: .docx links must be downloaded and tagged as word_document."""
+        from services.ssc_web_scraper import scrape_ssc_downloads
+
+        mock_session.return_value = self._fake_session()
+        results = scrape_ssc_downloads()
+
+        docx = [r for r in results if str(r["path"]).endswith(".docx")]
+        assert len(docx) == 1
+        assert docx[0]["metadata"]["source_type"] == "word_document"
+        assert "DOCX" in docx[0]["name"]
+
+    @patch("services.ssc_web_scraper._get_session")
+    @patch("services.ssc_web_scraper.time.sleep")
+    def test_pdfs_keep_pdf_metadata(self, mock_sleep, mock_session):
+        from services.ssc_web_scraper import scrape_ssc_downloads
+
+        mock_session.return_value = self._fake_session()
+        results = scrape_ssc_downloads()
+
+        pdfs = [r for r in results if str(r["path"]).endswith(".pdf")]
+        assert len(pdfs) == 2
+        assert all(r["metadata"]["source_type"] == "pdf_document" for r in pdfs)

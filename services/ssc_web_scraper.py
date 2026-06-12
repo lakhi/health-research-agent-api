@@ -269,7 +269,9 @@ def scrape_ssc_downloads() -> list[dict]:
         # Derive a human-readable title from the filename (strip extension)
         document_title = filename.rsplit(".", 1)[0].replace("_", " ").replace("-", " ")
         # Simple language heuristic: filenames containing _E_ or ending with E.pdf/E.docx are English
-        language = "en" if ("_E_" in filename or filename_lower.endswith(("e.pdf", "e.docx", "_en.pdf", "_en.docx"))) else "de"
+        language = (
+            "en" if ("_E_" in filename or filename_lower.endswith(("e.pdf", "e.docx", "_en.pdf", "_en.docx"))) else "de"
+        )
         file_label = "PDF" if source_type == "pdf_document" else "DOCX"
 
         results.append(
