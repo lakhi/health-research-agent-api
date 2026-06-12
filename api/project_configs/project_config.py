@@ -32,17 +32,6 @@ class ProjectConfig(ABC):
         """Project-specific CORS origins (UI URLs)."""
         pass
 
-    @property
-    def expose_session_history(self) -> bool:
-        """Whether AgentOS session-history endpoints (/sessions*) are served.
-
-        Disabled for projects with a no-persistence compliance requirement: the
-        agent's InMemoryDb still provides follow-up context in RAM, but the
-        framework's /sessions routes — which would expose that RAM-held chat
-        content — are not mounted.
-        """
-        return True
-
     @abstractmethod
     def get_agents(self) -> List[Agent]:
         """Initialize and return all agents for this project."""

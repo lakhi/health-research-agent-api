@@ -73,12 +73,44 @@ agent_os = AgentOS(
 
 app = agent_os.get_app()
 
-# Compliance: the HeX-GiG agent uses an in-RAM InMemoryDb for follow-up
-# context. AgentOS auto-discovers that db and mounts /sessions routes that
-# would serve the in-memory chat content. Strip those routes for projects
-# that require chat history to be non-retrievable.
-if not api_settings.project_config.expose_session_history:
-    app.router.routes = [route for route in app.router.routes if not getattr(route, "path", "").startswith("/sessions")]
+# Security: AgentOS leaves authentication disabled unless OS_SECURITY_KEY (or a
+# JWT config) is set, and these deployments run with external ingress and no key.
+# AgentOS still mounts a large admin/data surface alongside our public chat route
+# — /sessions (read/delete other users' conversations), /knowledge mutations,
+# /metrics, /traces, /eval-runs, /databases, /memories, schedules/approvals, etc.
+# None of these are used by the public UI, which only calls /agents and /health.
+# Strip every admin/data prefix from the public app so only the chat surface
+# (/agents/{id}/runs, GET /agents) and /health remain reachable. Applies to all
+# projects (vax-study and ssc-psych persist sessions to Postgres; this prevents
+# anonymous read/delete of that chat history, including ssc-psych PII).
+_PUBLIC_ADMIN_PREFIXES = (
+    "/sessions",
+    "/memory",
+    "/memories",
+    "/optimize-memories",
+    "/memory_topics",
+    "/user_memory_stats",
+    "/knowledge",
+    "/metrics",
+    "/traces",
+    "/trace_session_stats",
+    "/eval-runs",
+    "/eval",
+    "/evals",
+    "/databases",
+    "/database",
+    "/db",
+    "/components",
+    "/schedules",
+    "/approvals",
+    "/registry",
+    "/teams",
+    "/workflows",
+    "/config",
+)
+app.router.routes = [
+    route for route in app.router.routes if not getattr(route, "path", "").startswith(_PUBLIC_ADMIN_PREFIXES)
+]
 
 # Add CORS middleware
 app.add_middleware(
