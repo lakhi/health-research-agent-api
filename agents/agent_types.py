@@ -14,7 +14,7 @@ class AgentType(Enum):
     def name(self) -> str:
         return self._name
 
-    HEX_GIG_AGENT = ("hex_gig_agent", "Health Network Explorer")
-    SSC_PSYCH_AGENT = ("ssc_psych_agent", "SSC Psychologie Assistant")
+    HEX_GIG_AGENT = ("hex", "Health Explorer (GiG)")
+    SSC_PSYCH_AGENT = ("ssc", "SSC Psychologie Assistant")
     CONTROL_MARHINOVIRUS = ("c", "Agent C")
     SIMPLE_LANGUAGE_MARHINOVIRUS = ("sl", "Agent SL")
