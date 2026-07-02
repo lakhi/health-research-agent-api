@@ -88,13 +88,17 @@ gh run watch <run-id>
 
 If the workflow **fails**: print the run URL (`https://github.com/lakhi/health-research-agent-api/actions/runs/<run-id>`) and stop — do not proceed to the container app update.
 
-### Step 4 — Force Container App to pull new image
+### Step 4 — Deploy the new image
 
-Project values:
+**hex-gig: handled by CI — do not run manual update commands.** The workflow's `deploy-hex-gig` job
+(after a green build) updates the Container App *and* bumps the SHA-pinned `hex-gig-rss-refresh`
+job atomically, using the `hex-gig-deploy` service principal (Contributor on exactly the three
+container resources, stored as the `HEX_GIG_AZURE_CREDENTIALS` repo secret). Proceed to Step 5.
+
+**vax-study: manual update required** (no service principal exists for that RG):
 
 | Project   | Container App     | Resource Group | Image                                              |
 |-----------|-------------------|----------------|----------------------------------------------------|
-| hex-gig   | hex-gig-agent-api | healthsociety  | `hexgigacr.azurecr.io/hex-gig-agent-api:latest`   |
 | vax-study | marhinovirus-api  | vax-study      | `vaxacr.azurecr.io/health-research-api:latest`     |
 
 ```sh
@@ -107,10 +111,8 @@ az containerapp update \
 
 The `--revision-suffix` forces a new revision, causing Azure to pull a fresh copy of the `:latest` image from ACR even though the image tag hasn't changed.
 
-### Step 4b — hex-gig only: bump the RSS-refresh job image
-
-The scheduled Container Apps Job `hex-gig-rss-refresh` (daily RSS refresh + metrics purge, 12:00 UTC)
-pins a commit-SHA image tag, so it must be bumped alongside every hex-gig deploy or it goes stale:
+**Fallback for hex-gig** (only if the CI `deploy-hex-gig` job failed): run the same
+`az containerapp update` against `hex-gig-agent-api` in `healthsociety`, plus the job bump:
 
 ```sh
 SHA=$(gh run view <run-id> --json headSha --jq .headSha)
@@ -120,9 +122,18 @@ az containerapp job update \
   --image "hexgigacr.azurecr.io/hex-gig-agent-api:$SHA"
 ```
 
-Skip this step for vax-study / ssc-psych.
+### Step 5 — Verify startup and assert no drift
 
-### Step 5 — Verify startup
+**Drift assertion (hex-gig only, always run):** the RSS job must pin the exact commit the run built.
+
+```sh
+BUILT=$(gh run view <run-id> --json headSha --jq .headSha)
+PINNED=$(az containerapp job show -n hex-gig-rss-refresh -g healthsociety \
+  --query "properties.template.containers[0].image" -o tsv | cut -d: -f2)
+[ "$BUILT" = "$PINNED" ] && echo "✅ job in sync ($BUILT)" || echo "❌ DRIFT: built $BUILT but job pins $PINNED"
+```
+
+If they differ, do **not** declare the deployment complete — run the Step 4 fallback job bump, then re-check.
 
 Tail the container logs and watch for `Application startup complete.`:
 
@@ -138,6 +149,7 @@ Container App:   <app-name>
 Resource Group:  <rg>
 Image:           <image>
 GH Run:          https://github.com/lakhi/health-research-agent-api/actions/runs/<run-id>
+RSS job (hex):   ✅ pinned to <sha> (in sync)
 Status:          ✅ Deployment complete
 ```
 

@@ -68,3 +68,43 @@ jobs:
     - name: Image pushed successfully
       run: |
         echo "✅ Image pushed to: ${{ steps.config.outputs.acr_server }}/${{ steps.config.outputs.image_name }}:${{ env.IMAGE_TAG }}"
+
+  # Deploys atomically after a green build so the app and the SHA-pinned RSS job
+  # can never drift apart. Uses the hex-gig-deploy service principal, which has
+  # Contributor on exactly hex-gig-agent-api, hex-gig-rss-refresh, and
+  # hex-gig-agent-ui — nothing else in the healthsociety RG.
+  deploy-hex-gig:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: inputs.project == 'hex-gig'
+
+    steps:
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.HEX_GIG_AZURE_CREDENTIALS }}
+
+    - name: Install containerapp extension
+      run: az extension add --name containerapp --upgrade
+
+    - name: Update API Container App (force fresh :latest pull)
+      run: |
+        az containerapp update \
+          --name hex-gig-agent-api \
+          --resource-group healthsociety \
+          --image hexgigacr.azurecr.io/hex-gig-agent-api:latest \
+          --revision-suffix "gh-${{ github.run_number }}-${{ github.run_attempt }}" \
+          --output none
+
+    - name: Bump RSS-refresh job to this commit
+      run: |
+        az containerapp job update \
+          --name hex-gig-rss-refresh \
+          --resource-group healthsociety \
+          --image "hexgigacr.azurecr.io/hex-gig-agent-api:${{ github.sha }}" \
+          --output none
+
+    - name: Deploy summary
+      run: |
+        echo "✅ hex-gig-agent-api → new revision gh-${{ github.run_number }}-${{ github.run_attempt }} (image :latest)"
+        echo "✅ hex-gig-rss-refresh → pinned to ${{ github.sha }}"
