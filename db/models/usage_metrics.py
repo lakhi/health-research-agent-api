@@ -20,12 +20,15 @@ class AgentUsageMetrics(Base):
 
     Each row represents one agent run. The anonymous_session_id (a random UUID
     from the frontend) enables session counting and duration estimation without
-    identifying any user.
+    identifying any user. The anonymous_user_id (a second, longer-lived random
+    UUID persisted in the browser's localStorage) links sessions from the same
+    browser profile together for per-user aggregation — still no real identity.
 
     Attributes:
         id: Primary key
         date: The date of the request (Vienna timezone)
         anonymous_session_id: Client-generated UUID, not linked to any identity
+        anonymous_user_id: Longer-lived client-generated UUID (localStorage), not linked to any identity
         input_tokens: Number of input tokens consumed
         output_tokens: Number of output tokens consumed
         total_tokens: Combined input + output tokens
@@ -41,6 +44,7 @@ class AgentUsageMetrics(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(Date, nullable=False)
     anonymous_session_id = Column(String(64), nullable=True)
+    anonymous_user_id = Column(String(64), nullable=True)
     input_tokens = Column(Integer, nullable=False, default=0)
     output_tokens = Column(Integer, nullable=False, default=0)
     total_tokens = Column(Integer, nullable=False, default=0)
@@ -53,6 +57,7 @@ class AgentUsageMetrics(Base):
     __table_args__ = (
         Index("ix_agent_usage_metrics_date", "date"),
         Index("ix_agent_usage_metrics_session", "anonymous_session_id"),
+        Index("ix_agent_usage_metrics_user", "anonymous_user_id"),
     )
 
     def __repr__(self):
@@ -60,6 +65,7 @@ class AgentUsageMetrics(Base):
             f"<AgentUsageMetrics("
             f"date={self.date}, "
             f"session={self.anonymous_session_id}, "
+            f"user={self.anonymous_user_id}, "
             f"tokens={self.total_tokens}, "
             f"duration={self.duration_seconds}s, "
             f"cost={self.cost_eur}€, "

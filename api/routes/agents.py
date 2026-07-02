@@ -32,6 +32,7 @@ async def chat_response_streamer(
     message: str,
     has_budget: bool = False,
     session_id: Optional[str] = None,
+    user_id: Optional[str] = None,
     agent_id: Optional[str] = None,
 ) -> AsyncGenerator:
     """
@@ -42,6 +43,7 @@ async def chat_response_streamer(
         message: User message to process
         has_budget: Whether this deployment enforces budget (for usage recording)
         session_id: Anonymous session identifier for metrics tracking
+        user_id: Longer-lived anonymous user identifier for per-user metrics
         agent_id: The id of the agent being run (gates the final citations frame)
 
     Yields:
@@ -57,30 +59,46 @@ async def chat_response_streamer(
     latest_references = None
     start_time = time.monotonic()
 
-    async for chunk in run_response:
-        try:
-            yield format_sse_event(chunk)
-        except Exception:
-            chunk_content = getattr(chunk, "content", str(chunk))
-            yield f"event: message\ndata: {json.dumps({'content': chunk_content})}\n\n"
+    try:
+        async for chunk in run_response:
+            try:
+                yield format_sse_event(chunk)
+            except Exception:
+                chunk_content = getattr(chunk, "content", str(chunk))
+                yield f"event: message\ndata: {json.dumps({'content': chunk_content})}\n\n"
 
-        # Capture metrics from the final chunk if available
-        chunk_metrics = getattr(chunk, "metrics", None)
-        if chunk_metrics is not None:
-            if hasattr(chunk_metrics, "input_tokens") and chunk_metrics.input_tokens:
-                input_tokens = chunk_metrics.input_tokens
-            if hasattr(chunk_metrics, "output_tokens") and chunk_metrics.output_tokens:
-                output_tokens = chunk_metrics.output_tokens
-            if hasattr(chunk_metrics, "total_tokens") and chunk_metrics.total_tokens:
-                total_tokens = chunk_metrics.total_tokens
-            if hasattr(chunk_metrics, "duration") and chunk_metrics.duration:
-                duration_seconds = chunk_metrics.duration
-            if hasattr(chunk_metrics, "time_to_first_token") and chunk_metrics.time_to_first_token:
-                time_to_first_token = chunk_metrics.time_to_first_token
+            # Capture metrics from the final chunk if available
+            chunk_metrics = getattr(chunk, "metrics", None)
+            if chunk_metrics is not None:
+                if hasattr(chunk_metrics, "input_tokens") and chunk_metrics.input_tokens:
+                    input_tokens = chunk_metrics.input_tokens
+                if hasattr(chunk_metrics, "output_tokens") and chunk_metrics.output_tokens:
+                    output_tokens = chunk_metrics.output_tokens
+                if hasattr(chunk_metrics, "total_tokens") and chunk_metrics.total_tokens:
+                    total_tokens = chunk_metrics.total_tokens
+                if hasattr(chunk_metrics, "duration") and chunk_metrics.duration:
+                    duration_seconds = chunk_metrics.duration
+                if hasattr(chunk_metrics, "time_to_first_token") and chunk_metrics.time_to_first_token:
+                    time_to_first_token = chunk_metrics.time_to_first_token
 
-        chunk_refs = getattr(chunk, "references", None)
-        if chunk_refs:
-            latest_references = chunk_refs
+            chunk_refs = getattr(chunk, "references", None)
+            if chunk_refs:
+                latest_references = chunk_refs
+    except Exception:
+        # Issue #27 — failed runs must still leave a metrics row, otherwise
+        # the reported error rate can never rise above zero.
+        if has_budget:
+            record_agent_metrics(
+                session_id=session_id,
+                user_id=user_id,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                total_tokens=total_tokens,
+                duration_seconds=time.monotonic() - start_time,
+                time_to_first_token=time_to_first_token,
+                response_status="error",
+            )
+        raise
 
     # Issue #37 — emit inline-excerpt citations for SSC-Psych after content streams.
     # Wire name follows Agno's PascalCase SSE convention (e.g. RunStarted, RunCompleted)
@@ -104,6 +122,7 @@ async def chat_response_streamer(
     if has_budget:
         record_agent_metrics(
             session_id=session_id,
+            user_id=user_id,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             total_tokens=total_tokens,
@@ -118,6 +137,7 @@ class RunRequest(BaseModel):
     message: str
     stream: bool = True
     session_id: Optional[str] = None
+    user_id: Optional[str] = None  # anonymous localStorage UUID; stays None for old clients
 
     @field_validator("session_id")
     @classmethod
@@ -132,6 +152,7 @@ async def create_agent_run(
     message: Optional[str] = Form(default=None),
     stream: Optional[bool] = Form(default=None),
     session_id: Optional[str] = Form(default=None),
+    user_id: Optional[str] = Form(default=None),
 ):
     """
     Sends a message to a specific agent and returns the response.
@@ -153,6 +174,7 @@ async def create_agent_run(
             message=message,
             stream=True if stream is None else stream,
             session_id=session_id,
+            user_id=user_id,
         )
 
     if run_request is None:
@@ -175,6 +197,7 @@ async def create_agent_run(
         if not available:
             record_agent_metrics(
                 session_id=run_request.session_id,
+                user_id=run_request.user_id,
                 response_status="budget_exceeded",
             )
             return JSONResponse(
@@ -205,6 +228,7 @@ async def create_agent_run(
                 run_request.message,
                 has_budget=has_budget,
                 session_id=run_request.session_id,
+                user_id=run_request.user_id,
                 agent_id=agent_id,
             ),
             media_type="text/event-stream",
@@ -212,7 +236,19 @@ async def create_agent_run(
         )
     else:
         start_time = time.monotonic()
-        response = await agent.arun(run_request.message, stream=False, session_id=run_request.session_id)
+        try:
+            response = await agent.arun(run_request.message, stream=False, session_id=run_request.session_id)
+        except Exception:
+            # Issue #27 — failed runs must still leave a metrics row, otherwise
+            # the reported error rate can never rise above zero.
+            if has_budget:
+                record_agent_metrics(
+                    session_id=run_request.session_id,
+                    user_id=run_request.user_id,
+                    duration_seconds=time.monotonic() - start_time,
+                    response_status="error",
+                )
+            raise
         fallback_duration = time.monotonic() - start_time
 
         response_payload = response.to_dict() if hasattr(response, "to_dict") else None
@@ -259,6 +295,7 @@ async def create_agent_run(
 
             record_agent_metrics(
                 session_id=run_request.session_id,
+                user_id=run_request.user_id,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 total_tokens=total_tokens,

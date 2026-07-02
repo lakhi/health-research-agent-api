@@ -133,6 +133,43 @@ class TestRecordAgentMetrics:
 
     @patch("services.metrics_service.SessionLocal")
     @patch("services.metrics_service.get_today_vienna")
+    def test_records_anonymous_user_id(self, mock_today, mock_session_local):
+        """A provided user_id should persist as anonymous_user_id on the row."""
+        from datetime import date
+
+        mock_today.return_value = date(2026, 7, 2)
+        mock_db = MagicMock()
+        mock_session_local.return_value = mock_db
+
+        record_agent_metrics(
+            session_id="test-session-uuid",
+            user_id="test-user-uuid",
+            input_tokens=100,
+            output_tokens=50,
+        )
+
+        added_record = mock_db.add.call_args[0][0]
+        assert added_record.anonymous_user_id == "test-user-uuid"
+        assert added_record.anonymous_session_id == "test-session-uuid"
+
+    @patch("services.metrics_service.SessionLocal")
+    @patch("services.metrics_service.get_today_vienna")
+    def test_user_id_defaults_to_null(self, mock_today, mock_session_local):
+        """Old clients that send no user_id should produce a NULL anonymous_user_id."""
+        from datetime import date
+
+        mock_today.return_value = date(2026, 7, 2)
+        mock_db = MagicMock()
+        mock_session_local.return_value = mock_db
+
+        record_agent_metrics(input_tokens=100, output_tokens=50)
+
+        added_record = mock_db.add.call_args[0][0]
+        assert added_record.anonymous_user_id is None
+        mock_db.commit.assert_called_once()
+
+    @patch("services.metrics_service.SessionLocal")
+    @patch("services.metrics_service.get_today_vienna")
     def test_handles_nullable_session_id(self, mock_today, mock_session_local):
         """Metrics should be recorded even without a session_id."""
         from datetime import date

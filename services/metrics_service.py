@@ -18,6 +18,7 @@ logger = getLogger(__name__)
 def record_agent_metrics(
     *,
     session_id: Optional[str] = None,
+    user_id: Optional[str] = None,
     input_tokens: int = 0,
     output_tokens: int = 0,
     total_tokens: int = 0,
@@ -34,6 +35,7 @@ def record_agent_metrics(
 
     Args:
         session_id: Anonymous client-generated UUID (not linked to any identity)
+        user_id: Longer-lived anonymous UUID from browser localStorage (not linked to any identity)
         input_tokens: Number of input tokens consumed
         output_tokens: Number of output tokens consumed
         total_tokens: Combined input + output tokens
@@ -54,6 +56,7 @@ def record_agent_metrics(
         metrics = AgentUsageMetrics(
             date=today,
             anonymous_session_id=session_id,
+            anonymous_user_id=user_id,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             total_tokens=total_tokens,

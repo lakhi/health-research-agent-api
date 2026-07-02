@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS agent_usage_metrics (
     id SERIAL PRIMARY KEY,
     date DATE NOT NULL,
     anonymous_session_id VARCHAR(64),
+    anonymous_user_id VARCHAR(64),
     input_tokens INTEGER NOT NULL DEFAULT 0,
     output_tokens INTEGER NOT NULL DEFAULT 0,
     total_tokens INTEGER NOT NULL DEFAULT 0,
@@ -33,6 +34,9 @@ ON agent_usage_metrics(date);
 
 CREATE INDEX IF NOT EXISTS ix_agent_usage_metrics_session
 ON agent_usage_metrics(anonymous_session_id);
+
+CREATE INDEX IF NOT EXISTS ix_agent_usage_metrics_user
+ON agent_usage_metrics(anonymous_user_id);
 
 -- Add comment to table
 COMMENT ON TABLE agent_usage_metrics IS
