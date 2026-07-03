@@ -4,6 +4,27 @@ import json
 
 from services.citations_service import build_citations, extract_excerpt, format_citations_sse
 
+# Abridged verbatim from the live "Informationen für Studienbeginner*innen" page —
+# the chunk behind the Peer-Mentoring chip regression. The page header (which the
+# excerpt must NOT quote) precedes the study-start content (which it should).
+_STUDIENBEGINNER_CHUNK = (
+    "Informationen für Studienbeginner*innen Herzlich willkommen an der "
+    "Fakultät für Psychologie! Für Informationen zum Peer-Mentoring Psychologie "
+    "hier klicken Anmeldung zu den Lehrveranstaltungen Folgende "
+    "Lehrveranstaltungen sind für das erste Semester vorgesehen: die vier "
+    "Vorlesungen der Studieneingangs- und Orientierungsphase (STEOP) - siehe "
+    "unten die Vorlesung VO Allgemeine Psychologie I die Vorlesung VO "
+    "Bildungspsychologie die Vorlesung und Übung VU Psychologische Forschung "
+    "erleben und reflektieren Ausführliche Informationen über die Anmeldung zu "
+    "Lehrveranstaltungen und Prüfungen finden Sie hier. Detaillierte "
+    "Informationen zu allen Lehrveranstaltungen des Bachelorstudiums finden Sie "
+    "im Curriculum sowie im Vorlesungsverzeichnis u:find. Studienbeginn im "
+    "Sommersemester Sollten Sie im Sommersemester mit dem Bachelorstudium "
+    "Psychologie beginnen, empfehlen wir Ihnen, sich für die STEOP-Vorlesungen "
+    "aus dem vorhergehenden Wintersemester zu registrieren und sich den "
+    "Lehrstoff im Selbststudium anzueignen."
+)
+
 
 class TestExtractExcerpt:
     def test_short_content_returned_as_is(self):
@@ -44,6 +65,50 @@ class TestExtractExcerpt:
         # "the" and "of" are stopwords; "admission" should drive windowing.
         out = extract_excerpt(content, query="the admission of", max_chars=80)
         assert "admission" in out.lower()
+
+    def test_peer_mentoring_regression(self):
+        # The reported bug: earliest-match windowing put the chip on the page
+        # header ("… Peer-Mentoring Psychologie hier klicken …") because
+        # "Psychologie" appears there first. The densest window (Bachelorstudium
+        # + Psychologie) lies in the study-start section.
+        out = extract_excerpt(
+            _STUDIENBEGINNER_CHUNK,
+            query="Wie bewerbe ich mich für den Bachelor Psychologie?",
+            max_chars=200,
+        )
+        assert "Peer-Mentoring" not in out
+        assert "Bachelorstudium" in out
+
+    def test_densest_window_beats_earliest_single_match(self):
+        early = "Zulassung " + "filler " * 40
+        cluster = "Die Zulassung zum Studium erfordert einen Antrag innerhalb der Frist."
+        content = early + cluster + " tail " * 40
+        out = extract_excerpt(content, query="Zulassung Antrag Frist", max_chars=120)
+        assert "Antrag" in out
+
+    def test_pronouns_do_not_drive_windowing(self):
+        content = (
+            "Bitte kontaktieren Sie mich frühzeitig. " + "filler " * 40 + "BACHELOR Info zum Studium." + " tail " * 40
+        )
+        out = extract_excerpt(content, query="Wie kann ich mich für den Bachelor anmelden?", max_chars=80)
+        assert "BACHELOR" in out
+
+    def test_claim_text_steers_excerpt(self):
+        region_a = "Der Antrag auf Zulassung muss innerhalb der Frist gestellt werden."
+        region_b = "Die Kosten betragen zwanzig Euro pro Semester."
+        content = region_a + " filler" * 40 + " " + region_b + " tail" * 20
+        query = "Antrag Zulassung Frist"
+        # Without a claim, the query terms anchor the window on region A.
+        without = extract_excerpt(content, query=query, max_chars=100)
+        assert "Antrag" in without
+        # The claim (the answer sentence citing this source) outweighs the query.
+        with_claim = extract_excerpt(
+            content,
+            query=query,
+            max_chars=100,
+            claim_text="Die Gebühren betragen zwanzig Euro",
+        )
+        assert "Euro" in with_claim
 
 
 class TestBuildCitations:
@@ -118,6 +183,25 @@ class TestBuildCitations:
         assert scores == sorted(scores, reverse=True)
         assert scores[0] == 1.0
         assert scores[-1] < 1.0
+
+    def test_answer_text_claim_anchoring_and_title_exclusion(self):
+        # Title tokens ("Kontakt") must not anchor the excerpt — they cluster in
+        # page headers, and the chip already sits under the titled link. The
+        # claim sentence from the answer steers the window instead.
+        url = "https://ssc.example/kontakt/"
+        content = (
+            "Kontakt Kontaktseite des SSC Psychologie. "
+            + "filler " * 40
+            + "Öffnungszeiten: Montag bis Freitag von 9 bis 12 Uhr geöffnet."
+            + " tail" * 20
+        )
+        refs = self._refs(
+            self._chunk(url, content=content, page_title="Kontakt", source_type="web_page", language="de")
+        )
+        answer = f"Das SSC ist Montag bis Freitag geöffnet ([Kontakt]({url}))."
+        out = build_citations(refs, query="Wann hat das SSC geöffnet?", answer_text=answer)
+        assert "Montag" in out[0]["excerpt"]
+        assert "Kontaktseite" not in out[0]["excerpt"]
 
     def test_flattens_multiple_message_references(self):
         url_a = "https://a.example/"

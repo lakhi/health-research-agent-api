@@ -6,6 +6,12 @@ which carries a list of retrieved-chunk dicts produced by Document.to_dict()
 (`name`, `meta_data`, `content`). Agno's Document.to_dict() does not surface
 the retrieval/reranking score, so dedup falls back to first-seen per URL —
 which is equivalent because Agno returns chunks ordered by relevance.
+
+Excerpts are claim-anchored: keywords from the answer sentence that cites the
+source (weight 2) plus the user query (weight 1) compete for the densest
+window in the chunk, and the citation's own title words are barred from
+anchoring (titles repeat in header/nav boilerplate — the exact text a chip
+should not quote).
 """
 
 from __future__ import annotations
@@ -62,6 +68,44 @@ _STOPWORDS: frozenset[str] = frozenset(
         "auch",
         "nur",
         "schon",
+        "mich",
+        "dich",
+        "sich",
+        "uns",
+        "euch",
+        "ihr",
+        "ihre",
+        "ihren",
+        "ihrem",
+        "ihrer",
+        "ihres",
+        "sie",
+        "wir",
+        "mir",
+        "dir",
+        "ihm",
+        "ihn",
+        "ihnen",
+        "mein",
+        "meine",
+        "man",
+        "sein",
+        "seine",
+        "dies",
+        "diese",
+        "diesen",
+        "dieser",
+        "dieses",
+        "kann",
+        "muss",
+        "soll",
+        "wird",
+        "werden",
+        "wurde",
+        "können",
+        "müssen",
+        "sollen",
+        "möchte",
         # English
         "the",
         "a",
@@ -104,12 +148,57 @@ _STOPWORDS: frozenset[str] = frozenset(
         "he",
         "she",
         "it",
+        "my",
+        "your",
+        "our",
+        "their",
+        "them",
+        "this",
+        "these",
+        "those",
+        "there",
+        "will",
+        "would",
+        "can",
+        "could",
+        "should",
+        "shall",
+        "must",
+        "may",
+        "might",
+        "does",
+        "did",
+        "been",
+        "being",
+        "about",
     }
 )
 
 
 _WHITESPACE_RE = re.compile(r"\s+")
 _TOKEN_RE = re.compile(r"\w+", flags=re.UNICODE)
+_MD_LINK_RE = re.compile(r"\[[^\]]*\]\([^)]*\)")
+_URL_RE = re.compile(r"https?://\S+")
+
+
+def _claim_text_for_url(answer_text: Optional[str], source_url: str) -> Optional[str]:
+    """The answer line that cites `source_url`, stripped of link markup and URLs.
+
+    This is the claim the citation supports, so its words are the best anchor
+    for the excerpt window. Returns None when the URL is absent or the line
+    carries no prose beyond the link itself (a bare citation bullet).
+    """
+    if not answer_text:
+        return None
+    for line in answer_text.splitlines():
+        if source_url not in line:
+            continue
+        cleaned = _MD_LINK_RE.sub(" ", line)
+        cleaned = cleaned.replace(source_url, " ")
+        cleaned = _URL_RE.sub(" ", cleaned)
+        cleaned = cleaned.strip()
+        return cleaned or None
+    return None
 
 
 def _query_keywords(query: str) -> list[str]:
@@ -136,11 +225,23 @@ def _snap_to_whitespace(text: str, start: int, end: int) -> tuple[int, int]:
     return s, e
 
 
-def extract_excerpt(chunk_content: str, query: str, max_chars: int = 200) -> str:
-    """Verbatim window from chunk_content centered on the earliest query-term match.
+def extract_excerpt(
+    chunk_content: str,
+    query: str,
+    max_chars: int = 200,
+    claim_text: Optional[str] = None,
+    exclude_tokens: Optional[Iterable[str]] = None,
+) -> str:
+    """Verbatim window from chunk_content around the densest keyword cluster.
 
-    Falls back to the leading max_chars when no query terms match. Internal
-    whitespace is collapsed; ellipses are added only at truncation boundaries.
+    Keywords come from the answer sentence citing this source (`claim_text`,
+    weight 2) and the user query (weight 1). Each keyword occurrence anchors a
+    candidate window; the window with the highest sum of *distinct* keyword
+    weights wins (earliest anchor on ties), so one ubiquitous term repeated in
+    boilerplate never outranks an information-rich cluster. `exclude_tokens`
+    (the citation's title words) cannot anchor a window — titles repeat in page
+    headers/nav text, and the chip already sits under the titled link. Falls
+    back to the leading max_chars when nothing matches.
     """
     if not chunk_content:
         return ""
@@ -149,23 +250,46 @@ def extract_excerpt(chunk_content: str, query: str, max_chars: int = 200) -> str
     if len(content) <= max_chars:
         return _WHITESPACE_RE.sub(" ", content).strip()
 
-    keywords = _query_keywords(query)
+    excluded = {tok.lower() for tok in (exclude_tokens or ())}
+    weights: dict[str, int] = {}
+    for kw in _query_keywords(query):
+        if kw not in excluded:
+            weights[kw] = 1
+    for kw in _query_keywords(claim_text or ""):
+        if kw not in excluded:
+            weights[kw] = 2
+
     lowered = content.lower()
-
-    match_pos: Optional[int] = None
-    for kw in keywords:
+    occurrences: list[tuple[int, str]] = []
+    for kw in weights:
         pos = lowered.find(kw)
-        if pos != -1 and (match_pos is None or pos < match_pos):
-            match_pos = pos
+        while pos != -1:
+            occurrences.append((pos, kw))
+            pos = lowered.find(kw, pos + 1)
 
-    if match_pos is None:
+    if not occurrences:
+        if excluded:
+            # Retry with title tokens allowed: a title-anchored window is
+            # weaker, but still better than the blind leading window.
+            return extract_excerpt(content, query, max_chars, claim_text=claim_text)
         window = content[:max_chars]
         return _WHITESPACE_RE.sub(" ", window).strip() + "…"
 
-    half = max_chars // 2
-    raw_start = match_pos - half
-    raw_end = raw_start + max_chars
-    start, end = _snap_to_whitespace(content, raw_start, raw_end)
+    occurrences.sort()
+    lead = max_chars // 4  # anchor sits a quarter in, so context reads forward
+
+    best_start = 0
+    best_score = -1
+    for anchor, _kw in occurrences:
+        w_start = anchor - lead
+        w_end = w_start + max_chars
+        in_window = {kw for pos, kw in occurrences if w_start <= pos < w_end}
+        score = sum(weights[kw] for kw in in_window)
+        if score > best_score:
+            best_score = score
+            best_start = w_start
+
+    start, end = _snap_to_whitespace(content, best_start, best_start + max_chars)
 
     excerpt = content[start:end]
     excerpt = _WHITESPACE_RE.sub(" ", excerpt).strip()
@@ -206,6 +330,7 @@ def build_citations(
     references: Any,
     query: str,
     max_excerpt_chars: int = 200,
+    answer_text: Optional[str] = None,
 ) -> list[dict]:
     """Flatten Agno references into a deduplicated citation list.
 
@@ -215,6 +340,8 @@ def build_citations(
       in relevance order.
     - `score` is derived from rank (top = 1.0) since Document.to_dict() does
       not expose the retrieval score.
+    - `answer_text` (the agent's full reply) anchors each excerpt on the
+      claim sentence that cites the source; title words never anchor.
     """
     seen: set[str] = set()
     ordered: list[dict] = []
@@ -229,7 +356,13 @@ def build_citations(
         title = meta.get("page_title") or meta.get("document_title") or name or source_url
         source_type = meta.get("source_type") or "web_page"
         language = meta.get("language") or "de"
-        excerpt = extract_excerpt(content, query, max_chars=max_excerpt_chars)
+        excerpt = extract_excerpt(
+            content,
+            query,
+            max_chars=max_excerpt_chars,
+            claim_text=_claim_text_for_url(answer_text, source_url),
+            exclude_tokens=_TOKEN_RE.findall(str(title).lower()),
+        )
 
         ordered.append(
             {

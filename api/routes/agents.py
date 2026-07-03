@@ -57,6 +57,7 @@ async def chat_response_streamer(
     duration_seconds: Optional[float] = None
     time_to_first_token: Optional[float] = None
     latest_references = None
+    final_answer_text: Optional[str] = None
     start_time = time.monotonic()
 
     try:
@@ -84,6 +85,13 @@ async def chat_response_streamer(
             chunk_refs = getattr(chunk, "references", None)
             if chunk_refs:
                 latest_references = chunk_refs
+
+            # RunCompleted carries the full answer text — the claim anchor
+            # for citation excerpts.
+            if getattr(chunk, "event", None) == "RunCompleted":
+                chunk_content = getattr(chunk, "content", None)
+                if isinstance(chunk_content, str):
+                    final_answer_text = chunk_content
     except Exception:
         # Issue #27 — failed runs must still leave a metrics row, otherwise
         # the reported error rate can never rise above zero.
@@ -104,7 +112,7 @@ async def chat_response_streamer(
     # Wire name follows Agno's PascalCase SSE convention (e.g. RunStarted, RunCompleted)
     # so the FE RunEvent enum can stay internally consistent.
     if agent_id == AgentType.SSC_PSYCH_AGENT.id:
-        citations = build_citations(latest_references, query=message)
+        citations = build_citations(latest_references, query=message, answer_text=final_answer_text)
         yield format_citations_sse(citations)
 
     # Fallback: use wall-clock duration if agno didn't report it
@@ -259,9 +267,11 @@ async def create_agent_run(
 
         # Issue #37 — inline-excerpt citations for SSC-Psych.
         if agent_id == AgentType.SSC_PSYCH_AGENT.id:
+            response_content = getattr(response, "content", None)
             response_payload["citations"] = build_citations(
                 getattr(response, "references", None),
                 query=run_request.message,
+                answer_text=response_content if isinstance(response_content, str) else None,
             )
 
         # Record usage for budgeted agents
