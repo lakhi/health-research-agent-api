@@ -5,7 +5,11 @@ Tests URL parsing, content extraction, metadata schema, and language detection.
 Run with: pytest tests/knowledge_base/test_ssc_psych_knowledge.py -v
 """
 
+from io import BytesIO
 from unittest.mock import MagicMock, patch
+
+import requests
+from pypdf import PdfWriter
 
 from services.ssc_web_scraper import (
     _content_hash,
@@ -14,6 +18,18 @@ from services.ssc_web_scraper import (
     _extract_page_title,
     _is_internal_link,
 )
+
+
+def _pdf_bytes(user_password: str | None = None) -> bytes:
+    """Minimal valid one-page PDF; AES-encrypted when a password is given
+    (empty string = owner-locked only, like the real SSC forms)."""
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    if user_password is not None:
+        writer.encrypt(user_password=user_password, owner_password="owner", algorithm="AES-128")
+    buf = BytesIO()
+    writer.write(buf)
+    return buf.getvalue()
 
 
 class TestLanguageDetection:
@@ -180,13 +196,22 @@ class TestScrapeDownloads:
     """
     EMPTY_HTML = "<html><body><div class='content-main'></div></body></html>"
 
-    def _fake_session(self):
+    def _fake_session(self, pdf_overrides: dict[str, bytes] | None = None):
+        overrides = pdf_overrides or {}
+        default_pdf = _pdf_bytes()
+
         def fake_get(url, timeout=None):
             response = MagicMock()
             response.raise_for_status = MagicMock()
             if url.lower().endswith((".pdf", ".docx")):
                 response.headers = {"content-type": "application/octet-stream"}
-                response.content = b"fake file bytes"
+                filename = url.rsplit("/", 1)[-1]
+                if filename in overrides:
+                    response.content = overrides[filename]
+                elif url.lower().endswith(".pdf"):
+                    response.content = default_pdf
+                else:
+                    response.content = b"fake file bytes"
             else:
                 response.headers = {"content-type": "text/html; charset=utf-8"}
                 if "tx_filelist_filelist" in url:
@@ -237,6 +262,76 @@ class TestScrapeDownloads:
         mock_session.return_value = self._fake_session()
         results = scrape_ssc_downloads()
 
-        pdfs = [r for r in results if str(r["path"]).endswith(".pdf")]
+        pdfs = [r for r in results if str(r.get("path", "")).endswith(".pdf")]
         assert len(pdfs) == 2
         assert all(r["metadata"]["source_type"] == "pdf_document" for r in pdfs)
+
+    @patch("services.ssc_web_scraper._get_session")
+    @patch("services.ssc_web_scraper.time.sleep")
+    def test_transient_download_failure_is_retried(self, mock_sleep, mock_session):
+        """A single connection abort must not lose the document (observed live:
+        SL.P4_E_Registration_for_defense_2016.pdf, RemoteDisconnected)."""
+        from services.ssc_web_scraper import scrape_ssc_downloads
+
+        session = self._fake_session()
+        real_get = session.get.side_effect
+        failed: list[str] = []
+
+        def flaky_get(url, timeout=None):
+            if url.endswith("root_form.pdf") and not failed:
+                failed.append(url)
+                raise requests.ConnectionError("Remote end closed connection without response")
+            return real_get(url, timeout=timeout)
+
+        session.get.side_effect = flaky_get
+        mock_session.return_value = session
+        results = scrape_ssc_downloads()
+
+        urls = {r["metadata"]["source_url"] for r in results}
+        assert any(u.endswith("root_form.pdf") for u in urls)
+
+    @patch("services.ssc_web_scraper._get_session")
+    @patch("services.ssc_web_scraper.time.sleep")
+    def test_user_password_pdf_becomes_download_stub(self, mock_sleep, mock_session):
+        """A PDF locked with a real user password cannot be parsed — the agent
+        must still be able to cite the download link via a stub document."""
+        from services.ssc_web_scraper import scrape_ssc_downloads
+
+        mock_session.return_value = self._fake_session(
+            pdf_overrides={"root_form.pdf": _pdf_bytes(user_password="secret")}
+        )
+        results = scrape_ssc_downloads()
+
+        item = next(r for r in results if r["metadata"]["source_url"].endswith("root_form.pdf"))
+        assert "path" not in item
+        assert item["metadata"]["source_url"] in item["text_content"]
+        assert item["metadata"]["source_type"] == "pdf_document"
+
+    @patch("services.ssc_web_scraper._get_session")
+    @patch("services.ssc_web_scraper.time.sleep")
+    def test_owner_locked_pdf_is_decrypted_in_place(self, mock_sleep, mock_session):
+        """Owner-locked PDFs (empty user password — all 5 real SSC cases) must be
+        decrypted so the reader can embed their text."""
+        from pypdf import PdfReader
+
+        from services.ssc_web_scraper import scrape_ssc_downloads
+
+        mock_session.return_value = self._fake_session(pdf_overrides={"root_form.pdf": _pdf_bytes(user_password="")})
+        results = scrape_ssc_downloads()
+
+        item = next(r for r in results if r["metadata"]["source_url"].endswith("root_form.pdf"))
+        assert "path" in item
+        assert PdfReader(str(item["path"])).is_encrypted is False
+
+
+class TestNonEmptyReaders:
+    """Blank documents (image-only pages, empty chunks) 400 against the Azure
+    embedder and land in the vector table without embeddings — the readers
+    must drop them before upsert."""
+
+    def test_blank_pdf_page_produces_no_documents(self, tmp_path):
+        from api.project_configs.ssc_psych_config import NonEmptyPDFReader
+
+        pdf_path = tmp_path / "blank.pdf"
+        pdf_path.write_bytes(_pdf_bytes())
+        assert NonEmptyPDFReader().read(pdf_path) == []

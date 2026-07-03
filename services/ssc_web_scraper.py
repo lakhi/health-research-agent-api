@@ -11,10 +11,12 @@ import logging
 import tempfile
 import time
 from pathlib import Path
+from typing import Optional
 from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from pypdf import PdfReader, PdfWriter
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,7 @@ STUDIUM_PATHS = ["/studium/", "/en/studium/"]
 DOWNLOADS_PATHS = ["/downloads/", "/en/downloads/"]
 REQUEST_DELAY_SECONDS = 0.5
 REQUEST_TIMEOUT_SECONDS = 30
+DOWNLOAD_RETRY_ATTEMPTS = 3
 USER_AGENT = "UniVie-SSC-Psych-Agent/1.0 (research chatbot; +https://ssc-psychologie.univie.ac.at/)"
 
 
@@ -31,6 +34,48 @@ def _get_session() -> requests.Session:
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
     return session
+
+
+def _download_with_retry(session: requests.Session, url: str) -> Optional[requests.Response]:
+    """GET with retries — the SSC file server occasionally aborts connections."""
+    for attempt in range(1, DOWNLOAD_RETRY_ATTEMPTS + 1):
+        try:
+            time.sleep(REQUEST_DELAY_SECONDS)
+            response = session.get(url, timeout=REQUEST_TIMEOUT_SECONDS)
+            response.raise_for_status()
+            return response
+        except requests.RequestException as e:
+            if attempt < DOWNLOAD_RETRY_ATTEMPTS:
+                logger.info(f"Download attempt {attempt}/{DOWNLOAD_RETRY_ATTEMPTS} failed for {url}: {e} — retrying")
+            else:
+                logger.warning(f"Failed to download {url} after {DOWNLOAD_RETRY_ATTEMPTS} attempts: {e}")
+    return None
+
+
+def _unlock_pdf_in_place(path: Path) -> bool:
+    """True when the PDF at `path` is readable, decrypting it in place if needed.
+
+    The SSC forms are owner-locked (edit restrictions, empty user password) —
+    pypdf opens those with decrypt(""). False means a real user password (or an
+    unparseable file): the content is unreachable and the caller should embed a
+    download stub instead.
+    """
+    try:
+        reader = PdfReader(str(path))
+        if not reader.is_encrypted:
+            return True
+        if not reader.decrypt(""):
+            return False
+        writer = PdfWriter()
+        for page in reader.pages:
+            writer.add_page(page)
+        with path.open("wb") as fh:
+            writer.write(fh)
+        logger.info(f"Decrypted owner-locked PDF: {path.name}")
+        return True
+    except Exception as e:
+        logger.warning(f"Could not unlock PDF {path.name}: {e}")
+        return False
 
 
 def _is_internal_link(url: str, allowed_prefixes: list[str]) -> bool:
@@ -253,12 +298,8 @@ def scrape_ssc_downloads() -> list[dict]:
         if not filename:
             continue
 
-        try:
-            time.sleep(REQUEST_DELAY_SECONDS)
-            response = session.get(doc_url, timeout=REQUEST_TIMEOUT_SECONDS)
-            response.raise_for_status()
-        except requests.RequestException as e:
-            logger.warning(f"Failed to download {doc_url}: {e}")
+        response = _download_with_retry(session, doc_url)
+        if response is None:
             continue
 
         local_path = tmp_dir / filename
@@ -274,18 +315,28 @@ def scrape_ssc_downloads() -> list[dict]:
         )
         file_label = "PDF" if source_type == "pdf_document" else "DOCX"
 
-        results.append(
-            {
-                "name": f"SSC {file_label} - {document_title}",
-                "path": local_path,
-                "metadata": {
-                    "source_type": source_type,
-                    "source_url": doc_url,
-                    "document_title": document_title,
-                    "language": language,
-                },
-            }
-        )
+        item: dict = {
+            "name": f"SSC {file_label} - {document_title}",
+            "metadata": {
+                "source_type": source_type,
+                "source_url": doc_url,
+                "document_title": document_title,
+                "language": language,
+            },
+        }
+        if source_type == "pdf_document" and not _unlock_pdf_in_place(local_path):
+            # Content is unreachable, but the agent must still be able to cite
+            # the download link when a page tells students to fetch this form.
+            item["text_content"] = (
+                f"{document_title}: Dieses Formular ist als geschütztes PDF verfügbar; "
+                f"Download unter {doc_url}. / This form is available as a protected PDF; "
+                f"download it at {doc_url}."
+            )
+            logger.warning(f"Password-protected PDF (no empty-password unlock): {filename} — embedding download stub")
+        else:
+            item["path"] = local_path
+
+        results.append(item)
         logger.info(f"Downloaded: {filename} → {doc_url}")
 
     logger.info(f"Downloaded {len(results)} documents from SSC Psychologie website")

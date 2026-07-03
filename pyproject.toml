@@ -10,6 +10,7 @@ dependencies = [
   "aiohttp",
   "beautifulsoup4",
   "chonkie[semantic]",
+  "cryptography",  # pypdf AES decryption of owner-locked SSC download PDFs
   "fastapi[standard]",
   "openai",
   "pgvector",
