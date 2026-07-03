@@ -119,8 +119,10 @@ def get_ssc_psych_agent() -> Agent:
                 asks about forms or downloadable documents
               - Search BOTH when the query could span general info and specific
                 documents (e.g., "how do I register for the doctoral defense?")
-            - Use the `language` metadata filter when the user writes in a
-              specific language, to prefer results in their language.
+            - Do NOT filter by `language`: the knowledge base is almost entirely
+              German (the SSC website has no English pages), so a language filter
+              returns nothing for English queries. Search with German terms and
+              answer in the user's language.
             - If initial results seem sparse, try broadening your search with
               related German/English terms before concluding that no information
               is available.
@@ -193,8 +195,9 @@ def get_ssc_psych_agent() -> Agent:
             </grounding_reminder>
             """
         ),
-        # Debug & Development
-        debug_mode=True,
+        # Debug & Development — off in production: debug_mode echoes prompts/responses
+        # (including user messages) into container logs
+        debug_mode=False,
     )
 
     return ssc_psych_agent
