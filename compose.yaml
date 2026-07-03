@@ -37,7 +37,9 @@ services:
       DB_PASS: ${DB_PASSWORD}
       DB_DATABASE: ${DB_NAME}
       WAIT_FOR_DB: "True"
-      PRINT_ENV_ON_LOAD: "True"
+      # Never enable in a deployed environment: dumps every env var —
+      # including credentials — into the container log stream.
+      PRINT_ENV_ON_LOAD: "False"
     networks:
       - health-research-agent-api
     depends_on:
