@@ -1,10 +1,9 @@
 from logging import getLogger
 
 from agno.agent import Agent
-from agno.models.azure import AzureOpenAI
 
 from agents.agent_types import AgentType
-from agents.llm_models import VAX_STUDY_GPT_MODEL
+from agents.llm_models import get_vax_local_model
 from agents.marhinovirus_agents.shared_instructions import (
     COMPLETENESS_INSTRUCTION,
     SHARED_MARHINOVIRUS_INSTRUCTIONS,
@@ -30,7 +29,7 @@ def get_simple_language_marhinovirus_agent() -> Agent:
     simple_language_agent = Agent(
         id=AgentType.SIMPLE_LANGUAGE_MARHINOVIRUS.id,
         name=AgentType.SIMPLE_LANGUAGE_MARHINOVIRUS.name,
-        model=AzureOpenAI(id=VAX_STUDY_GPT_MODEL, temperature=0.2),
+        model=get_vax_local_model(temperature=0.2),
         description=marhinovirus_knowledge_base.SIMPLE_DESCRIPTION,
         instructions=[
             COMPLETENESS_INSTRUCTION,
