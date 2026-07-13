@@ -165,11 +165,11 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
             }
             {
               name: 'MODEL_PRICING_INPUT_EUR'
-              value: '1.91'
+              value: '1.90'
             }
             {
               name: 'MODEL_PRICING_OUTPUT_EUR'
-              value: '7.64'
+              value: '7.70'
             }
             // ── u:Cloud (Nextcloud) — research paper source ──────────────────
             // Share token supplied as a deploy-time secret (never hard-coded in the
