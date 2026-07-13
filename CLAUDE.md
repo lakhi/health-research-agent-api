@@ -55,9 +55,9 @@ mypy . --config-file pyproject.toml
 `agents/registry.py` holds startup-built agents keyed by `AgentType` id. Agents are constructed with project-specific settings from the active config.
 
 ### Knowledge / RAG
-- **HeX-GiG**: CSV member profiles + u:Cloud research PDFs + RSS news, hybrid search (BM25 + semantic) via Agno + pgvector.
+- **HeX-GiG**: CSV member profiles + u:Cloud research PDFs + RSS news, semantic (vector) search via Agno + pgvector. (Was hybrid; agno's hybrid_search full-scans the table — see knowledge_base/hex_gig_knowledge_base.py.)
 - **VAX**: PDF vaccine-information catalogs, semantic search via Agno + pgvector.
-- **SSC-PSYCH**: Web-scraped SSC website pages + downloaded PDF forms/regulations, hybrid search via Agno + pgvector.
+- **SSC-PSYCH**: Web-scraped SSC website pages + downloaded PDF forms/regulations, semantic (vector) search via Agno + pgvector.
 
 ### Budget enforcement
 `services/budget_service.py` enforces a daily EUR spend limit per deployment. Timezone is `Europe/Vienna`. Applies to projects with budget env vars configured (HeX-GiG, SSC-PSYCH).
