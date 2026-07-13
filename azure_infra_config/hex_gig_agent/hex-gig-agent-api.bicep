@@ -126,7 +126,7 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
             // ── Azure OpenAI (LLM) ───────────────────────────────────────────
             {
               name: 'AZURE_OPENAI_ENDPOINT'
-              value: 'https://az-openai-nex.openai.azure.com/openai/deployments/gpt-41-nex/chat/completions?api-version=2025-01-01-preview'
+              value: 'https://az-openai-healthsociety.openai.azure.com/openai/deployments/gpt-41-dev-healthsoc/chat/completions?api-version=2025-01-01-preview'
             }
             {
               name: 'AZURE_OPENAI_API_KEY'
@@ -135,7 +135,7 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
             // ── Azure OpenAI (Embedder) ──────────────────────────────────────
             {
               name: 'AZURE_EMBEDDER_OPENAI_ENDPOINT'
-              value: 'https://az-openai-nex.openai.azure.com/openai/deployments/embedding-large-nex/embeddings?api-version=2023-05-15'
+              value: 'https://az-openai-healthsociety.openai.azure.com/openai/deployments/embedding-large-dev-healthsoc/embeddings?api-version=2023-05-15'
             }
             {
               name: 'AZURE_EMBEDDER_OPENAI_API_VERSION'
@@ -143,7 +143,7 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
             }
             {
               name: 'AZURE_EMBEDDER_DEPLOYMENT'
-              value: 'embedding-large-nex'
+              value: 'embedding-large-dev-healthsoc'
             }
             {
               name: 'AZURE_EMBEDDER_OPENAI_API_KEY'

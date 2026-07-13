@@ -104,7 +104,7 @@ resource jobs_hex_gig_rss_refresh_resource 'Microsoft.App/jobs@2025-02-02-previe
             // ── Azure OpenAI (Embedder) ──────────────────────────────────────
             {
               name: 'AZURE_EMBEDDER_OPENAI_ENDPOINT'
-              value: 'https://az-openai-nex.openai.azure.com/openai/deployments/embedding-large-nex/embeddings?api-version=2023-05-15'
+              value: 'https://az-openai-healthsociety.openai.azure.com/openai/deployments/embedding-large-dev-healthsoc/embeddings?api-version=2023-05-15'
             }
             {
               name: 'AZURE_EMBEDDER_OPENAI_API_VERSION'
@@ -112,7 +112,7 @@ resource jobs_hex_gig_rss_refresh_resource 'Microsoft.App/jobs@2025-02-02-previe
             }
             {
               name: 'AZURE_EMBEDDER_DEPLOYMENT'
-              value: 'embedding-large-nex'
+              value: 'embedding-large-dev-healthsoc'
             }
             {
               name: 'AZURE_EMBEDDER_OPENAI_API_KEY'
