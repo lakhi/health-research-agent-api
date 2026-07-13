@@ -84,7 +84,11 @@ def get_hex_gig_knowledge() -> Knowledge:
         name="Health in Society Research Network Knowledge",
         vector_db=PgVector(
             db_url=db_url,
-            search_type=SearchType.hybrid,
+            # SearchType.vector, not hybrid: agno's hybrid_search computes
+            # ts_rank_cd(to_tsvector(content), ...) over every row with no WHERE
+            # clause, so it full-scans the table on each query (~30s on the
+            # B1ms prod DB at 15k+ chunks). Vector search stays index-friendly.
+            search_type=SearchType.vector,
             table_name="hex_gig_embeddings",
             embedder=get_azure_embedder(),
         ),
