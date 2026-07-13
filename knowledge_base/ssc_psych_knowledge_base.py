@@ -11,14 +11,17 @@ logger = logging.getLogger(__name__)
 
 
 def get_ssc_psych_knowledge() -> Knowledge:
-    """Create the Knowledge object for SSC Psychologie with PgVector hybrid search."""
+    """Create the Knowledge object for SSC Psychologie with PgVector semantic search."""
     db_url = get_db_url_cached()
 
     return Knowledge(
         name="SSC Psychologie Knowledge",
         vector_db=PgVector(
             db_url=db_url,
-            search_type=SearchType.hybrid,
+            # SearchType.vector, not hybrid: agno's hybrid_search full-scans the
+            # table on every query (no WHERE clause, ts_rank_cd computed for all
+            # rows) — see the same switch in hex_gig_knowledge_base.py (#42).
+            search_type=SearchType.vector,
             table_name="ssc_psych_embeddings",
             embedder=get_azure_embedder(),
         ),
