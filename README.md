@@ -71,14 +71,9 @@ For Linux deployment:
 ./scripts/generate_requirements.sh linux
 ```
 
-### 2. Switch Environment
+### 2. Configure Environment
 
-Switch between local and Azure environments:
-
-```sh
-./scripts/switch_env.sh local   # For local development
-./scripts/switch_env.sh azure   # For Azure deployment
-```
+Copy `.env.example` to `.env` and fill in local values (Docker Postgres credentials, Azure OpenAI keys, `PROJECT_NAME`). `.env` is gitignored — edit it directly, no switching script needed.
 
 ### 3. Development Setup
 

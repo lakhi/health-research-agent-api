@@ -203,7 +203,7 @@ The hex_gig agent (`hex_gig_agent`) has a daily budget enforcement system to con
 
 ### Configuration
 
-The following environment variables are required for `PROJECT_NAME=hex_gig` and can be set in `.env.local` (local) and in Azure as an environment variable for the Container App:
+The following environment variables are required for `PROJECT_NAME=hex_gig` and can be set in `.env` (local) and in Azure as an environment variable for the Container App:
 
 | Variable                   | Example | Description                                   |
 | -------------------------- | ------- | --------------------------------------------- |

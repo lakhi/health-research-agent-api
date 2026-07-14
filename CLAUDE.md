@@ -12,12 +12,6 @@ FastAPI-based multi-project health research agent platform for the University of
 ./scripts/generate_requirements.sh linux-upgrade
 ```
 
-### Environment switching
-```bash
-./scripts/switch_env.sh local   # copies .env.local → .env
-./scripts/switch_env.sh azure   # copies .env.azure → .env
-```
-
 ### Dev setup
 ```bash
 ./scripts/dev_setup.sh
@@ -72,7 +66,7 @@ mypy . --config-file pyproject.toml
 |---|---|
 | App settings (env vars) | `api/settings.py` — Pydantic `BaseSettings` |
 | Azure OpenAI model IDs | `agents/llm_models.py` |
-| Env files | `.env.local` / `.env.azure` (switched via `switch_env.sh`, symlinked to `.env`) |
+| Env files | single `.env` (gitignored, edited directly); `.env.example` documents required keys. Azure Container App env vars are set directly on the resource, independent of any local file |
 | Ruff | line-length = 120 |
 | mypy | strict mode; pgvector and agno modules are ignored |
 | pytest-asyncio | `asyncio_mode = auto` |

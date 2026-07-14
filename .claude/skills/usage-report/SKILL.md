@@ -30,7 +30,7 @@ Example invocations:
 
 #### target=live (default)
 
-The source of truth is the running Container App — **never** read `.env.azure` (it is known to drift).
+The source of truth is the running Container App — **never** read a local `.env` file for live credentials (it is known to drift from what's actually deployed).
 
 1. Check `az account show` succeeds; if not, ask the user to log in (`az login`). Subscription: `444c1e5c-ac0d-4420-94ea-d4a5414d20e1` ("Project - socialeconpsy").
 2. Read the live app's env config:
@@ -197,7 +197,7 @@ HTML report written to `reports/<filename>.html`
 - This skill is **read-only** against the database — it never modifies records.
 - The only infra change it may ever make is adding a PostgreSQL firewall rule for the current IP, and only after the user agrees.
 - Never start a stopped Azure PostgreSQL server without asking the user first.
-- Never read `.env.azure` for live credentials — always the Container App config.
+- Never read a local `.env` file for live credentials — always the Container App config.
 - The only file it may write is the HTML report under `reports/` when `format=html` is passed.
 - If a query returns zero rows, show an empty table with headers and a note "(no data in range)".
 - If `from` is after `to`, report the invalid range and stop.
