@@ -14,8 +14,8 @@ FastAPI-based multi-project health research agent platform for the University of
 
 ### Environment switching
 ```bash
-./scripts/switch_env.sh local   # symlinks .env → .env.local
-./scripts/switch_env.sh azure   # symlinks .env → .env.azure
+./scripts/switch_env.sh local   # copies .env.local → .env
+./scripts/switch_env.sh azure   # copies .env.azure → .env
 ```
 
 ### Dev setup
