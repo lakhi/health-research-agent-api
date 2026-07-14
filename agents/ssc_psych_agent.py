@@ -123,6 +123,10 @@ def get_ssc_psych_agent() -> Agent:
               German (the SSC website has no English pages), so a language filter
               returns nothing for English queries. Search with German terms and
               answer in the user's language.
+            - If a filtered search returns no documents, retry the SAME query
+              WITHOUT any filters before concluding that no information is
+              available — the answer may live in a different source_type than
+              expected.
             - If initial results seem sparse, try broadening your search with
               related German/English terms before concluding that no information
               is available.

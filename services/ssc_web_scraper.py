@@ -288,7 +288,10 @@ def scrape_ssc_downloads() -> list[dict]:
         logger.warning("No documents found on SSC downloads pages")
         return results
 
-    tmp_dir = Path(tempfile.mkdtemp(prefix="ssc_psych_pdfs_"))
+    # Fixed path (not mkdtemp): agno's skip_if_exists hashes the file *path*, so a
+    # random temp dir per run defeats dedup and re-embeds every document on restart.
+    tmp_dir = Path(tempfile.gettempdir()) / "ssc_psych_pdfs"
+    tmp_dir.mkdir(exist_ok=True)
     logger.info(f"Downloading {len(doc_urls)} documents to {tmp_dir}")
 
     for doc_url in sorted(doc_urls):
