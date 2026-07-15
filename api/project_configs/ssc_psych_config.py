@@ -55,8 +55,7 @@ class SscPsychConfig(ProjectConfig):
 
     @property
     def cors_origins(self) -> List[str]:
-        # TBD — Azure Container App UI URL added once provisioned
-        return []
+        return ["https://ssc-psych-chatbot-ui.politesmoke-3283667d.swedencentral.azurecontainerapps.io"]
 
     def get_agents(self) -> List[Agent]:
         """Initialize SSC Psychologie agent."""
