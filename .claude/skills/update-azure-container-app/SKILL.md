@@ -33,13 +33,11 @@ Use **AskUserQuestion**:
     },
     {
       "label": "ssc-psych",
-      "description": "SSC Psychologie chatbot"
+      "description": "Builds ssc-psych-agent-api → pushes to sscpsychacr → updates ssc-psych-api in ssc-psych-test RG"
     }
   ]
 }
 ```
-
-If the user selects **ssc-psych**: inform them that SSC-Psych has not yet been deployed to Azure — no Container App or ACR exists for it yet. Exit the skill gracefully (no further steps).
 
 ### Step 2 — Azure login check
 
@@ -61,6 +59,7 @@ Then set the correct subscription for the chosen project:
 |-----------|----------------------------------------|
 | hex-gig   | `444c1e5c-ac0d-4420-94ea-d4a5414d20e1` |
 | vax-study | `44365843-c70c-4844-a430-ad0193819039` |
+| ssc-psych | `44365843-c70c-4844-a430-ad0193819039` |
 
 ```sh
 az account set --subscription <id>
@@ -95,11 +94,12 @@ If the workflow **fails**: print the run URL (`https://github.com/lakhi/health-r
 job atomically, using the `hex-gig-deploy` service principal (Contributor on exactly the three
 container resources, stored as the `HEX_GIG_AZURE_CREDENTIALS` repo secret). Proceed to Step 5.
 
-**vax-study: manual update required** (no service principal exists for that RG):
+**vax-study / ssc-psych: manual update required** (no service principal exists for those RGs):
 
 | Project   | Container App     | Resource Group | Image                                              |
 |-----------|-------------------|----------------|----------------------------------------------------|
 | vax-study | marhinovirus-api  | vax-study      | `vaxacr.azurecr.io/health-research-api:latest`     |
+| ssc-psych | ssc-psych-api     | ssc-psych-test | `sscpsychacr.azurecr.io/ssc-psych-agent-api:latest` |
 
 ```sh
 az containerapp update \
@@ -156,5 +156,6 @@ Status:          ✅ Deployment complete
 ## Notes
 
 - **VAX pre-condition:** The GitHub repo must have `VAX_ACR_LOGIN_SERVER`, `VAX_ACR_USERNAME`, and `VAX_ACR_PASSWORD` set as repository secrets before a vax-study build can succeed. If they're missing, the GH Actions run will fail at Step 3 and the skill will exit.
+- **SSC-Psych pre-condition:** likewise `SSC_PSYCH_ACR_LOGIN_SERVER`, `SSC_PSYCH_ACR_USERNAME`, `SSC_PSYCH_ACR_PASSWORD` (set 2026-07-15). Note: an ssc-psych restart re-runs knowledge loading against the `ssc_psych` database on the shared `vax-db` server (skip_if_exists makes it fast when content is unchanged).
 - **Tenant:** Always use `--tenant azure.univie.ac.at` for login — this is the University of Vienna Azure tenant.
 - **Image tag stays `:latest`** — the `--revision-suffix` trick (not a tag change) is what triggers the fresh pull.
