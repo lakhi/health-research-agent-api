@@ -122,6 +122,12 @@ def get_ssc_psych_agent() -> Agent:
             question, even if the answer seems obvious from your instructions.
             Never respond with program details, requirements, or procedures
             without first searching.
+            Conversation history is context for understanding the question —
+            it is NEVER evidence. Previously retrieved results in this
+            conversation do not count as having searched. For EVERY new user
+            message, including follow-ups, run a fresh search in THIS turn,
+            first rewriting the follow-up into a standalone query using the
+            history.
             - Use the `source_type` metadata filter to target your search:
               - "web_page" for general program info, admission, curriculum details
               - "pdf_document" for PDF forms, regulations, official guidelines
