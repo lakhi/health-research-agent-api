@@ -122,6 +122,27 @@ az containerapp job update \
   --image "hexgigacr.azurecr.io/hex-gig-agent-api:$SHA"
 ```
 
+### Step 4c — SSC-Psych UI redeploy (only when frontend code changed)
+
+This skill's main flow covers the API image. If the change touched the `agent-ui` repo
+(components, `projects.tsx`, theme), redeploy the UI separately:
+
+```sh
+cd ../../agent-ui   # sibling repo
+gh workflow run "Deploy SSC Psychology Chatbot" --ref main -R lakhi/health-research-agent-ui
+gh run watch <run-id> -R lakhi/health-research-agent-ui --exit-status
+az containerapp update \
+  --name ssc-psych-chatbot-ui \
+  --resource-group ssc-psych-test \
+  --image sscpsychacr.azurecr.io/ssc-psych-chatbot-ui:latest \
+  --revision-suffix "$(date +%d)-$(date +%b | tr '[:upper:]' '[:lower:]')-$((RANDOM % 10))"
+```
+
+The UI workflow is build+push only (no SP), so the `az containerapp update` always runs locally.
+Remember: `NEXT_PUBLIC_*` values (`apiEndpoint` in `src/config/projects.tsx`, project id) are baked
+into the bundle **at image build time** — changing them requires this full rebuild path; a bare
+revision bump will keep serving the old values.
+
 ### Step 5 — Verify startup and assert no drift
 
 **Drift assertion (hex-gig only, always run):** the RSS job must pin the exact commit the run built.
