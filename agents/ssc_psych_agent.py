@@ -41,6 +41,11 @@ def get_ssc_psych_agent() -> Agent:
         # Context & Memory — RAM-backed, so history injection is safe
         add_history_to_context=True,
         num_history_runs=5,
+        # Keep search results out of stored history: with them present, the model
+        # treats last turn's retrieval as evidence and skips search_knowledge_base
+        # on follow-ups (~1-in-5 compliance). Without them it must search fresh
+        # each turn. Conversational text is still stored, so continuity holds.
+        store_tool_messages=False,
         # Behavior & Instructions
         description=dedent(
             """\
