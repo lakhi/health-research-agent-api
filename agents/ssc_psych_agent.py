@@ -2,6 +2,7 @@ from logging import getLogger
 from textwrap import dedent
 
 from agno.agent import Agent
+from agno.db.in_memory import InMemoryDb
 from agno.models.azure import AzureOpenAI
 
 from agents.agent_types import AgentType
@@ -18,17 +19,28 @@ def get_ssc_psych_agent() -> Agent:
     This agent helps prospective students and the general public find information
     about psychology study programs at the University of Vienna by drawing on
     scraped SSC website content and downloadable PDF documents.
+
+    Sessions are held in process memory only (InMemoryDb) — nothing is written
+    to Postgres or disk. Recent turns are injected into the model context so
+    follow-up questions (e.g. "what date in July?" after an entrance-exam
+    answer) retain their meaning. Session state is wiped on container restart.
     """
     ssc_psych_agent = Agent(
         # Identity & Configuration
         id=AgentType.SSC_PSYCH_AGENT.id,
         name=AgentType.SSC_PSYCH_AGENT.name,
         # Model & Storage
-        model=AzureOpenAI(id=LLMModel.GPT_4_1),
+        model=AzureOpenAI(id=LLMModel.GPT_4_1, temperature=0.75),
+        # In-memory only: provides conversational context for follow-ups,
+        # nothing persisted to Postgres/disk. Wiped on container restart.
+        db=InMemoryDb(),
         # Knowledge & Search
         knowledge=get_ssc_psych_knowledge(),
         search_knowledge=True,
         enable_agentic_knowledge_filters=True,
+        # Context & Memory — RAM-backed, so history injection is safe
+        add_history_to_context=True,
+        num_history_runs=5,
         # Behavior & Instructions
         description=dedent(
             """\
@@ -199,6 +211,10 @@ def get_ssc_psych_agent() -> Agent:
             </grounding_reminder>
             """
         ),
+        # Telemetry — off: no per-run metadata events to Agno's API (os-api.agno.com).
+        # This is the authoritative switch for Azure (the SSC bicep sets no
+        # AGNO_TELEMETRY env var); OS-level events are muted in api/main.py.
+        telemetry=False,
         # Debug & Development — off in production: debug_mode echoes prompts/responses
         # (including user messages) into container logs
         debug_mode=False,
