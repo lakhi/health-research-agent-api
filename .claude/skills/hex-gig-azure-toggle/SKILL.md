@@ -16,7 +16,7 @@ Toggle the HeX-GiG stack in the `healthsociety` resource group (subscription `44
 | `hex-gig-postgres-db` (PostgreSQL Flexible Server) | Stopped | Ready |
 | `hex-gig-agent-api` (Container App) | minReplicas=0, maxReplicas=1 | minReplicas=1, maxReplicas=3 |
 | `hex-gig-agent-ui` (Container App) | minReplicas=0, maxReplicas=1 | minReplicas=1, maxReplicas=3 |
-| `hex-gig-rss-refresh` (Container Apps Job, daily 12:00 UTC) | Suspended | Enabled |
+| `hex-gig-rss-refresh` (Container Apps Job) | cron disabled (`0 0 31 2 *`, never fires) | cron `0 12 * * *` (daily 12:00 UTC) |
 
 ## Procedure
 
@@ -39,7 +39,7 @@ Interpret the result:
 
 ### Step 2a — Pause (if state was `Ready`)
 
-Run all three commands. Container Apps can run in parallel with the PostgreSQL stop:
+Run all four commands in parallel:
 
 ```bash
 az containerapp update \
@@ -58,6 +58,15 @@ az postgres flexible-server stop \
   --name hex-gig-postgres-db \
   --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
+
+# Disable the RSS-refresh job so it doesn't fire against a stopped DB while paused.
+# Container Apps Jobs have no native suspend toggle — overwrite the cron with a date
+# that can never occur (Feb 31st) instead. Restore the real cron on unpause.
+az containerapp job update \
+  --name hex-gig-rss-refresh \
+  --resource-group healthsociety \
+  --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
+  --cron-expression "0 0 31 2 *"
 ```
 
 ### Step 2b — Unpause (if state was `Stopped`)
@@ -70,11 +79,13 @@ az postgres flexible-server start \
   --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
 
-# Re-enable the daily RSS-refresh job
-az containerapp job resume \
+# Restore the real cron (there is no `az containerapp job resume` command — jobs have
+# no native suspend/resume toggle, so pausing/unpausing means swapping the cron expression)
+az containerapp job update \
   --name hex-gig-rss-refresh \
   --resource-group healthsociety \
-  --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
+  --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
+  --cron-expression "0 12 * * *"
 
 az containerapp update \
   --name hex-gig-agent-api \
@@ -106,7 +117,8 @@ az containerapp show --name hex-gig-agent-api --resource-group healthsociety \
 
 az containerapp job show --name hex-gig-rss-refresh --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
-  --query "properties.runningState" -o tsv   # expect Suspended when paused, Ready when running
+  --query "properties.configuration.scheduleTriggerConfig.cronExpression" -o tsv
+  # expect "0 0 31 2 *" when paused, "0 12 * * *" when running
 ```
 
 ### Step 4 — Report
@@ -125,6 +137,9 @@ Report clearly:
 
 ## Cost Context
 
-- **Paused**: ~$9/month (ACR Basic + storage only)
-- **Running**: ~$144/month
-- ⚠️ Azure auto-restarts stopped PostgreSQL Flexible Servers after 7 days. If this happens, run `/hex-gig-azure-toggle` to re-pause, or trigger the `pause-hex-gig-postgres` GitHub Actions workflow manually.
+Measured from actual Azure Cost Management data for the `healthsociety` RG, 2026-05-08 (when the stack was first deployed) through 2026-07-22 — 76 days, €159.30 total. Query via `az rest` against `Microsoft.CostManagement/query` (the `az costmanagement query` CLI command has been removed from the extension; use the REST API directly).
+
+- **Running**: ~€2.10/day, ~**€63/month**. Breakdown: Container Apps 72% (€115.02), PostgreSQL 21% (€33.62), ACR 6% (€9.91), Azure OpenAI usage <1% (€0.74).
+- **Paused**: ~€0.13/day, ~**€4/month** (ACR storage only — Container Apps and PostgreSQL compute drop to ~€0 when scaled to zero / stopped).
+- **Savings from pausing**: ~€1.97/day, ~**€59/month (~94% reduction)**.
+- ⚠️ Azure auto-restarts stopped PostgreSQL Flexible Servers after 7 days. This is handled automatically: the `pause-hex-gig-postgres` GitHub Actions workflow (`.github/workflows/pause-hex-gig-postgres.yml`) now runs on a `schedule` trigger every 6 days and re-stops the DB if it finds it `Ready`. No manual action needed — it will keep the DB paused indefinitely once this skill has paused the stack. Trigger it manually from the GitHub Actions UI only if you want to force an immediate check.
