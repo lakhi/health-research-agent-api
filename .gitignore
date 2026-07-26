@@ -45,3 +45,6 @@ venv*
 
 # eval results (generated)
 /results
+
+# Study data exports (participant conversations — never commit)
+/exports
