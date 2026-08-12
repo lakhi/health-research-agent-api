@@ -1,0 +1,118 @@
+# Re-stops PostgreSQL Flexible Servers that are meant to stay paused.
+#
+# Azure force-restarts a stopped Flexible Server after 7 days, so a stack paused via the
+# /pause-unpause-chatbots-azure skill would silently resume billing. This workflow runs every
+# 6 days and re-stops any server it finds Ready that should still be paused.
+# See the Cost Context section of .claude/skills/pause-unpause-chatbots-azure/SKILL.md for why.
+#
+# Can also be triggered manually from the GitHub Actions UI at any time.
+
+name: Keep PostgreSQL servers paused
+
+on:
+  schedule:
+    - cron: "0 3 */6 * *" # every 6 days at 03:00 UTC — beats Azure's 7-day auto-restart
+  workflow_dispatch: # Run manually from GitHub Actions UI
+
+jobs:
+  # hex-gig owns its server outright, so "is hex-gig paused?" is answered by the server itself.
+  stop-hex-gig-db:
+    name: hex-gig-postgres-db
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_SOCIALECONPSY }}
+
+      - name: Stop hex-gig-postgres-db if running
+        run: |
+          STATE=$(az postgres flexible-server show \
+            --name hex-gig-postgres-db \
+            --resource-group healthsociety \
+            --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
+            --query "state" -o tsv)
+          echo "Current state: $STATE"
+          if [ "$STATE" = "Ready" ]; then
+            az postgres flexible-server stop \
+              --name hex-gig-postgres-db \
+              --resource-group healthsociety \
+              --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
+            echo "Stopped."
+          else
+            echo "Already stopped — no action."
+          fi
+
+  # vax-db is SHARED by vax-study (marhinovirus-api) and ssc-psych (ssc-psych-api), so the server's
+  # own state says nothing about whether it should be paused. Re-stop it only when BOTH tenants are
+  # scaled to zero — otherwise this job would kill the database out from under a live chatbot.
+  stop-vax-db:
+    name: vax-db (shared — ref-counted)
+    runs-on: ubuntu-latest
+    env:
+      SUBSCRIPTION: 44365843-c70c-4844-a430-ad0193819039
+    steps:
+      # The `secrets` context is not available in job- or step-level `if:` conditions, so the
+      # presence check has to happen inside a step and be exported as an output.
+      - name: Check for vaxcommunication credentials
+        id: creds
+        env:
+          AZURE_CREDENTIALS_VAXCOMMUNICATION: ${{ secrets.AZURE_CREDENTIALS_VAXCOMMUNICATION }}
+        run: |
+          if [ -n "$AZURE_CREDENTIALS_VAXCOMMUNICATION" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::AZURE_CREDENTIALS_VAXCOMMUNICATION is not set — skipping vax-db." \
+                 "A paused vax-db will auto-restart after ~7 days until this secret exists." \
+                 "Setup steps are in .claude/skills/pause-unpause-chatbots-azure/SKILL.md."
+          fi
+
+      - name: Azure login
+        if: steps.creds.outputs.configured == 'true'
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_VAXCOMMUNICATION }}
+
+      - name: Stop vax-db if both tenants are paused
+        if: steps.creds.outputs.configured == 'true'
+        run: |
+          set -euo pipefail
+          az config set extension.use_dynamic_install=yes_without_prompt --only-show-errors
+
+          # An unset minReplicas comes back empty; treat anything non-zero OR unreadable as
+          # "running" so an API hiccup can never cause us to stop a live database.
+          read_min() {
+            local name=$1 rg=$2 min
+            min=$(az containerapp show --name "$name" --resource-group "$rg" \
+              --subscription "$SUBSCRIPTION" \
+              --query "properties.template.scale.minReplicas" -o tsv 2>/dev/null) || min=""
+            [ -n "$min" ] && [ "$min" != "null" ] || min="1"
+            echo "$min"
+          }
+
+          VAX_MIN=$(read_min marhinovirus-api vax-study)
+          SSC_MIN=$(read_min ssc-psych-api ssc-psych-test)
+          echo "marhinovirus-api minReplicas: $VAX_MIN"
+          echo "ssc-psych-api    minReplicas: $SSC_MIN"
+
+          if [ "$VAX_MIN" != "0" ] || [ "$SSC_MIN" != "0" ]; then
+            echo "At least one tenant is still running — leaving vax-db up."
+            exit 0
+          fi
+
+          STATE=$(az postgres flexible-server show \
+            --name vax-db \
+            --resource-group vax-study \
+            --subscription "$SUBSCRIPTION" \
+            --query "state" -o tsv)
+          echo "Both tenants paused. vax-db current state: $STATE"
+          if [ "$STATE" = "Ready" ]; then
+            az postgres flexible-server stop \
+              --name vax-db \
+              --resource-group vax-study \
+              --subscription "$SUBSCRIPTION"
+            echo "Stopped."
+          else
+            echo "Already stopped — no action."
+          fi

@@ -49,7 +49,7 @@ The source of truth is the running Container App — **never** read a local `.en
    az postgres flexible-server show -n hex-gig-postgres-db -g healthsociety \
      --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 --query "state" -o tsv
    ```
-   If it is not `Ready` (e.g. `Stopped` because the stack is paused): **stop and ask the user** whether to start it (suggest `/hex-gig-azure-toggle`). Never start it silently.
+   If it is not `Ready` (e.g. `Stopped` because the stack is paused): **stop and ask the user** whether to start it (suggest `/pause-unpause-chatbots-azure`). Never start it silently.
 4. Base psql command (Azure requires SSL):
    ```bash
    PGPASSWORD=<password> psql "host=<DB_HOST> port=<DB_PORT> user=<DB_USER> dbname=<dbname> sslmode=require"

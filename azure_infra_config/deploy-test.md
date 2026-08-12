@@ -122,7 +122,8 @@ az postgres flexible-server stop \
 ```
 
 > ⚠️ Azure auto-restarts stopped PostgreSQL Flexible Servers after 7 days. Re-run the stop
-> command if that happens, or trigger the `pause-hex-gig-postgres` GitHub Actions workflow manually.
+> command if that happens, or trigger the `Keep PostgreSQL servers paused` GitHub Actions workflow
+> (`.github/workflows/keep-paused-postgres.yml`) manually.
 
 **Resume (start DB + scale back up):**
 ```sh
