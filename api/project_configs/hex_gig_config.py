@@ -24,7 +24,7 @@ class HexGigConfig(ProjectConfig):
     def cors_origins(self) -> List[str]:
         return [
             "https://hex-gig.univie.ac.at",
-            "https://hex-gig-agent-ui.bravemeadow-0cb4208f.swedencentral.azurecontainerapps.io",  # remove after ZID CNAME is live
+            "https://hex-gig-agent-ui.bravemeadow-0cb4208f.swedencentral.azurecontainerapps.io",  # Azure-hosted UI; drop when it is retired in favour of the ZID webspace
             "https://statsbot.univie.ac.at",  # TEMPORARY (11 Aug 2026): ZID-webspace hosting feasibility test — remove once concluded
         ]
 
