@@ -70,11 +70,19 @@ jobs:
       - name: Set up Python
         run: uv python install 3.12
 
+      # Index flags mirror Dockerfile.azure: requirements-linux.txt pins torch==2.12.0+cpu,
+      # which only exists on PyTorch's own index, and uv will not look past the first index
+      # carrying a package without unsafe-best-match.
       - name: Install dependencies
         run: |
           uv venv
-          uv pip install -r requirements-linux.txt
+          uv pip install -r requirements-linux.txt \
+            --index-strategy unsafe-best-match \
+            --index-url https://download.pytorch.org/whl/cpu \
+            --extra-index-url https://pypi.org/simple/
           uv pip install pytest pytest-asyncio httpx
 
+      # Invoked through the venv directly rather than `uv run`, which would try to
+      # re-sync the project and undo the pinned install above.
       - name: Run unit tests
-        run: uv run pytest tests/ -v -m "not integration"
+        run: .venv/bin/python -m pytest tests/ -v -m "not integration"
