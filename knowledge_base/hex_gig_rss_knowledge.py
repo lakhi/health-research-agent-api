@@ -1,6 +1,8 @@
 import hashlib
 import logging
+import re
 import xml.etree.ElementTree as ET
+from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from urllib.request import urlopen
 
@@ -12,6 +14,12 @@ RSS_FEED_URL = "https://gig.univie.ac.at/en/about-us/news/feed.xml"
 RSS_LANGUAGE = "en"
 RSS_SOURCE_TYPE = "news_article"
 RSS_NAMESPACES = {"content": "http://purl.org/rss/1.0/modules/content/"}
+
+# The CMS emits an empty rich-text field as "<>" inside content:encoded, which survives HTML
+# stripping as the literal two-character string "<>". That is truthy, so it used to suppress the
+# <description> fallback and two articles were embedded with "<>" as their entire body. Require at
+# least one alphanumeric character before treating stripped text as real content.
+_HAS_WORD_CHAR_RE = re.compile(r"\w")
 
 
 # ---------------------------------------------------------------------------
@@ -43,9 +51,39 @@ def _strip_html(html: str) -> str:
     return " ".join(joined.split())
 
 
+def _is_meaningful(text: str) -> bool:
+    """True when *text* contains at least one word character (letter/digit/underscore)."""
+    return bool(_HAS_WORD_CHAR_RE.search(text))
+
+
 def _compute_content_hash(text: str) -> str:
     """Return SHA-256 hex digest of the stripped text for audit/change detection."""
     return hashlib.sha256(text.strip().encode("utf-8")).hexdigest()
+
+
+def _to_iso_date(pub_date: str) -> str:
+    """Convert an RFC-2822 pubDate to a sortable YYYY-MM-DD string; "" if unparseable."""
+    if not pub_date:
+        return ""
+    try:
+        return parsedate_to_datetime(pub_date).date().isoformat()
+    except (TypeError, ValueError):
+        logger.warning("Unparseable pubDate, storing empty pub_date_iso: %r", pub_date)
+        return ""
+
+
+def _build_document_text(title: str, iso_date: str, body: str) -> str:
+    """Assemble the text that actually gets embedded.
+
+    The headline is the most topic-dense field an article has and the date is what "latest"
+    questions are really about, yet both used to live only in metadata — the embedding was built
+    from the body alone. Putting them in the embedded text is what lets a query like
+    "news about heat in August" match on more than a paragraph of prose.
+    """
+    header = f"GiG network news: {title}"
+    if iso_date:
+        header = f"{header}\nPublished: {iso_date}"
+    return f"{header}\n\n{body}" if body else header
 
 
 def _parse_rss_item(item: ET.Element) -> dict | None:  # type: ignore[type-arg]
@@ -73,33 +111,43 @@ def _parse_rss_item(item: ET.Element) -> dict | None:  # type: ignore[type-arg]
     pub_date_el = item.find("pubDate")
     pub_date = (pub_date_el.text or "").strip() if pub_date_el is not None else ""
 
-    # Prefer content:encoded when non-empty after stripping; fall back to description
+    # Prefer content:encoded when it carries real text; fall back to description otherwise
     content_encoded_el = item.find("content:encoded", RSS_NAMESPACES)
     raw_content = (content_encoded_el.text or "").strip() if content_encoded_el is not None else ""
     plain_content = _strip_html(raw_content) if raw_content else ""
 
-    if not plain_content:
+    if not _is_meaningful(plain_content):
         description_el = item.find("description")
         description = (description_el.text or "").strip() if description_el is not None else ""
         plain_content = _strip_html(description)
+
+    if not _is_meaningful(plain_content):
+        plain_content = ""
 
     enclosure_el = item.find("enclosure")
     image_url = ""
     if enclosure_el is not None:
         image_url = enclosure_el.get("url", "")
 
+    iso_date = _to_iso_date(pub_date)
+    document_text = _build_document_text(title, iso_date, plain_content)
+
     return {
         "name": f"HeX News - {title}",
-        "text_content": plain_content,
+        "text_content": document_text,
         "metadata": {
             "guid": guid,
             "title": title,
             "link": link,
             "pub_date": pub_date,
+            # Sortable form of pub_date. The RFC-2822 original ("Thu, 11 Jun 2026 09:18:00 +0200")
+            # is not something a model can order reliably by eye.
+            "pub_date_iso": iso_date,
             "language": RSS_LANGUAGE,
             "source_type": RSS_SOURCE_TYPE,
             "image_url": image_url,
-            "content_hash": _compute_content_hash(plain_content),
+            # Fingerprint of the text we actually embed, so a changed article is detectable.
+            "content_hash": _compute_content_hash(document_text),
         },
     }
 
@@ -139,18 +187,67 @@ def get_rss_news_data() -> list[dict]:  # type: ignore[type-arg]
     return parse_rss_feed(xml_str)
 
 
-async def aload_rss_into_knowledge(knowledge: Knowledge) -> tuple[int, int]:
-    """Fetch the RSS feed and insert items into *knowledge*, skipping duplicates.
+async def _astored_news_fingerprints(knowledge: Knowledge) -> dict[str, tuple[str | None, str | None]]:
+    """Map ``name`` → ``(content_id, content_hash)`` for news articles already in *knowledge*.
 
-    Uses ``skip_if_exists=True`` so previously-loaded articles (keyed by ``name``)
-    are not re-inserted. Returns ``(items_seen, items_attempted_insert)`` for logging.
+    Failure is deliberately non-fatal: an empty map means "treat every article as new", which
+    costs a re-embed of the whole feed but can never leave the knowledge base short of an article.
+    """
+    try:
+        contents, _ = await knowledge.aget_content()
+    except Exception:
+        logger.warning("Could not read stored knowledge contents — re-inserting every article", exc_info=True)
+        return {}
+
+    fingerprints: dict[str, tuple[str | None, str | None]] = {}
+    for content in contents:
+        metadata = content.metadata or {}
+        if metadata.get("source_type") != RSS_SOURCE_TYPE or not content.name:
+            continue
+        fingerprints[content.name] = (content.id, metadata.get("content_hash"))
+    return fingerprints
+
+
+async def aload_rss_into_knowledge(knowledge: Knowledge) -> tuple[int, int]:
+    """Fetch the RSS feed and bring *knowledge* in line with it.
+
+    An article is (re)inserted only when its ``content_hash`` differs from what is stored, so a
+    steady-state run does no embedding work at all.
+
+    This deliberately does not use ``skip_if_exists=True``. Agno derives its own dedupe key from
+    the content *name* and type (``Knowledge._build_content_hash``), never the body — so under
+    ``skip_if_exists`` an article was keyed by its title alone and could never be updated once
+    stored. A feed that later filled in an empty article, fixed a typo, or expanded a stub was
+    invisible to us forever; two articles sat in the knowledge base with "<>" as their whole body
+    while the feed served a perfectly good description. Comparing hashes ourselves and replacing
+    the content on a mismatch makes the pipeline self-healing.
+
+    Returns ``(items_seen, items_written)`` for logging.
     """
     items = get_rss_news_data()
+    stored = await _astored_news_fingerprints(knowledge)
+
+    written = 0
     for item in items:
+        name = item["name"]
+        content_id, stored_hash = stored.get(name, (None, None))
+
+        if stored_hash == item["metadata"]["content_hash"]:
+            continue
+
+        if content_id is not None:
+            logger.info("RSS article changed — replacing: %s", name)
+            await knowledge.aremove_content_by_id(content_id)
+        # Also clear vectors orphaned by an earlier run that left no contents-db row behind.
+        knowledge.remove_vectors_by_name(name)
+
         await knowledge.ainsert(
-            name=item["name"],
+            name=name,
             text_content=item["text_content"],
             metadata=item["metadata"],
-            skip_if_exists=True,
+            skip_if_exists=False,
         )
-    return len(items), len(items)
+        written += 1
+
+    logger.info("RSS feed: %d items, %d written, %d unchanged", len(items), written, len(items) - written)
+    return len(items), written

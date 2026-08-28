@@ -41,9 +41,9 @@ def _purge_old_metrics() -> None:
 async def _main() -> int:
     knowledge = get_hex_gig_knowledge()
     started = time.monotonic()
-    seen, _ = await aload_rss_into_knowledge(knowledge)
+    seen, written = await aload_rss_into_knowledge(knowledge)
     elapsed = time.monotonic() - started
-    logger.info("RSS refresh: %d items processed in %.1fs", seen, elapsed)
+    logger.info("RSS refresh: %d items processed, %d new or changed, in %.1fs", seen, written, elapsed)
 
     # Piggyback the daily metrics-retention purge on this scheduled run.
     _purge_old_metrics()

@@ -3,8 +3,11 @@
 import pytest
 
 from knowledge_base.hex_gig_rss_knowledge import (
+    _build_document_text,
     _compute_content_hash,
+    _is_meaningful,
     _strip_html,
+    _to_iso_date,
     fetch_rss_feed,
     get_rss_news_data,
     parse_rss_feed,
@@ -51,6 +54,17 @@ FIXTURE_XML = """\
       <description>Interviews with GiG members for the focus topic of stress in the science magazine.</description>
       <content:encoded><![CDATA[]]></content:encoded>
       <enclosure url="https://gig.univie.ac.at/fileadmin/user_upload/gig/News/2026_02_Rudolphina.png" length="0" type="image/png"/>
+    </item>
+
+    <!-- Item F: content:encoded is the CMS's empty-field artifact "<>" → must fall back
+         to description rather than embedding "<>" as the whole article -->
+    <item>
+      <guid isPermaLink="false">news-2159</guid>
+      <pubDate>Thu, 11 Jun 2026 09:18:00 +0200</pubDate>
+      <title>Launch of the first comprehensive Health Survey</title>
+      <link>https://gig.univie.ac.at/en/health-survey</link>
+      <description>For the first time, the network is surveying all staff about their health at work.</description>
+      <content:encoded><![CDATA[<>]]></content:encoded>
     </item>
 
     <!-- Item D: missing guid → should be skipped -->
@@ -112,9 +126,9 @@ def test_compute_content_hash_differs_on_change():
 
 
 def test_parse_rss_feed_happy_path():
-    """5 items in fixture XML → 3 valid dicts (D and E skipped)."""
+    """6 items in fixture XML → 4 valid dicts (D and E skipped)."""
     results = parse_rss_feed(FIXTURE_XML)
-    assert len(results) == 3
+    assert len(results) == 4
 
 
 def test_parse_rss_feed_empty_cdata_uses_description():
@@ -150,7 +164,7 @@ def test_parse_rss_feed_skips_item_missing_guid():
     # Item D has no guid — "No GUID Article" should not appear
     titles = [r["metadata"]["title"] for r in results]
     assert "No GUID Article" not in titles
-    assert len(guids) == 3
+    assert len(guids) == 4
 
 
 def test_parse_rss_feed_skips_item_missing_title():
@@ -191,7 +205,7 @@ def test_get_rss_news_data_structure(monkeypatch):
 
     monkeypatch.setattr(rss_mod, "fetch_rss_feed", lambda url=rss_mod.RSS_FEED_URL: FIXTURE_XML)
     results = get_rss_news_data()
-    assert len(results) == 3
+    assert len(results) == 4
     for item in results:
         assert "name" in item
         assert "text_content" in item
@@ -204,9 +218,89 @@ def test_metadata_required_fields(monkeypatch):
 
     monkeypatch.setattr(rss_mod, "fetch_rss_feed", lambda url=rss_mod.RSS_FEED_URL: FIXTURE_XML)
     results = get_rss_news_data()
-    required = {"guid", "title", "link", "pub_date", "language", "source_type", "content_hash"}
+    required = {
+        "guid",
+        "title",
+        "link",
+        "pub_date",
+        "pub_date_iso",
+        "language",
+        "source_type",
+        "content_hash",
+    }
     for item in results:
         assert required.issubset(item["metadata"].keys()), f"Missing fields in {item['metadata']}"
+
+
+# ---------------------------------------------------------------------------
+# _is_meaningful / _to_iso_date / _build_document_text unit tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("empty", ["", "   ", "<>", "<> <>", "\n\t"])
+def test_is_meaningful_rejects_contentless_text(empty):
+    """The CMS's "<>" artifact must not count as article content."""
+    assert not _is_meaningful(empty)
+
+
+@pytest.mark.parametrize("real", ["A", "health survey", "2026", "Böhm"])
+def test_is_meaningful_accepts_real_text(real):
+    assert _is_meaningful(real)
+
+
+def test_to_iso_date_converts_rfc2822():
+    assert _to_iso_date("Thu, 11 Jun 2026 09:18:00 +0200") == "2026-06-11"
+
+
+@pytest.mark.parametrize("bad", ["", "not a date", "31 Feb 2026"])
+def test_to_iso_date_returns_empty_on_unparseable(bad):
+    assert _to_iso_date(bad) == ""
+
+
+def test_build_document_text_leads_with_title_and_date():
+    text = _build_document_text("Heat and health", "2026-08-05", "Julia Reiter on the effects of heat.")
+    assert text.startswith("GiG network news: Heat and health")
+    assert "Published: 2026-08-05" in text
+    assert text.endswith("Julia Reiter on the effects of heat.")
+
+
+def test_build_document_text_survives_missing_body_and_date():
+    """A body-less article still embeds something searchable rather than an empty string."""
+    text = _build_document_text("Heat and health", "", "")
+    assert text == "GiG network news: Heat and health"
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for the "<>" ingestion bug
+# ---------------------------------------------------------------------------
+
+
+def test_parse_rss_feed_empty_field_artifact_falls_back_to_description():
+    """Item F: content:encoded of "<>" must not suppress the description fallback.
+
+    Two live articles were embedded with "<>" as their entire body because "<>" is truthy.
+    """
+    results = parse_rss_feed(FIXTURE_XML)
+    item_f = next(r for r in results if r["metadata"]["guid"] == "news-2159")
+    assert "surveying all staff" in item_f["text_content"]
+    assert "<>" not in item_f["text_content"]
+    assert len(item_f["text_content"]) > 50
+
+
+def test_parse_rss_feed_embeds_title_and_iso_date():
+    """Title and date belong in the embedded text, not only in metadata."""
+    results = parse_rss_feed(FIXTURE_XML)
+    item_a = next(r for r in results if r["metadata"]["guid"] == "news-1789")
+    assert "Live stream with Helena Hansen" in item_a["text_content"]
+    assert "Published: 2026-03-18" in item_a["text_content"]
+    assert item_a["metadata"]["pub_date_iso"] == "2026-03-18"
+
+
+def test_content_hash_fingerprints_the_embedded_text():
+    """The hash must cover what is embedded, or a changed article looks unchanged."""
+    results = parse_rss_feed(FIXTURE_XML)
+    for item in results:
+        assert item["metadata"]["content_hash"] == _compute_content_hash(item["text_content"])
 
 
 # ---------------------------------------------------------------------------
