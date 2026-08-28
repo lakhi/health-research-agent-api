@@ -1,0 +1,80 @@
+# Lint, format and unit-test gate.
+#
+# Added after a cleanup that cleared 3 ruff and 56 mypy errors which had accumulated
+# unnoticed — nothing was checking. Both ruff and pytest are green as of that commit,
+# so this enforces from day one rather than starting with a grace period.
+#
+# mypy is deliberately not gated here yet: it is clean now, but agno's own annotations
+# shift between releases, so a red gate on someone else's typing would block unrelated
+# work. Run it locally with: .venv/bin/mypy . --config-file pyproject.toml
+
+name: Lint and test
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: lint-and-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Ruff alone is a few hundred KB, so this job gives lint feedback in seconds
+      # instead of waiting on the full dependency install the test job needs.
+      - name: Install ruff
+        run: pip install "ruff==0.15.6"
+
+      - name: ruff check
+        run: ruff check .
+
+      - name: ruff format --check
+        run: ruff format --check .
+
+  test:
+    name: pytest
+    runs-on: ubuntu-latest
+    env:
+      # Non-secret configuration. api/settings.py validates these at import time for
+      # hex-gig, so the suite cannot even be collected without them. No real credentials
+      # are involved: the tests marked `integration` are excluded and never open a
+      # database, a model endpoint or u:Cloud.
+      PROJECT_NAME: hex-gig
+      DAILY_BUDGET_EUR: "3.0"
+      MODEL_PRICING_INPUT_EUR: "1.90"
+      MODEL_PRICING_OUTPUT_EUR: "7.70"
+      UCLOUD_SHARE_TOKEN: ci-placeholder-not-a-real-token
+      AGNO_TELEMETRY: "false"
+      AGNO_MONITOR: "False"
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: requirements-linux.txt
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install -r requirements-linux.txt
+          uv pip install pytest pytest-asyncio httpx
+
+      - name: Run unit tests
+        run: uv run pytest tests/ -v -m "not integration"
