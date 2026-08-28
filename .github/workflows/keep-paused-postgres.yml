@@ -15,29 +15,60 @@ on:
   workflow_dispatch: # Run manually from GitHub Actions UI
 
 jobs:
-  # hex-gig owns its server outright, so "is hex-gig paused?" is answered by the server itself.
+  # "Is the server running?" is NOT the same question as "should hex-gig be paused?". Answering it
+  # that way stopped the database out from under a live chatbot (25 Aug 2026), and is what produced
+  # the 31 Jul – 10 Aug run of RSS-refresh failures behind issue #44. Gate on hex-gig's actual pause
+  # markers instead: /pause-unpause-chatbots-azure parks the RSS cron on "0 0 31 2 *" (a date that
+  # never occurs) and scales the API to minReplicas 0. Both must say "paused" before we stop the DB.
   stop-hex-gig-db:
     name: hex-gig-postgres-db
     runs-on: ubuntu-latest
+    env:
+      SUBSCRIPTION: 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
+      PAUSED_CRON: "0 0 31 2 *"
     steps:
       - name: Azure login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS_SOCIALECONPSY }}
 
-      - name: Stop hex-gig-postgres-db if running
+      - name: Stop hex-gig-postgres-db only if hex-gig is meant to be paused
         run: |
+          set -euo pipefail
+          az config set extension.use_dynamic_install=yes_without_prompt --only-show-errors
+
+          # Every unreadable value falls back to the "running" answer, so an API hiccup can never
+          # be the thing that stops a live database.
+          CRON=$(az containerapp job show --name hex-gig-rss-refresh --resource-group healthsociety \
+            --subscription "$SUBSCRIPTION" \
+            --query "properties.configuration.scheduleTriggerConfig.cronExpression" \
+            -o tsv 2>/dev/null) || CRON=""
+          [ -n "$CRON" ] && [ "$CRON" != "null" ] || CRON="<unreadable>"
+
+          MIN=$(az containerapp show --name hex-gig-agent-api --resource-group healthsociety \
+            --subscription "$SUBSCRIPTION" \
+            --query "properties.template.scale.minReplicas" -o tsv 2>/dev/null) || MIN=""
+          [ -n "$MIN" ] && [ "$MIN" != "null" ] || MIN="1"
+
+          echo "hex-gig-rss-refresh cron:      $CRON (paused marker: $PAUSED_CRON)"
+          echo "hex-gig-agent-api minReplicas: $MIN (paused marker: 0)"
+
+          if [ "$CRON" != "$PAUSED_CRON" ] || [ "$MIN" != "0" ]; then
+            echo "hex-gig is live — leaving the database running."
+            exit 0
+          fi
+
           STATE=$(az postgres flexible-server show \
             --name hex-gig-postgres-db \
             --resource-group healthsociety \
-            --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
+            --subscription "$SUBSCRIPTION" \
             --query "state" -o tsv)
-          echo "Current state: $STATE"
+          echo "hex-gig is paused. hex-gig-postgres-db current state: $STATE"
           if [ "$STATE" = "Ready" ]; then
             az postgres flexible-server stop \
               --name hex-gig-postgres-db \
               --resource-group healthsociety \
-              --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1
+              --subscription "$SUBSCRIPTION"
             echo "Stopped."
           else
             echo "Already stopped — no action."
