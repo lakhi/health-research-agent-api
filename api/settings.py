@@ -71,9 +71,7 @@ class ApiSettings(BaseSettings):
 
             if missing_vars:
                 missing = ", ".join(missing_vars)
-                raise ValueError(
-                    f"Missing required budget environment variables for PROJECT_NAME={project}: {missing}"
-                )
+                raise ValueError(f"Missing required budget environment variables for PROJECT_NAME={project}: {missing}")
 
         # HeX-specific: u:Cloud token required for research paper downloads
         if project == ProjectName.HEX_GIG.value and not self.ucloud_share_token:

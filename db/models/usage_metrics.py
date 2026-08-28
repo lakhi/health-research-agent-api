@@ -9,9 +9,11 @@ preserving user privacy.
 from datetime import datetime, timezone
 
 from sqlalchemy import Column, Date, DateTime, Float, Index, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    """Declarative base for this module's models (SQLAlchemy 2.0 style)."""
 
 
 class AgentUsageMetrics(Base):

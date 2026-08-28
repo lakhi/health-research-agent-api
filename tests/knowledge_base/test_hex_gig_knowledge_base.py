@@ -5,20 +5,22 @@ from pathlib import Path
 
 
 def _install_agno_stubs() -> None:
+    # setattr rather than plain assignment: mypy cannot see attributes added to a
+    # dynamically created ModuleType, and these stubs exist precisely to be dynamic.
     agno = types.ModuleType("agno")
 
     knowledge_module = types.ModuleType("agno.knowledge")
-    knowledge_module.Knowledge = object
+    setattr(knowledge_module, "Knowledge", object)
 
     pgvector_module = types.ModuleType("agno.vectordb.pgvector")
-    pgvector_module.PgVector = object
-    pgvector_module.SearchType = types.SimpleNamespace(hybrid="hybrid")
+    setattr(pgvector_module, "PgVector", object)
+    setattr(pgvector_module, "SearchType", types.SimpleNamespace(hybrid="hybrid"))
 
     postgres_module = types.ModuleType("agno.db.postgres")
-    postgres_module.PostgresDb = object
+    setattr(postgres_module, "PostgresDb", object)
 
     azure_embedder_module = types.ModuleType("agno.knowledge.embedder.azure_openai")
-    azure_embedder_module.AzureOpenAIEmbedder = object
+    setattr(azure_embedder_module, "AzureOpenAIEmbedder", object)
 
     sys.modules["agno"] = agno
     sys.modules["agno.knowledge"] = knowledge_module
@@ -29,7 +31,8 @@ def _install_agno_stubs() -> None:
 
 _install_agno_stubs()
 
-from knowledge_base import hex_gig_knowledge_base
+# Imported after the stubs are installed, by design — the real agno package must never load.
+from knowledge_base import hex_gig_knowledge_base  # noqa: E402
 
 MEMBERS_HEADER = (
     "first_name,last_name,email_address,academic_position,"

@@ -15,9 +15,10 @@ from dataclasses import dataclass
 from textwrap import dedent
 
 import pytest
-from agno.eval.accuracy import AccuracyEval, AccuracyResult
+from agno.eval.accuracy import AccuracyEval
 from agno.models.azure import AzureOpenAI
 
+from api.project_configs.project_config import require_knowledge
 from agents.llm_models import VAX_STUDY_GPT_MODEL
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
 from agents.marhinovirus_agents.simple_language_agent import get_simple_language_marhinovirus_agent
@@ -93,10 +94,10 @@ async def vax_agent(request):
     initialize_agent_configs()
     if request.param == "control":
         agent = get_control_marhinovirus_agent()
-        await load_normal_catalog(agent.knowledge, skip_if_exists=True)
+        await load_normal_catalog(require_knowledge(agent), skip_if_exists=True)
     elif request.param == "simple_language":
         agent = get_simple_language_marhinovirus_agent()
-        await load_normal_catalog(agent.knowledge, skip_if_exists=True)
+        await load_normal_catalog(require_knowledge(agent), skip_if_exists=True)
     else:
         raise ValueError(f"Unknown agent condition: {request.param!r}")
     return agent
@@ -137,7 +138,8 @@ def test_infection_consequences(vax_agent):
         ).strip(),
         num_iterations=30,
     )
-    result: AccuracyResult = eval_case.run(print_results=True)
+    result = eval_case.run(print_results=True)
+    assert result is not None, "AccuracyEval returned no result"
     assert result.avg_score >= 8.5
 
 
@@ -153,7 +155,8 @@ def test_vaccination_side_effects(vax_agent):
         additional_guidelines=SIDE_EFFECTS_GUIDELINES,
         num_iterations=30,
     )
-    result: AccuracyResult = eval_case.run(print_results=True)
+    result = eval_case.run(print_results=True)
+    assert result is not None, "AccuracyEval returned no result"
     assert result.avg_score >= 8.5
 
 
@@ -186,7 +189,8 @@ def test_worst_case_outcome(vax_agent):
         ).strip(),
         num_iterations=30,
     )
-    result: AccuracyResult = eval_case.run(print_results=True)
+    result = eval_case.run(print_results=True)
+    assert result is not None, "AccuracyEval returned no result"
     assert result.avg_score >= 8.5
 
 
@@ -244,7 +248,7 @@ async def side_effect_agent(request):
         agent = get_control_marhinovirus_agent()
     else:
         agent = get_simple_language_marhinovirus_agent()
-    await load_normal_catalog(agent.knowledge, skip_if_exists=True)
+    await load_normal_catalog(require_knowledge(agent), skip_if_exists=True)
     return request.param, agent
 
 
@@ -273,7 +277,7 @@ def test_side_effect_phrasings(side_effect_agent, case):
     if condition != case.condition:
         pytest.skip(f"{case.id} runs only on {case.condition!r}, not {condition!r}")
 
-    result: AccuracyResult = AccuracyEval(
+    result = AccuracyEval(
         model=AzureOpenAI(id=JUDGE_MODEL_ID),
         agent=agent,
         input=case.input,
@@ -281,6 +285,7 @@ def test_side_effect_phrasings(side_effect_agent, case):
         additional_guidelines=case.additional_guidelines,
         num_iterations=SIDE_EFFECT_NUM_ITERATIONS,
     ).run(print_results=True)
+    assert result is not None, "AccuracyEval returned no result"
 
     # avg gate mirrors the rest of the suite (infection / worst-case / baseline all use avg-only).
     assert result.avg_score >= 8.5, f"{case.id} ({condition}): avg {result.avg_score:.2f} < 8.5"

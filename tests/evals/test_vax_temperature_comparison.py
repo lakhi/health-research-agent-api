@@ -34,6 +34,7 @@ import pytest
 from agno.eval.accuracy import AccuracyEval
 from agno.models.azure import AzureOpenAI
 
+from api.project_configs.project_config import require_knowledge
 from agents.llm_models import VAX_STUDY_GPT_MODEL
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
 from knowledge_base.marhinovirus_knowledge_base import initialize_agent_configs, load_normal_catalog
@@ -161,7 +162,7 @@ async def control_agent_at_temp(request):
     initialize_agent_configs()
     agent = get_control_marhinovirus_agent()
     agent.model = AzureOpenAI(id=VAX_STUDY_GPT_MODEL, temperature=request.param)
-    await load_normal_catalog(agent.knowledge, skip_if_exists=True)
+    await load_normal_catalog(require_knowledge(agent), skip_if_exists=True)
     return agent
 
 

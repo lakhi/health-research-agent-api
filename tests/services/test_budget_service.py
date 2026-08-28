@@ -22,6 +22,14 @@ from services.budget_service import (
     get_today_vienna,
 )
 
+# api_settings types this Optional. Narrow it once here so the tests below read cleanly, and
+# skip rather than error when it is unset — an unconfigured environment is a reason not to run
+# these tests, not a collection failure for the whole file.
+_daily_budget = api_settings.daily_budget_eur
+if _daily_budget is None:
+    pytest.skip("DAILY_BUDGET_EUR is not configured", allow_module_level=True)
+DAILY_BUDGET: float = _daily_budget
+
 
 class TestCalculateCostEur:
     """Unit tests for EUR cost calculation."""
@@ -66,12 +74,12 @@ class TestBudgetAvailability:
     @patch("services.budget_service.get_daily_spend_eur")
     def test_check_budget_available_under_limit(self, mock_spend):
         """Budget should be available when spend is under limit."""
-        mock_spend.return_value = api_settings.daily_budget_eur / 2
+        mock_spend.return_value = DAILY_BUDGET / 2
 
         available, remaining, reset_time = check_budget_available()
 
         assert available is True
-        assert remaining == pytest.approx(api_settings.daily_budget_eur - mock_spend.return_value, rel=0.01)
+        assert remaining == pytest.approx(DAILY_BUDGET - mock_spend.return_value, rel=0.01)
         assert isinstance(reset_time, datetime)
 
     @patch("services.budget_service.get_daily_spend_eur")
@@ -88,7 +96,7 @@ class TestBudgetAvailability:
     @patch("services.budget_service.get_daily_spend_eur")
     def test_check_budget_available_at_exact_limit(self, mock_spend):
         """Budget should not be available when spend equals limit."""
-        mock_spend.return_value = api_settings.daily_budget_eur
+        mock_spend.return_value = DAILY_BUDGET
 
         available, remaining, reset_time = check_budget_available()
 

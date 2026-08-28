@@ -10,6 +10,10 @@ _registry: dict[str, Agent] = {}
 def register_agents(agents: list[Agent]) -> None:
     """Store startup agents in the registry, keyed by agent.id."""
     for agent in agents:
+        if agent.id is None:
+            # Agno types Agent.id as Optional. Registering under None would create an entry
+            # get_agent() can never reach, so fail at startup instead of dispatching into a hole.
+            raise ValueError(f"Agent {agent.name!r} has no id and cannot be registered for dispatch.")
         _registry[agent.id] = agent
         logger.debug("Registered agent: %s", agent.id)
 

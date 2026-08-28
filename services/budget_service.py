@@ -26,16 +26,18 @@ def _get_required_budget_config() -> Tuple[float, float, float]:
     input_price = api_settings.model_pricing_input_eur
     output_price = api_settings.model_pricing_output_eur
 
-    missing_vars = []
-    if daily_budget is None:
-        missing_vars.append("DAILY_BUDGET_EUR")
-    if input_price is None:
-        missing_vars.append("MODEL_PRICING_INPUT_EUR")
-    if output_price is None:
-        missing_vars.append("MODEL_PRICING_OUTPUT_EUR")
-
-    if missing_vars:
-        missing = ", ".join(missing_vars)
+    # Written as one guard rather than an accumulated list so the None-checks narrow the types
+    # for the return below; the message still names every missing variable at once.
+    if daily_budget is None or input_price is None or output_price is None:
+        missing = ", ".join(
+            name
+            for name, value in (
+                ("DAILY_BUDGET_EUR", daily_budget),
+                ("MODEL_PRICING_INPUT_EUR", input_price),
+                ("MODEL_PRICING_OUTPUT_EUR", output_price),
+            )
+            if value is None
+        )
         raise RuntimeError(f"Budget settings are not configured. Missing environment variables: {missing}")
 
     return daily_budget, input_price, output_price

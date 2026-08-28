@@ -101,7 +101,7 @@ def get_hex_gig_agent() -> Agent:
             """
         ),
         instructions=dedent(
-            f"""\
+            """\
             <grounding_rules>
             ONLY use information from your retrieved knowledge base results to make claims
             about network members, their research, or network activities. Do not rely on

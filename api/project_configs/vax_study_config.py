@@ -5,7 +5,7 @@ from agno.agent import Agent
 
 from agents.marhinovirus_agents.control_agent import get_control_marhinovirus_agent
 from agents.marhinovirus_agents.simple_language_agent import get_simple_language_marhinovirus_agent
-from api.project_configs.project_config import ProjectConfig, ProjectName
+from api.project_configs.project_config import ProjectConfig, ProjectName, require_knowledge
 from knowledge_base.marhinovirus_knowledge_base import (
     initialize_agent_configs,
     load_normal_catalog,
@@ -42,7 +42,9 @@ class VaxStudyConfig(ProjectConfig):
     async def load_knowledge(self, agents: List[Agent]) -> None:
         """Load Marhinovirus research catalog into both agents."""
         try:
-            await asyncio.gather(*(load_normal_catalog(agent.knowledge, skip_if_exists=False) for agent in agents))
+            await asyncio.gather(
+                *(load_normal_catalog(require_knowledge(agent), skip_if_exists=False) for agent in agents)
+            )
             print(f"✅ Knowledge loaded successfully for {len(agents)} vax-study agents")
         except Exception as e:
             print(f"❌ Error loading Marhinovirus knowledge: {e}")

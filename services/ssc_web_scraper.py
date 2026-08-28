@@ -15,7 +15,7 @@ from typing import Optional
 from urllib.parse import urljoin, urlparse
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from pypdf import PdfReader, PdfWriter
 
 logger = logging.getLogger(__name__)
@@ -76,6 +76,21 @@ def _unlock_pdf_in_place(path: Path) -> bool:
     except Exception as e:
         logger.warning(f"Could not unlock PDF {path.name}: {e}")
         return False
+
+
+def _href_of(link: Tag) -> str:
+    """Return a link's href as a plain string.
+
+    BeautifulSoup types attribute access as ``str | Sequence[str]`` because HTML permits
+    multi-valued attributes (class, rel). href never is one, so narrow it here rather than
+    at every crawl site.
+    """
+    href = link.get("href")
+    if href is None:
+        return ""
+    if isinstance(href, str):
+        return href
+    return " ".join(href)
 
 
 def _is_internal_link(url: str, allowed_prefixes: list[str]) -> bool:
@@ -209,7 +224,7 @@ def scrape_ssc_web_pages() -> list[dict]:
 
         # Discover internal links within /studium/
         for link in soup.find_all("a", href=True):
-            href = link["href"]
+            href = _href_of(link)
             full_url = urljoin(url, href)
             full_parsed = urlparse(full_url)
             full_normalized = f"{full_parsed.scheme}://{full_parsed.netloc}{full_parsed.path}"
@@ -270,7 +285,7 @@ def scrape_ssc_downloads() -> list[dict]:
 
         # Collect PDF and Word document links
         for link in soup.find_all("a", href=True):
-            href = link["href"]
+            href = _href_of(link)
             full_url = urljoin(url, href)
 
             if full_url.lower().endswith((".pdf", ".docx")):

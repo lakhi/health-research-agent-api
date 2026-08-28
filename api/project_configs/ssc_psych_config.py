@@ -7,7 +7,7 @@ from agno.knowledge.reader.docx_reader import DocxReader
 from agno.knowledge.reader.pdf_reader import PDFReader
 
 from agents.ssc_psych_agent import get_ssc_psych_agent
-from api.project_configs.project_config import ProjectConfig, ProjectName
+from api.project_configs.project_config import ProjectConfig, ProjectName, require_knowledge
 
 
 def _drop_blank_documents(documents: List[Document]) -> List[Document]:
@@ -39,10 +39,15 @@ class NonEmptyPDFReader(PDFReader):
 class NonEmptyDocxReader(DocxReader):
     """DocxReader that drops blank documents before they reach the embedder."""
 
-    def read(self, file: Union[Path, IO[Any]], name: Optional[str] = None) -> List[Document]:
+    # agno's own DocxReader narrows Reader.read/async_read (obj: Any, password: ...) down to
+    # (file: Path | IO[Any]), so mypy reports the LSP violation against Reader. These signatures
+    # match DocxReader exactly; the mismatch is upstream, not ours.
+    def read(self, file: Union[Path, IO[Any]], name: Optional[str] = None) -> List[Document]:  # type: ignore[override]
         return _drop_blank_documents(super().read(file, name=name))
 
-    async def async_read(self, file: Union[Path, IO[Any]], name: Optional[str] = None) -> List[Document]:
+    async def async_read(  # type: ignore[override]
+        self, file: Union[Path, IO[Any]], name: Optional[str] = None
+    ) -> List[Document]:
         return _drop_blank_documents(await super().async_read(file, name=name))
 
 
@@ -87,12 +92,13 @@ class SscPsychConfig(ProjectConfig):
 
         try:
             ssc_agent = agents[0]
+            knowledge = require_knowledge(ssc_agent)
 
             # Load web pages from SSC website
             web_pages = scrape_ssc_web_pages()
             for i, item in enumerate(web_pages, 1):
                 print(f"  [{i}/{len(web_pages)}] Embedding web page: {item['name']}")
-                await ssc_agent.knowledge.ainsert(
+                await knowledge.ainsert(
                     name=item["name"],
                     text_content=item["text_content"],
                     metadata=item["metadata"],
@@ -107,7 +113,7 @@ class SscPsychConfig(ProjectConfig):
                     # Password-locked PDF: embed the download stub so the agent
                     # can still cite the form's URL.
                     print(f"  [{i}/{len(docs)}] Embedding download stub: {item['name']}")
-                    await ssc_agent.knowledge.ainsert(
+                    await knowledge.ainsert(
                         name=item["name"],
                         text_content=item["text_content"],
                         metadata=item["metadata"],
@@ -118,7 +124,7 @@ class SscPsychConfig(ProjectConfig):
                 reader = pdf_reader if is_pdf else docx_reader
                 file_type = "PDF" if is_pdf else "Word doc"
                 print(f"  [{i}/{len(docs)}] Embedding {file_type}: {item['name']}")
-                await ssc_agent.knowledge.ainsert(
+                await knowledge.ainsert(
                     name=item["name"],
                     path=str(item["path"]),
                     reader=reader,

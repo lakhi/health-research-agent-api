@@ -4,7 +4,7 @@ from agno.agent import Agent
 from agno.knowledge.reader.pdf_reader import PDFReader
 
 from agents.hex_gig_agent import get_hex_gig_agent
-from api.project_configs.project_config import ProjectConfig, ProjectName
+from api.project_configs.project_config import ProjectConfig, ProjectName, require_knowledge
 from knowledge_base.hex_gig_knowledge_base import get_member_profiles_data, get_research_articles_from_ucloud
 from knowledge_base.hex_gig_rss_knowledge import aload_rss_into_knowledge
 from services.nextcloud_client import NextcloudClient
@@ -66,6 +66,7 @@ class HexGigConfig(ProjectConfig):
 
         try:
             hex_gig_agent = agents[0]
+            knowledge = require_knowledge(hex_gig_agent)
 
             # Load research papers from u:Cloud (Nextcloud)
             share_token = os.environ.get("UCLOUD_SHARE_TOKEN", "")
@@ -85,7 +86,7 @@ class HexGigConfig(ProjectConfig):
             kb_data = get_research_articles_from_ucloud(discovered)
             for i, item in enumerate(kb_data, 1):
                 print(f"  [{i}/{len(kb_data)}] Embedding: {item['name']}")
-                await hex_gig_agent.knowledge.ainsert(
+                await knowledge.ainsert(
                     name=item["name"],
                     path=str(item["path"]),
                     reader=pdf_reader,
@@ -95,13 +96,13 @@ class HexGigConfig(ProjectConfig):
             print(f"✅ Knowledge loaded from u:Cloud ({len(kb_data)} documents)")
 
             # Load RSS news
-            seen, _ = await aload_rss_into_knowledge(hex_gig_agent.knowledge)
+            seen, _ = await aload_rss_into_knowledge(knowledge)
             print(f"✅ RSS news loaded for hex_gig agent ({seen} articles processed)")
 
             # Load member profiles from CSV
             member_profiles = get_member_profiles_data()
             for item in member_profiles:
-                await hex_gig_agent.knowledge.ainsert(
+                await knowledge.ainsert(
                     name=item["name"],
                     text_content=item["text_content"],
                     metadata=item["metadata"],

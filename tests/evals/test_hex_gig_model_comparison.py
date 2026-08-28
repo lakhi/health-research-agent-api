@@ -54,7 +54,9 @@ class ModelConfig:
 
 MODELS = [
     ModelConfig(id=LLMModel.GPT_4_1, label="GPT-4.1", endpoint_env="AZURE_OPENAI_ENDPOINT"),
-    ModelConfig(id=LLMModel.GPT_5_MINI, label="GPT-5-mini", endpoint_env="AZURE_OPENAI_ENDPOINT_GPT_5_MINI", temperature=1.0),
+    ModelConfig(
+        id=LLMModel.GPT_5_MINI, label="GPT-5-mini", endpoint_env="AZURE_OPENAI_ENDPOINT_GPT_5_MINI", temperature=1.0
+    ),
 ]
 
 

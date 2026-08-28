@@ -13,7 +13,7 @@ from pydantic import BaseModel, field_validator
 from agents.agent_types import AgentType
 from agents.registry import get_agent
 from api.settings import api_settings
-from knowledge_base.marhinovirus_knowledge_base import get_normal_catalog_knowledge
+from knowledge_base.marhinovirus_knowledge_base import get_normal_catalog_knowledge, load_normal_catalog
 from services.budget_service import check_budget_available, record_usage
 from services.citations_service import build_citations, format_citations_sse
 from services.metrics_service import record_agent_metrics
@@ -63,7 +63,9 @@ async def chat_response_streamer(
     try:
         async for chunk in run_response:
             try:
-                yield format_sse_event(chunk)
+                # The stream yields RunOutputEvent objects plus a final RunOutput, which
+                # format_sse_event is not typed to take; the except below is what handles it.
+                yield format_sse_event(chunk)  # type: ignore[arg-type]
             except Exception:
                 chunk_content = getattr(chunk, "content", str(chunk))
                 yield f"event: message\ndata: {json.dumps({'content': chunk_content})}\n\n"
@@ -348,7 +350,10 @@ async def load_agent_knowledge(agent_id: AgentType):
         )
 
     try:
-        await agent_knowledge.aload(upsert=True)
+        # Knowledge has no aload(); this used to raise AttributeError straight into the handler
+        # below and return 500 for every call. load_normal_catalog is what startup uses, and
+        # skip_if_exists=False gives the same "reload it now" semantics the old upsert intended.
+        await load_normal_catalog(agent_knowledge, skip_if_exists=False)
     except Exception as e:
         logger.error(f"Error loading knowledge base for {agent_id}: {e}")
         raise HTTPException(
