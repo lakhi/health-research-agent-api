@@ -18,6 +18,11 @@ logger = logging.getLogger(__name__)
 # Standard DOI pattern — matches "10.NNNN/suffix" anywhere in text
 _DOI_RE = re.compile(r"\b(10\.\d{4,9}/[^\s\],;:\'\"<>()]+)", re.IGNORECASE)
 
+# Vector table identifiers, shared with agents.hex_gig_tools so the recency tool and the vector
+# store can never point at different tables.
+HEX_GIG_VECTOR_SCHEMA = "ai"
+HEX_GIG_EMBEDDINGS_TABLE = "hex_gig_embeddings"
+
 HEX_GIG_KNOWLEDGE_DIR = Path(__file__).resolve().parent / "hex_gig_knowledge"
 HEX_GIG_MEMBERS_CSV = HEX_GIG_KNOWLEDGE_DIR / "hex_gig_members_list.csv"
 
@@ -89,7 +94,8 @@ def get_hex_gig_knowledge() -> Knowledge:
             # clause, so it full-scans the table on each query (~30s on the
             # B1ms prod DB at 15k+ chunks). Vector search stays index-friendly.
             search_type=SearchType.vector,
-            table_name="hex_gig_embeddings",
+            table_name=HEX_GIG_EMBEDDINGS_TABLE,
+            schema=HEX_GIG_VECTOR_SCHEMA,
             embedder=get_azure_embedder(),
         ),
         contents_db=get_hex_gig_contents_db(),

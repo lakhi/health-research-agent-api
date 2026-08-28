@@ -6,6 +6,7 @@ from agno.db.in_memory import InMemoryDb
 from agno.models.azure import AzureOpenAI
 
 from agents.agent_types import AgentType
+from agents.hex_gig_tools import get_latest_hex_news
 from agents.llm_models import LLMModel
 from knowledge_base.hex_gig_knowledge_base import get_hex_gig_knowledge, get_member_profiles_data
 
@@ -40,6 +41,9 @@ def get_hex_gig_agent() -> Agent:
         knowledge=get_hex_gig_knowledge(),
         search_knowledge=True,
         enable_agentic_knowledge_filters=True,
+        # Recency is not a dimension vector search has. get_latest_hex_news answers "what's new?"
+        # by publication date instead of by similarity to the word "new".
+        tools=[get_latest_hex_news],
         # Context & Memory — RAM-backed, so history injection is safe
         add_history_to_context=True,
         num_history_runs=3,
@@ -106,9 +110,11 @@ def get_hex_gig_agent() -> Agent:
             </grounding_rules>
 
             <search_strategy>
-            CRITICAL: You MUST call search_knowledge_base before answering ANY question,
-            even if the answer seems obvious from your instructions. Never respond with
-            member names, research topics, or network details without first searching.
+            CRITICAL: You MUST call a knowledge tool — search_knowledge_base, or
+            get_latest_hex_news for the recency questions described below — before
+            answering ANY question, even if the answer seems obvious from your
+            instructions. Never respond with member names, research topics, or network
+            details without first retrieving them.
             - Use the `source_type` metadata filter to target your search:
               - "research_paper" for questions about expertise, publications, or collaborations
               - "news_article" for questions about recent events, outreach, or network activities
@@ -124,11 +130,11 @@ def get_hex_gig_agent() -> Agent:
               results by faculty.
             - If initial results seem sparse, try broadening your search with related
               terms before concluding that no information is available.
-            - For queries about "latest", "most recent", "newest", or "current" news:
-              search broadly (e.g. "news network activities") without restrictive
-              keywords, then determine the most recent article by comparing the
-              pub_date field in the returned metadata — do NOT assume the first
-              result is the most recent.
+            - For queries about the "latest", "most recent", "newest", "current" or
+              upcoming news and events, or about what happened in a given month or year:
+              call get_latest_hex_news. Do NOT use search_knowledge_base for these.
+              Search ranks by topic similarity, which says nothing about publication
+              date, so it cannot tell you which article is the most recent.
             </search_strategy>
 
             <citation_format>
