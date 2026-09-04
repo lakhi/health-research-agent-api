@@ -17,4 +17,8 @@ def get_project_db(project_name: str) -> PostgresDb:
     return PostgresDb(
         db_url=get_db_url_cached(),
         session_table=f"{project_name}_agentos_sessions",
+        # agno v3 normalises runs out of the sessions row into their own table, defaulting to
+        # a shared "agno_runs". Named per project to match session_table, so the two halves of
+        # one project's history are obvious as a pair in a database browser.
+        runs_table=f"{project_name}_agentos_runs",
     )
