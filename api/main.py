@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from agents.registry import register_agents
 from api.routes.agents import agents_router
+from api.security import PublicSurfaceOnly
 from api.settings import api_settings
 
 logging.basicConfig(
@@ -82,44 +83,19 @@ agent_os = AgentOS(
 
 app = agent_os.get_app()
 
-# Security: AgentOS leaves authentication disabled unless OS_SECURITY_KEY (or a
-# JWT config) is set, and these deployments run with external ingress and no key.
-# AgentOS still mounts a large admin/data surface alongside our public chat route
-# — /sessions (read/delete other users' conversations), /knowledge mutations,
-# /metrics, /traces, /eval-runs, /databases, /memories, schedules/approvals, etc.
-# None of these are used by the public UI, which only calls /agents and /health.
-# Strip every admin/data prefix from the public app so only the chat surface
-# (/agents/{id}/runs, GET /agents) and /health remain reachable. Applies to all
-# projects (vax-study and ssc-psych persist sessions to Postgres; this prevents
-# anonymous read/delete of that chat history, including ssc-psych PII).
-_PUBLIC_ADMIN_PREFIXES = (
-    "/sessions",
-    "/memory",
-    "/memories",
-    "/optimize-memories",
-    "/memory_topics",
-    "/user_memory_stats",
-    "/knowledge",
-    "/metrics",
-    "/traces",
-    "/trace_session_stats",
-    "/eval-runs",
-    "/eval",
-    "/evals",
-    "/databases",
-    "/database",
-    "/db",
-    "/components",
-    "/schedules",
-    "/approvals",
-    "/registry",
-    "/teams",
-    "/workflows",
-    "/config",
-)
-app.router.routes = [
-    route for route in app.router.routes if not getattr(route, "path", "").startswith(_PUBLIC_ADMIN_PREFIXES)
-]
+# Security: refuse every request outside the public chat surface (GET /agents,
+# POST /agents/{id}/runs, /health, docs). AgentOS leaves authentication disabled unless
+# OS_SECURITY_KEY (or a JWT config) is set, and these deployments run with external ingress
+# and no key, so its admin/data surface — /sessions, /knowledge, /metrics, /learnings,
+# /databases and the rest — has to be closed here. Enforced as ASGI middleware rather than
+# by filtering app.router.routes: see api/security.py for why that filtering stopped working
+# (issue #31, #46).
+#
+# Added BEFORE CORSMiddleware on purpose. Starlette applies middleware in reverse order of
+# addition, so the last one added is outermost: CORS therefore wraps this and answers
+# preflight itself. Reversing the two would let the allow-list refuse OPTIONS before CORS
+# ever saw it, failing preflight and blocking every chat request from the browser.
+app.add_middleware(PublicSurfaceOnly)
 
 # Add CORS middleware
 app.add_middleware(
