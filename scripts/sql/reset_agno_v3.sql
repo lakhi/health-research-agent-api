@@ -22,6 +22,10 @@
 --        `skip_if_exists=True` loaders would stop recognising them, re-embed
 --        everything, and leave the originals behind as duplicates.
 --
+--   The <project>_agentos_runs entries only exist once v3 has run (they are
+--   what v3 normalises the sessions blob into), so on a first reset from v2 they
+--   simply report "does not exist, skipping". They matter when re-resetting.
+--
 --   Agno recreates its tables at the v3 schema on the next startup
 --   (auto_provision_dbs), and knowledge re-embeds from source: u:Cloud PDFs,
 --   the RSS feed and the members CSV for hex-gig, the website scrape for
@@ -52,6 +56,10 @@
 --   FULL re-embed, which is slow on a small instance (hex-gig runs B1ms) and
 --   costs Azure OpenAI embedding calls. Take a backup if in any doubt.
 --
+--   Run this BEFORE first starting the v3 image against the database. Starting
+--   v3 against a half-reset database leaves it in a mixed state: v3 creates the
+--   tables that are missing, then fails schema validation on the stale ones.
+--
 -- Refs #46
 -- =============================================================================
 
@@ -76,6 +84,7 @@ $$ LANGUAGE plpgsql;
 -- hex-gig
 -- =============================================================================
 -- SELECT drop_table_in_schema('ai', 'hex-gig_agentos_sessions');
+-- SELECT drop_table_in_schema('ai', 'hex-gig_agentos_runs');
 -- SELECT drop_table_in_schema('ai', 'hex_gig_embeddings');
 -- SELECT drop_table_in_schema('ai', 'hex_gig_contents');
 
@@ -84,6 +93,7 @@ $$ LANGUAGE plpgsql;
 -- ssc-psych
 -- =============================================================================
 -- SELECT drop_table_in_schema('ai', 'ssc-psych_agentos_sessions');
+-- SELECT drop_table_in_schema('ai', 'ssc-psych_agentos_runs');
 -- SELECT drop_table_in_schema('ai', 'ssc_psych_embeddings');
 -- SELECT drop_table_in_schema('ai', 'ssc_psych_contents');
 
@@ -96,6 +106,7 @@ $$ LANGUAGE plpgsql;
 -- control_agent_sessions and simple_language_sessions are pre-launch testing
 -- leftovers, ~19 rows total.
 -- SELECT drop_table_in_schema('ai', 'vax-study_agentos_sessions');
+-- SELECT drop_table_in_schema('ai', 'vax-study_agentos_runs');
 -- SELECT drop_table_in_schema('ai', 'marhino_normal_catalog');
 -- SELECT drop_table_in_schema('ai', 'marhino_catalog_contents');
 -- SELECT drop_table_in_schema('ai', 'control_agent_sessions');
@@ -103,11 +114,45 @@ $$ LANGUAGE plpgsql;
 
 
 -- =============================================================================
--- Agno bookkeeping, shared across projects within a database
+-- Agno bookkeeping tables — REQUIRED for every database, not optional
 -- =============================================================================
--- Schema versions must go too: leaving a stale row makes MigrationManager
--- believe a freshly created v3 table is already migrated.
--- SELECT drop_table_in_schema('ai', 'agno_schema_versions');
+-- Agno keeps its own tables alongside the per-project ones: agno_metrics,
+-- agno_knowledge, agno_memories, agno_sessions, agno_eval_runs, agno_components,
+-- agno_schedules and friends. They are not named per project, so the sections
+-- above miss them, and they were created by v2 without the `user_id` column v3
+-- expects.
+--
+-- This is not cosmetic. v3 validates the schema at startup, and a single stale
+-- table fails the WHOLE PostgresDb:
+--
+--   WARNING  Missing columns {'user_id'} in table ai.agno_metrics
+--   WARNING  Failed to initialize PostgresDb (id: ...): Table ai.agno_metrics
+--            has an invalid schema ...
+--
+-- The app still answers requests, but its database is dead: no sessions, no
+-- metrics. Dropping them lets v3 recreate them correctly.
+--
+-- agno_schema_versions goes too — a stale version row would make
+-- MigrationManager treat a freshly created v3 table as already migrated.
+--
+-- The pattern escapes the underscore (`_` is a LIKE wildcard), so it matches
+-- agno_* and nothing else: our agent_usage_metrics and daily_agent_usage, and
+-- the per-project <project>_agentos_* tables, are all untouched.
+
+-- DO $$
+-- DECLARE
+--     tbl text;
+-- BEGIN
+--     FOR tbl IN
+--         SELECT table_name FROM information_schema.tables
+--         WHERE table_schema = 'ai' AND table_name LIKE 'agno\_%'
+--         ORDER BY table_name
+--     LOOP
+--         EXECUTE format('DROP TABLE IF EXISTS %I.%I CASCADE', 'ai', tbl);
+--         RAISE NOTICE 'Dropped Agno table: ai.%', tbl;
+--     END LOOP;
+-- END;
+-- $$;
 
 
 -- =============================================================================
