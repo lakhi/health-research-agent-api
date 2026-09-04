@@ -316,12 +316,14 @@ def scrape_ssc_downloads() -> list[dict]:
         if not filename:
             continue
 
-        response = _download_with_retry(session, doc_url)
-        if response is None:
+        # Distinct name from the page `response` above: that one is a plain Response, this
+        # one is Optional, and reusing the name makes the download's None-ness invisible.
+        download = _download_with_retry(session, doc_url)
+        if download is None:
             continue
 
         local_path = tmp_dir / filename
-        local_path.write_bytes(response.content)
+        local_path.write_bytes(download.content)
 
         filename_lower = filename.lower()
         source_type = "pdf_document" if filename_lower.endswith(".pdf") else "word_document"

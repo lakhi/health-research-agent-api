@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [{ name = "Akshay Lakhi", email = "akshay.lakhi@univie.ac.at" }]
 
 dependencies = [
-  "agno",
+  "agno>=3.0,<4",  # major-version guard: routine 3.x upgrades stay automatic, v4 needs a deliberate edit
   "aiohttp",
   "beautifulsoup4",
   "chonkie[semantic]",
@@ -15,7 +15,7 @@ dependencies = [
   "openai",
   "pgvector",
   "psycopg2-binary",
-  "pyjwt",  # Required by agno v2.4.0+ (missing from their dependencies)
+  "pyjwt",  # Required by agno since v2.4.0 (still absent from their core dependencies in v3.0.5)
   "pypdf",
   "python-docx",
   "ddgs",

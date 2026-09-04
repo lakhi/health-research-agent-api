@@ -140,6 +140,7 @@ def test_infection_consequences(vax_agent):
     )
     result = eval_case.run(print_results=True)
     assert result is not None, "AccuracyEval returned no result"
+    assert result.avg_score is not None, "AccuracyEval produced no score"
     assert result.avg_score >= 8.5
 
 
@@ -157,6 +158,7 @@ def test_vaccination_side_effects(vax_agent):
     )
     result = eval_case.run(print_results=True)
     assert result is not None, "AccuracyEval returned no result"
+    assert result.avg_score is not None, "AccuracyEval produced no score"
     assert result.avg_score >= 8.5
 
 
@@ -191,6 +193,7 @@ def test_worst_case_outcome(vax_agent):
     )
     result = eval_case.run(print_results=True)
     assert result is not None, "AccuracyEval returned no result"
+    assert result.avg_score is not None, "AccuracyEval produced no score"
     assert result.avg_score >= 8.5
 
 
@@ -288,4 +291,5 @@ def test_side_effect_phrasings(side_effect_agent, case):
     assert result is not None, "AccuracyEval returned no result"
 
     # avg gate mirrors the rest of the suite (infection / worst-case / baseline all use avg-only).
+    assert result.avg_score is not None, f"{case.id} ({condition}): AccuracyEval produced no score"
     assert result.avg_score >= 8.5, f"{case.id} ({condition}): avg {result.avg_score:.2f} < 8.5"
