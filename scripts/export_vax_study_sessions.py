@@ -26,6 +26,17 @@ message) and ``content`` (the agent's reply) are kept, which is both ~300x
 smaller and the correct view of the conversation. Fetched sessions are cached
 as trimmed JSON, so switching sources or re-running costs nothing.
 
+PRE-v3 ONLY (see #46). Both sources read the session row's ``runs`` column, and
+Agno v3 stopped writing it: runs are normalised into their own table
+(``<project>_agentos_runs``), and ``GET /sessions/{id}/runs`` is part of the
+admin surface the deployments no longer expose. The vax-study export was taken
+before that migration and the study is complete, so this script is kept as-is
+for re-running against the exported archive or a pre-v3 backup. Pointing it at a
+v3 database would need the SELECT re-aimed at the runs table:
+
+    SELECT run_id, run_data FROM ai."<project>_agentos_runs"
+    WHERE session_id = %s ORDER BY run_index;
+
 The database password is read from --password-file or $VAX_DB_PASSWORD; it is
 never accepted as a command-line argument, where it would leak into shell
 history and the process table.
