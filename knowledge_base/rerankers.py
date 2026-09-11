@@ -12,6 +12,16 @@ container is 0.5 vCPU / 1 GiB, and an XLM-RoBERTa-large-class reranker such as t
 default ``BAAI/bge-reranker-v2-m3`` needs roughly 2 GB for weights alone — it cannot
 load there at all, never mind score 50 chunks inside a request.
 
+The endpoint is the full URL of a rerank deployment on an **AIServices**-kind account —
+not the ``OpenAI``-kind accounts that serve gpt-4.1, which cannot host Cohere models at
+all. Verified shape::
+
+    POST https://<account>.services.ai.azure.com/models/v1/rerank?api-version=2024-05-01-preview
+    api-key: <key>
+    {"model": "<deployment>", "query": "...", "documents": [...], "top_n": N}
+    -> {"results": [{"index": 0, "relevance_score": 0.93}, ...],
+        "meta": {"billed_units": {"search_units": 1}}}
+
 Blocking I/O is safe here: ``PgVector.async_search`` runs the whole sync search through
 ``asyncio.to_thread``, so the event loop is never on the call stack when ``rerank`` runs.
 
@@ -76,15 +86,11 @@ class AzureCohereReranker(Reranker):
         return self.http_client
 
     def _headers(self) -> dict[str, str]:
-        # Both auth schemes are sent deliberately. A Cohere rerank model can be reached
-        # either through the Cognitive Services account that already hosts gpt-4.1
-        # (which expects `api-key`) or through the Foundry model-inference path (which
-        # expects a bearer token), and which one applies is not knowable until the
-        # deployment exists. Both go to the one endpoint we configured, over TLS.
-        # Trim to whichever the live deployment accepts once that is confirmed.
+        # `api-key` matches the rest of our Azure calls. The live endpoint also accepts
+        # `Authorization: Bearer <key>` (verified against the deployment), so either
+        # works — we send one rather than both so the credential appears once.
         return {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}",
             "api-key": self.api_key,
         }
 

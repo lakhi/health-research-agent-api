@@ -94,8 +94,8 @@ class TestRequestShape:
 
         assert captured["body"]["top_n"] == 2
 
-    def test_sends_both_auth_schemes(self):
-        """Deliberate: the account path wants api-key, the inference path wants Bearer."""
+    def test_authenticates_with_api_key_only(self):
+        """The endpoint accepts Bearer too, but the credential should appear once."""
         captured: dict = {}
 
         def handler(request: httpx.Request) -> httpx.Response:
@@ -104,8 +104,8 @@ class TestRequestShape:
 
         _reranker(handler).rerank("q", _docs(1))
 
-        assert captured["headers"]["authorization"] == "Bearer test-key"
         assert captured["headers"]["api-key"] == "test-key"
+        assert "authorization" not in captured["headers"]
 
     def test_caps_pool_at_one_billed_search(self):
         """Cohere bills a query + up to 100 documents as one search; more would cost two."""
