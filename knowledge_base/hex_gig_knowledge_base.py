@@ -12,6 +12,7 @@ from agno.vectordb.pgvector import PgVector, SearchType
 
 from db.session import get_db_url_cached
 from knowledge_base import get_azure_embedder
+from knowledge_base.rerankers import get_azure_reranker, get_search_max_results
 
 logger = logging.getLogger(__name__)
 
@@ -84,9 +85,14 @@ def _extract_doi_from_pdf(path: Path) -> str | None:
 
 def get_hex_gig_knowledge() -> Knowledge:
     db_url = get_db_url_cached()
+    # None unless the Azure rerank endpoint is configured, in which case we over-fetch
+    # candidates for the reranker to cut back down — agno reranks after LIMIT, so
+    # without the wider pool it could only reorder what the model already sees.
+    reranker = get_azure_reranker()
 
     hex_gig_knowledge = Knowledge(
         name="Health in Society Research Network Knowledge",
+        max_results=get_search_max_results(reranker),
         vector_db=PgVector(
             db_url=db_url,
             # SearchType.vector, not hybrid: agno's hybrid_search computes
@@ -97,6 +103,7 @@ def get_hex_gig_knowledge() -> Knowledge:
             table_name=HEX_GIG_EMBEDDINGS_TABLE,
             schema=HEX_GIG_VECTOR_SCHEMA,
             embedder=get_azure_embedder(),
+            reranker=reranker,
         ),
         contents_db=get_hex_gig_contents_db(),
     )
