@@ -23,6 +23,8 @@ ROWS = [
         "pub_date": "Thu, 22 Jan 2026 10:00:00 +0100",
         "link": "https://gig.univie.ac.at/en/a",
         "content": "Final presentations of a research seminar.",
+        "title_de": None,
+        "link_de": None,
     },
     {
         "guid": "news-2200",
@@ -31,6 +33,8 @@ ROWS = [
         "pub_date": "Tue, 18 Aug 2026 09:00:00 +0200",
         "link": "https://gig.univie.ac.at/en/b",
         "content": "Expectations of one's own ageing are a self-fulfilling prophecy.",
+        "title_de": None,
+        "link_de": None,
     },
     # No pub_date_iso — an article ingested before that field existed.
     {
@@ -40,6 +44,8 @@ ROWS = [
         "pub_date": "Wed, 05 Aug 2026 12:00:00 +0200",
         "link": "https://gig.univie.ac.at/en/c",
         "content": "TV appearance on heat, health and social inequalities.",
+        "title_de": None,
+        "link_de": None,
     },
     # Second chunk of the same article — must not become a separate entry.
     {
@@ -49,6 +55,8 @@ ROWS = [
         "pub_date": "Tue, 18 Aug 2026 09:00:00 +0200",
         "link": "https://gig.univie.ac.at/en/b",
         "content": "A study by Christina Ristl.",
+        "title_de": None,
+        "link_de": None,
     },
 ]
 
@@ -142,3 +150,32 @@ def test_database_error_returns_a_message_rather_than_raising(monkeypatch):
     monkeypatch.setattr(hex_gig_tools, "get_engine", boom)
     result = get_latest_hex_news()
     assert "could not be reached" in result
+
+
+def test_bilingual_article_lists_both_titles_and_links(fake_engine):
+    """The agent cites the title and link matching its reply language, so both must be offered."""
+    fake_engine(
+        [
+            {
+                "guid": "news-2300",
+                "title": "Thinking About Health in a Societal Context",
+                "pub_date_iso": "2026-09-16",
+                "pub_date": "Wed, 16 Sep 2026 10:00:00 +0200",
+                "link": "https://gig.univie.ac.at/en/d",
+                "title_de": "Gesundheit gesellschaftlich denken",
+                "link_de": "https://gig.univie.ac.at/detailansicht/d",
+                "content": "GiG network news: ...\n\nNeuigkeiten aus dem Forschungsverbund ...",
+            }
+        ]
+    )
+    result = get_latest_hex_news()
+    assert "German title: Gesundheit gesellschaftlich denken" in result
+    assert "Link (English): https://gig.univie.ac.at/en/d" in result
+    assert "Link (German): https://gig.univie.ac.at/detailansicht/d" in result
+
+
+def test_english_only_article_keeps_the_single_link_shape(fake_engine):
+    fake_engine(ROWS)
+    result = get_latest_hex_news()
+    assert "Link: https://gig.univie.ac.at/en/b" in result
+    assert "German title" not in result

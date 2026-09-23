@@ -27,6 +27,8 @@ _LATEST_NEWS_SQL = text(
            meta_data->>'pub_date_iso' AS pub_date_iso,
            meta_data->>'pub_date'     AS pub_date,
            meta_data->>'link'         AS link,
+           meta_data->>'title_de'     AS title_de,
+           meta_data->>'link_de'      AS link_de,
            content                    AS content
     FROM {HEX_GIG_VECTOR_SCHEMA}.{HEX_GIG_EMBEDDINGS_TABLE}
     WHERE meta_data @> '{{"source_type": "news_article"}}'::jsonb
@@ -61,7 +63,8 @@ def get_latest_hex_news(limit: int = 8) -> str:
         limit: How many articles to return, from 1 to 20. Defaults to 8.
 
     Returns:
-        The articles as readable text, each with its title, publication date and link.
+        The articles as readable text, each with its title, publication date and link. Articles
+        are stored in English and German, so each carries both titles and both links.
     """
     limit = max(1, min(int(limit), MAX_LATEST_NEWS))
 
@@ -82,6 +85,8 @@ def get_latest_hex_news(limit: int = 8) -> str:
                 "title": row["title"] or "Untitled",
                 "date": _sort_date(row["pub_date_iso"], row["pub_date"]),
                 "link": row["link"] or "",
+                "title_de": row["title_de"] or "",
+                "link_de": row["link_de"] or "",
                 "body": "",
             },
         )
@@ -96,7 +101,15 @@ def get_latest_hex_news(limit: int = 8) -> str:
     blocks = []
     for article in newest:
         header = f"{article['title']} (published {article['date'] or 'date unknown'})"
-        if article["link"]:
+        # Both languages are listed so the agent can cite the one matching its reply. Rows stored
+        # before the German feed was merged in have neither German field, and keep the old shape.
+        if article["title_de"] and article["title_de"] != article["title"]:
+            header = f"{header}\nGerman title: {article['title_de']}"
+        if article["link_de"] and article["link_de"] != article["link"]:
+            if article["link"]:
+                header = f"{header}\nLink (English): {article['link']}"
+            header = f"{header}\nLink (German): {article['link_de']}"
+        elif article["link"]:
             header = f"{header}\nLink: {article['link']}"
         blocks.append(f"{header}\n{article['body']}".strip())
 

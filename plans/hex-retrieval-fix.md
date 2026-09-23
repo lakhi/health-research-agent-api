@@ -191,6 +191,14 @@ Run the six evals against the **unmodified** prompt first to get a baseline, the
 Three changes: ban free-text filter keys, port SSC's retry clause, reframe `source_type`
 from routing to coverage.
 
+> **Since this was drafted, #48 changed the prompt and the news corpus** — see the note on #47.
+> The "unmodified" baseline is now the post-#48 prompt: `<language_rules>` already tells the
+> model to write search queries in English and to use only the stored English filter values,
+> which touches `role_word_does_not_empty_the_search` and `faculty_filter_still_works`. Swap only
+> `<search_strategy>`; keep `<language_rules>`. News items are now one bilingual document per
+> `guid` with `title_de`/`link_de` and **no `language` key**, so tier 2's per-source quota needs
+> no per-language dedupe. Add a German-query case to the eval gate.
+
 ```
 <search_strategy>
 CRITICAL: You MUST call a knowledge tool — search_knowledge_base, or

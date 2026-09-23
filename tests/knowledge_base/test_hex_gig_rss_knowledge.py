@@ -3,11 +3,14 @@
 import pytest
 
 from knowledge_base.hex_gig_rss_knowledge import (
+    RSS_FEED_URL,
+    RSS_FEED_URL_DE,
     _build_document_text,
     _compute_content_hash,
     _is_meaningful,
     _strip_html,
     _to_iso_date,
+    build_news_items,
     fetch_rss_feed,
     get_rss_news_data,
     parse_rss_feed,
@@ -88,6 +91,54 @@ FIXTURE_XML = """\
 """
 
 
+# German feed: same <guid>s as the English one (the site translates every article), plus one
+# article that exists only in German.
+FIXTURE_XML_DE = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <item>
+      <guid isPermaLink="false">news-1789</guid>
+      <pubDate>Wed, 18 Mar 2026 18:00:00 +0100</pubDate>
+      <title>Livestream mit Helena Hansen</title>
+      <link>https://gig.univie.ac.at/detailansicht/livestream</link>
+      <description>Die Veranstaltung in der VHS Urania ist ausgebucht. Sie können per Livestream teilnehmen.</description>
+      <content:encoded><![CDATA[]]></content:encoded>
+    </item>
+    <item>
+      <guid isPermaLink="false">news-1753</guid>
+      <pubDate>Tue, 03 Mar 2026 09:11:11 +0100</pubDate>
+      <title>Wie wirkt Musikunterricht auf das Gehirn?</title>
+      <link>https://gig.univie.ac.at/detailansicht/musikunterricht</link>
+      <content:encoded><![CDATA[<p>Eine <strong>vertraute Melodie</strong> und Erinnerungen.</p>]]></content:encoded>
+    </item>
+    <item>
+      <guid isPermaLink="false">news-3000</guid>
+      <pubDate>Fri, 04 Sep 2026 10:00:00 +0200</pubDate>
+      <title>Nur auf Deutsch erschienen</title>
+      <link>https://gig.univie.ac.at/detailansicht/nur-deutsch</link>
+      <description>Ein Beitrag des Forschungsverbunds Gesundheit in Gesellschaft ohne englische Fassung.</description>
+    </item>
+  </channel>
+</rss>
+"""
+
+
+def _en_only_items() -> list[dict]:
+    """Knowledge items built from the English fixture alone."""
+    return build_news_items(parse_rss_feed(FIXTURE_XML), [])
+
+
+def _bilingual_items() -> dict[str, dict]:
+    """Knowledge items built from both fixtures, keyed by guid."""
+    items = build_news_items(parse_rss_feed(FIXTURE_XML), parse_rss_feed(FIXTURE_XML_DE))
+    return {item["metadata"]["guid"]: item for item in items}
+
+
+def _fake_fetch(url: str = RSS_FEED_URL) -> str:
+    return {RSS_FEED_URL: FIXTURE_XML, RSS_FEED_URL_DE: FIXTURE_XML_DE}[url]
+
+
 # ---------------------------------------------------------------------------
 # _strip_html unit tests
 # ---------------------------------------------------------------------------
@@ -127,13 +178,13 @@ def test_compute_content_hash_differs_on_change():
 
 def test_parse_rss_feed_happy_path():
     """6 items in fixture XML → 4 valid dicts (D and E skipped)."""
-    results = parse_rss_feed(FIXTURE_XML)
+    results = _en_only_items()
     assert len(results) == 4
 
 
 def test_parse_rss_feed_empty_cdata_uses_description():
     """Item A: empty CDATA → description text used as text_content."""
-    results = parse_rss_feed(FIXTURE_XML)
+    results = _en_only_items()
     item_a = next(r for r in results if r["metadata"]["guid"] == "news-1789")
     assert "VHS Urania" in item_a["text_content"]
     assert "live stream" in item_a["text_content"]
@@ -141,7 +192,7 @@ def test_parse_rss_feed_empty_cdata_uses_description():
 
 def test_parse_rss_feed_nonempty_content_encoded_used():
     """Item B: non-empty CDATA → stripped HTML of content:encoded used."""
-    results = parse_rss_feed(FIXTURE_XML)
+    results = _en_only_items()
     item_b = next(r for r in results if r["metadata"]["guid"] == "news-1753")
     assert "familiar melody" in item_b["text_content"]
     assert "memories" in item_b["text_content"]
@@ -152,14 +203,14 @@ def test_parse_rss_feed_nonempty_content_encoded_used():
 
 def test_parse_rss_feed_external_link_uses_description():
     """Item C: external domain link, empty CDATA → description used; external link preserved."""
-    results = parse_rss_feed(FIXTURE_XML)
+    results = _en_only_items()
     item_c = next(r for r in results if r["metadata"]["guid"] == "news-1749")
     assert "stress" in item_c["text_content"]
     assert item_c["metadata"]["link"] == "https://rudolphina.univie.ac.at/en/article/some-article"
 
 
 def test_parse_rss_feed_skips_item_missing_guid():
-    results = parse_rss_feed(FIXTURE_XML)
+    results = _en_only_items()
     guids = [r["metadata"]["guid"] for r in results]
     # Item D has no guid — "No GUID Article" should not appear
     titles = [r["metadata"]["title"] for r in results]
@@ -168,7 +219,7 @@ def test_parse_rss_feed_skips_item_missing_guid():
 
 
 def test_parse_rss_feed_skips_item_missing_title():
-    results = parse_rss_feed(FIXTURE_XML)
+    results = _en_only_items()
     guids = [r["metadata"]["guid"] for r in results]
     # Item E has guid news-0001 but no title — must be skipped
     assert "news-0001" not in guids
@@ -176,7 +227,7 @@ def test_parse_rss_feed_skips_item_missing_title():
 
 def test_parse_rss_feed_guid_is_short_id():
     """guid value is a short string like 'news-1789', not a full URL."""
-    results = parse_rss_feed(FIXTURE_XML)
+    results = _en_only_items()
     item_a = next(r for r in results if r["metadata"]["guid"] == "news-1789")
     guid = item_a["metadata"]["guid"]
     assert guid == "news-1789"
@@ -184,7 +235,7 @@ def test_parse_rss_feed_guid_is_short_id():
 
 
 def test_parse_rss_feed_enclosure_maps_to_image_url():
-    results = parse_rss_feed(FIXTURE_XML)
+    results = _en_only_items()
     item_a = next(r for r in results if r["metadata"]["guid"] == "news-1789")
     assert item_a["metadata"]["image_url"] == "https://gig.univie.ac.at/fileadmin/img.png"
 
@@ -203,9 +254,10 @@ def test_get_rss_news_data_structure(monkeypatch):
     """Returned dicts have required top-level keys."""
     import knowledge_base.hex_gig_rss_knowledge as rss_mod
 
-    monkeypatch.setattr(rss_mod, "fetch_rss_feed", lambda url=rss_mod.RSS_FEED_URL: FIXTURE_XML)
+    monkeypatch.setattr(rss_mod, "fetch_rss_feed", _fake_fetch)
     results = get_rss_news_data()
-    assert len(results) == 4
+    # 4 English articles, two of them with a German version, plus 1 German-only article.
+    assert len(results) == 5
     for item in results:
         assert "name" in item
         assert "text_content" in item
@@ -216,7 +268,7 @@ def test_metadata_required_fields(monkeypatch):
     """Each metadata dict contains all required fields."""
     import knowledge_base.hex_gig_rss_knowledge as rss_mod
 
-    monkeypatch.setattr(rss_mod, "fetch_rss_feed", lambda url=rss_mod.RSS_FEED_URL: FIXTURE_XML)
+    monkeypatch.setattr(rss_mod, "fetch_rss_feed", _fake_fetch)
     results = get_rss_news_data()
     required = {
         "guid",
@@ -224,7 +276,6 @@ def test_metadata_required_fields(monkeypatch):
         "link",
         "pub_date",
         "pub_date_iso",
-        "language",
         "source_type",
         "content_hash",
     }
@@ -280,7 +331,7 @@ def test_parse_rss_feed_empty_field_artifact_falls_back_to_description():
 
     Two live articles were embedded with "<>" as their entire body because "<>" is truthy.
     """
-    results = parse_rss_feed(FIXTURE_XML)
+    results = _en_only_items()
     item_f = next(r for r in results if r["metadata"]["guid"] == "news-2159")
     assert "surveying all staff" in item_f["text_content"]
     assert "<>" not in item_f["text_content"]
@@ -289,7 +340,7 @@ def test_parse_rss_feed_empty_field_artifact_falls_back_to_description():
 
 def test_parse_rss_feed_embeds_title_and_iso_date():
     """Title and date belong in the embedded text, not only in metadata."""
-    results = parse_rss_feed(FIXTURE_XML)
+    results = _en_only_items()
     item_a = next(r for r in results if r["metadata"]["guid"] == "news-1789")
     assert "Live stream with Helena Hansen" in item_a["text_content"]
     assert "Published: 2026-03-18" in item_a["text_content"]
@@ -298,9 +349,86 @@ def test_parse_rss_feed_embeds_title_and_iso_date():
 
 def test_content_hash_fingerprints_the_embedded_text():
     """The hash must cover what is embedded, or a changed article looks unchanged."""
-    results = parse_rss_feed(FIXTURE_XML)
+    results = _en_only_items()
     for item in results:
         assert item["metadata"]["content_hash"] == _compute_content_hash(item["text_content"])
+
+
+# ---------------------------------------------------------------------------
+# Bilingual merge — one knowledge item per article, carrying both languages
+# ---------------------------------------------------------------------------
+
+
+def test_build_document_text_german_section_names_the_network_in_german():
+    text = _build_document_text("Hitze und Gesundheit", "2026-08-05", "Julia Reiter über Hitze.", "de")
+    assert text.startswith("Neuigkeiten aus dem Forschungsverbund Gesundheit in Gesellschaft: Hitze und Gesundheit")
+    assert "Veröffentlicht: 2026-08-05" in text
+
+
+def test_translations_merge_into_one_item_per_guid():
+    """Two translations of one article must not take two retrieval slots."""
+    items = build_news_items(parse_rss_feed(FIXTURE_XML), parse_rss_feed(FIXTURE_XML_DE))
+    guids = [item["metadata"]["guid"] for item in items]
+    assert len(guids) == len(set(guids))
+
+
+def test_merged_item_embeds_both_languages_english_first():
+    item = _bilingual_items()["news-1789"]
+    text = item["text_content"]
+    assert "GiG network news: Live stream with Helena Hansen" in text
+    assert "Forschungsverbund Gesundheit in Gesellschaft: Livestream mit Helena Hansen" in text
+    assert text.index("VHS Urania is fully booked") < text.index("ausgebucht")
+    assert item["metadata"]["content_hash"] == _compute_content_hash(text)
+
+
+def test_merged_item_carries_both_titles_and_links():
+    metadata = _bilingual_items()["news-1789"]["metadata"]
+    assert metadata["title"] == "Live stream with Helena Hansen"
+    assert metadata["link"] == "https://gig.univie.ac.at/en/study#c9773"
+    assert metadata["title_de"] == "Livestream mit Helena Hansen"
+    assert metadata["link_de"] == "https://gig.univie.ac.at/detailansicht/livestream"
+
+
+def test_merged_item_keeps_the_english_name():
+    """Items stored before the German feed was merged in must be replaced in place, by name.
+
+    A new name would leave the old English-only row behind as a duplicate.
+    """
+    assert _bilingual_items()["news-1789"]["name"] == "HeX News - Live stream with Helena Hansen"
+
+
+def test_merged_item_has_no_language_key():
+    """agno offers every metadata key as a filter; a `language` filter would drop every paper."""
+    for item in _bilingual_items().values():
+        assert "language" not in item["metadata"]
+
+
+def test_german_only_article_is_still_stored():
+    item = _bilingual_items()["news-3000"]
+    assert item["name"] == "HeX News - Nur auf Deutsch erschienen"
+    assert item["metadata"]["title_de"] == "Nur auf Deutsch erschienen"
+    assert item["metadata"]["pub_date_iso"] == "2026-09-04"
+    assert "ohne englische Fassung" in item["text_content"]
+
+
+def test_english_only_article_has_no_german_fields():
+    metadata = _bilingual_items()["news-2159"]["metadata"]
+    assert "title_de" not in metadata
+    assert "link_de" not in metadata
+
+
+def test_get_rss_news_data_fails_whole_when_german_feed_is_down(monkeypatch):
+    """Storing English-only items would rewrite every content_hash and re-embed the feed twice."""
+    import knowledge_base.hex_gig_rss_knowledge as rss_mod
+
+    def fetch(url: str = RSS_FEED_URL) -> str:
+        if url == RSS_FEED_URL_DE:
+            raise OSError("feed unreachable")
+        return FIXTURE_XML
+
+    monkeypatch.setattr(rss_mod, "fetch_rss_feed", fetch)
+    with pytest.raises(OSError):
+        get_rss_news_data()
 
 
 # ---------------------------------------------------------------------------
@@ -318,6 +446,14 @@ def test_fetch_rss_feed_live():
     assert len(items) >= 1
 
     first = items[0]
-    assert "name" in first
-    assert "text_content" in first
-    assert "guid" in first["metadata"]
+    assert first["guid"]
+    assert first["title"]
+
+
+@pytest.mark.integration
+def test_live_feeds_pair_up_by_guid():
+    """The merge pairs articles by <guid>; if the site stops sharing guids across feeds, say so."""
+    guids_en = {article["guid"] for article in parse_rss_feed(fetch_rss_feed(RSS_FEED_URL))}
+    guids_de = {article["guid"] for article in parse_rss_feed(fetch_rss_feed(RSS_FEED_URL_DE))}
+    assert guids_de, "German feed returned no articles"
+    assert len(guids_en & guids_de) >= 0.8 * len(guids_en)

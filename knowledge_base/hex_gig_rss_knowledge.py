@@ -4,14 +4,19 @@ import re
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
+from typing import Any
 from urllib.request import urlopen
 
 from agno.knowledge import Knowledge
 
 logger = logging.getLogger(__name__)
 
+# The site publishes every article in both languages, under the same <guid> in each feed, so the
+# two feeds are merged into one bilingual document per article (see build_news_items). Ingesting
+# only the English feed left German users with no German content at all — not even the network's
+# German name, "Forschungsverbund Gesundheit in Gesellschaft", which GiG abbreviates.
 RSS_FEED_URL = "https://gig.univie.ac.at/en/about-us/news/feed.xml"
-RSS_LANGUAGE = "en"
+RSS_FEED_URL_DE = "https://gig.univie.ac.at/news-events/news/feed.xml"
 RSS_SOURCE_TYPE = "news_article"
 RSS_NAMESPACES = {"content": "http://purl.org/rss/1.0/modules/content/"}
 
@@ -72,22 +77,31 @@ def _to_iso_date(pub_date: str) -> str:
         return ""
 
 
-def _build_document_text(title: str, iso_date: str, body: str) -> str:
-    """Assemble the text that actually gets embedded.
+# Per-language section headings for the embedded text. The German heading carries the network's
+# German name so a German query about the network lands on German wording, not a translation.
+_SECTION_LABELS = {
+    "en": ("GiG network news", "Published"),
+    "de": ("Neuigkeiten aus dem Forschungsverbund Gesundheit in Gesellschaft", "Veröffentlicht"),
+}
+
+
+def _build_document_text(title: str, iso_date: str, body: str, language: str = "en") -> str:
+    """Assemble one language's section of the text that actually gets embedded.
 
     The headline is the most topic-dense field an article has and the date is what "latest"
     questions are really about, yet both used to live only in metadata — the embedding was built
     from the body alone. Putting them in the embedded text is what lets a query like
     "news about heat in August" match on more than a paragraph of prose.
     """
-    header = f"GiG network news: {title}"
+    heading, published = _SECTION_LABELS[language]
+    header = f"{heading}: {title}"
     if iso_date:
-        header = f"{header}\nPublished: {iso_date}"
+        header = f"{header}\n{published}: {iso_date}"
     return f"{header}\n\n{body}" if body else header
 
 
-def _parse_rss_item(item: ET.Element) -> dict | None:  # type: ignore[type-arg]
-    """Extract fields from a single RSS <item> element.
+def _parse_rss_item(item: ET.Element) -> dict[str, str] | None:
+    """Extract the article fields from a single RSS <item> element.
 
     Returns None (and logs a warning) if guid or title is missing.
     """
@@ -129,26 +143,63 @@ def _parse_rss_item(item: ET.Element) -> dict | None:  # type: ignore[type-arg]
     if enclosure_el is not None:
         image_url = enclosure_el.get("url", "")
 
+    return {
+        "guid": guid,
+        "title": title,
+        "link": link,
+        "pub_date": pub_date,
+        "body": plain_content,
+        "image_url": image_url,
+    }
+
+
+def _build_news_item(en: dict[str, str] | None, de: dict[str, str] | None) -> dict[str, Any]:
+    """Build one knowledge item from an article's English and/or German version.
+
+    English is the primary language: it supplies ``title``, ``link``, the date and the item
+    ``name``. Keeping the name English is what lets items stored before the German feed was added
+    be recognised by name and replaced in place (their content_hash changes) instead of being
+    left behind as duplicates. ``title_de``/``link_de`` are set whenever a German version exists.
+
+    There is deliberately no ``language`` key: a merged item is both languages, and agno
+    advertises every metadata key to the model as a filter — a ``language`` filter would drop
+    every research paper and member profile, which carry no such key.
+    """
+    primary = en or de
+    if primary is None:
+        raise ValueError("A news item needs at least one language version")
+
+    pub_date = primary["pub_date"] or (de["pub_date"] if de else "")
+    # Sortable form of pub_date. The RFC-2822 original ("Thu, 11 Jun 2026 09:18:00 +0200")
+    # is not something a model can order reliably by eye.
     iso_date = _to_iso_date(pub_date)
-    document_text = _build_document_text(title, iso_date, plain_content)
+
+    sections = []
+    if en is not None:
+        sections.append(_build_document_text(en["title"], iso_date, en["body"], "en"))
+    if de is not None:
+        sections.append(_build_document_text(de["title"], iso_date, de["body"], "de"))
+    document_text = "\n\n".join(sections)
+
+    metadata = {
+        "guid": primary["guid"],
+        "title": primary["title"],
+        "link": primary["link"],
+        "pub_date": pub_date,
+        "pub_date_iso": iso_date,
+        "source_type": RSS_SOURCE_TYPE,
+        "image_url": primary["image_url"] or (de["image_url"] if de else ""),
+        # Fingerprint of the text we actually embed, so a changed article is detectable.
+        "content_hash": _compute_content_hash(document_text),
+    }
+    if de is not None:
+        metadata["title_de"] = de["title"]
+        metadata["link_de"] = de["link"]
 
     return {
-        "name": f"HeX News - {title}",
+        "name": f"HeX News - {primary['title']}",
         "text_content": document_text,
-        "metadata": {
-            "guid": guid,
-            "title": title,
-            "link": link,
-            "pub_date": pub_date,
-            # Sortable form of pub_date. The RFC-2822 original ("Thu, 11 Jun 2026 09:18:00 +0200")
-            # is not something a model can order reliably by eye.
-            "pub_date_iso": iso_date,
-            "language": RSS_LANGUAGE,
-            "source_type": RSS_SOURCE_TYPE,
-            "image_url": image_url,
-            # Fingerprint of the text we actually embed, so a changed article is detectable.
-            "content_hash": _compute_content_hash(document_text),
-        },
+        "metadata": metadata,
     }
 
 
@@ -163,13 +214,13 @@ def fetch_rss_feed(url: str = RSS_FEED_URL) -> str:
         return response.read().decode("utf-8")
 
 
-def parse_rss_feed(xml_str: str) -> list[dict]:  # type: ignore[type-arg]
-    """Parse *xml_str* as RSS 2.0 and return one dict per valid <item>."""
+def parse_rss_feed(xml_str: str) -> list[dict[str, str]]:
+    """Parse *xml_str* as RSS 2.0 and return the article fields of each valid <item>."""
     root = ET.fromstring(xml_str)
     channel = root.find("channel")
     items_el = channel.findall("item") if channel is not None else root.findall(".//item")
 
-    results: list[dict] = []  # type: ignore[type-arg]
+    results: list[dict[str, str]] = []
     for item_el in items_el:
         parsed = _parse_rss_item(item_el)
         if parsed is not None:
@@ -178,13 +229,34 @@ def parse_rss_feed(xml_str: str) -> list[dict]:  # type: ignore[type-arg]
     return results
 
 
-def get_rss_news_data() -> list[dict]:  # type: ignore[type-arg]
-    """Fetch and parse the HeX RSS news feed.
+def build_news_items(articles_en: list[dict[str, str]], articles_de: list[dict[str, str]]) -> list[dict[str, Any]]:
+    """Merge the English and German feeds into one bilingual knowledge item per article.
+
+    Articles are paired by <guid>, which the site keeps identical across the two feeds. One
+    document per article rather than one per language: two translations of one article would
+    otherwise take two of the reranked slots in every search, and get_latest_hex_news — which
+    groups rows by guid — would splice both bodies together under whichever title it read first.
+    An article present in only one feed is still stored, in that language alone.
+    """
+    de_by_guid = {article["guid"]: article for article in articles_de}
+    en_guids = {article["guid"] for article in articles_en}
+
+    items = [_build_news_item(en, de_by_guid.get(en["guid"])) for en in articles_en]
+    items.extend(_build_news_item(None, de) for de in articles_de if de["guid"] not in en_guids)
+    return items
+
+
+def get_rss_news_data() -> list[dict[str, Any]]:
+    """Fetch both HeX RSS news feeds and merge them into bilingual items.
 
     Returns a list of dicts with keys: ``name``, ``text_content``, ``metadata``.
+
+    Either feed failing raises rather than storing English-only items: that would change every
+    article's content_hash, re-embedding the whole feed now and again once the German feed is back.
     """
-    xml_str = fetch_rss_feed()
-    return parse_rss_feed(xml_str)
+    articles_en = parse_rss_feed(fetch_rss_feed(RSS_FEED_URL))
+    articles_de = parse_rss_feed(fetch_rss_feed(RSS_FEED_URL_DE))
+    return build_news_items(articles_en, articles_de)
 
 
 async def _astored_news_fingerprints(knowledge: Knowledge) -> dict[str, tuple[str | None, str | None]]:
@@ -209,7 +281,7 @@ async def _astored_news_fingerprints(knowledge: Knowledge) -> dict[str, tuple[st
 
 
 async def aload_rss_into_knowledge(knowledge: Knowledge) -> tuple[int, int]:
-    """Fetch the RSS feed and bring *knowledge* in line with it.
+    """Fetch both RSS feeds and bring *knowledge* in line with them.
 
     An article is (re)inserted only when its ``content_hash`` differs from what is stored, so a
     steady-state run does no embedding work at all.
