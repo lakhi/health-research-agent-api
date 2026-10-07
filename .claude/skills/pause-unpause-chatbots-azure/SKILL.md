@@ -18,7 +18,7 @@ so pausing one project while unpausing another in the same run is supported.
 
 | Project | Subscription | RG | API app | UI app | Scheduled job | Database |
 |---|---|---|---|---|---|---|
-| `hex-gig` | `444c1e5c-ac0d-4420-94ea-d4a5414d20e1` | `healthsociety` | `hex-gig-agent-api` | `hex-gig-agent-ui` | `hex-gig-rss-refresh` | `hex-gig-postgres-db` (**dedicated**) |
+| `hex-gig` | `444c1e5c-ac0d-4420-94ea-d4a5414d20e1` | `healthsociety` | `hex-gig-agent-api` | `hex-gig-agent-ui` | `hex-gig-knowledge-sync` | `hex-gig-postgres-db` (**dedicated**) |
 | `vax-study` | `44365843-c70c-4844-a430-ad0193819039` | `vax-study` | `marhinovirus-api` | `marhinovirus-infobot` | — | `vax-db` in RG `vax-study` (**shared**) |
 | `ssc-psych` | `44365843-c70c-4844-a430-ad0193819039` | `ssc-psych-test` | `ssc-psych-api` | `ssc-psych-chatbot-ui` | — | logical DB `ssc_psych` on the same `vax-db` (**shared**) |
 
@@ -30,7 +30,7 @@ Replica targets — paused is `0/1` for every app; running differs per project:
 | `vax-study` | `1` / `2` | `0` / `1` |
 | `ssc-psych` | `1` / `2` | `0` / `1` |
 
-`hex-gig-rss-refresh` cron: `0 12 * * *` when running, `0 0 31 2 *` (Feb 31st — never fires) when paused.
+`hex-gig-knowledge-sync` cron: `0 12 * * *` when running, `0 0 31 2 *` (Feb 31st — never fires) when paused.
 
 > **`vax-db` is shared by vax-study and ssc-psych.** It must never be stopped while either of them
 > is running. See [Shared-database rules](#shared-database-rules) — this is the one piece of logic
@@ -70,7 +70,7 @@ az postgres flexible-server show --name vax-db --resource-group vax-study \
 Optionally confirm the hex-gig job cron:
 
 ```bash
-az containerapp job show --name hex-gig-rss-refresh --resource-group healthsociety \
+az containerapp job show --name hex-gig-knowledge-sync --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 \
   --query "properties.configuration.scheduleTriggerConfig.cronExpression" -o tsv
 ```
@@ -83,7 +83,7 @@ so it cannot answer a question about a single project.
 
 - API app and UI app of the same project disagreeing (one at `0`, the other at `≥1`)
 - a project reading as running while its database is `Stopped` (chat will be broken)
-- `hex-gig` running but the RSS cron still set to the disabled expression, or vice versa
+- `hex-gig` running but the knowledge-sync cron still set to the disabled expression, or vice versa
 
 Drift does not block the toggle — apply the requested change, then report what was off.
 
@@ -100,7 +100,7 @@ detected state and each description naming the concrete resulting action:
   "options": [
     {
       "label": "hex-gig — running",
-      "description": "Will PAUSE: agent-api + agent-ui to 0/1, hex-gig-postgres-db stopped, RSS cron disabled."
+      "description": "Will PAUSE: agent-api + agent-ui to 0/1, hex-gig-postgres-db stopped, knowledge-sync cron disabled."
     },
     {
       "label": "vax-study — running",
@@ -132,7 +132,7 @@ az containerapp update --name <ui-app> --resource-group <rg> --subscription <sub
 
 # hex-gig only — Container Apps Jobs have no native suspend toggle, so overwrite the cron
 # with a date that can never occur instead of deleting the schedule.
-az containerapp job update --name hex-gig-rss-refresh --resource-group healthsociety \
+az containerapp job update --name hex-gig-knowledge-sync --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 --cron-expression "0 0 31 2 *"
 
 # hex-gig only — dedicated server, safe to stop whenever hex-gig is paused
@@ -146,7 +146,7 @@ az postgres flexible-server stop --name hex-gig-postgres-db --resource-group hea
 az postgres flexible-server start --name <server> --resource-group <db-rg> --subscription <sub>
 
 # hex-gig only — restore the real schedule (there is no `az containerapp job resume`)
-az containerapp job update --name hex-gig-rss-refresh --resource-group healthsociety \
+az containerapp job update --name hex-gig-knowledge-sync --resource-group healthsociety \
   --subscription 444c1e5c-ac0d-4420-94ea-d4a5414d20e1 --cron-expression "0 12 * * *"
 
 az containerapp update --name <api-app> --resource-group <rg> --subscription <sub> \

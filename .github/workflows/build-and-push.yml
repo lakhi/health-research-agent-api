@@ -81,9 +81,9 @@ jobs:
       run: |
         echo "✅ Image pushed to: ${{ steps.config.outputs.acr_server }}/${{ steps.config.outputs.image_name }}:${{ env.IMAGE_TAG }}"
 
-  # Deploys atomically after a green build so the app and the SHA-pinned RSS job
+  # Deploys atomically after a green build so the app and the SHA-pinned knowledge-sync job
   # can never drift apart. Uses the hex-gig-deploy service principal, which has
-  # Contributor on exactly hex-gig-agent-api, hex-gig-rss-refresh, and
+  # Contributor on exactly hex-gig-agent-api, hex-gig-knowledge-sync, and
   # hex-gig-agent-ui — nothing else in the healthsociety RG.
   deploy-hex-gig:
     runs-on: ubuntu-latest
@@ -108,10 +108,10 @@ jobs:
           --revision-suffix "gh-${{ github.run_number }}-${{ github.run_attempt }}" \
           --output none
 
-    - name: Bump RSS-refresh job to this commit
+    - name: Bump knowledge-sync job to this commit
       run: |
         az containerapp job update \
-          --name hex-gig-rss-refresh \
+          --name hex-gig-knowledge-sync \
           --resource-group healthsociety \
           --image "hexgigacr.azurecr.io/hex-gig-agent-api:${{ github.sha }}" \
           --output none
@@ -119,4 +119,4 @@ jobs:
     - name: Deploy summary
       run: |
         echo "✅ hex-gig-agent-api → new revision gh-${{ github.run_number }}-${{ github.run_attempt }} (image :latest)"
-        echo "✅ hex-gig-rss-refresh → pinned to ${{ github.sha }}"
+        echo "✅ hex-gig-knowledge-sync → pinned to ${{ github.sha }}"

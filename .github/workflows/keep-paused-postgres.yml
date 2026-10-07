@@ -18,7 +18,7 @@ jobs:
   # "Is the server running?" is NOT the same question as "should hex-gig be paused?". Answering it
   # that way stopped the database out from under a live chatbot (25 Aug 2026), and is what produced
   # the 31 Jul – 10 Aug run of RSS-refresh failures behind issue #44. Gate on hex-gig's actual pause
-  # markers instead: /pause-unpause-chatbots-azure parks the RSS cron on "0 0 31 2 *" (a date that
+  # markers instead: /pause-unpause-chatbots-azure parks the knowledge-sync cron on "0 0 31 2 *" (a date that
   # never occurs) and scales the API to minReplicas 0. Both must say "paused" before we stop the DB.
   stop-hex-gig-db:
     name: hex-gig-postgres-db
@@ -39,7 +39,7 @@ jobs:
 
           # Every unreadable value falls back to the "running" answer, so an API hiccup can never
           # be the thing that stops a live database.
-          CRON=$(az containerapp job show --name hex-gig-rss-refresh --resource-group healthsociety \
+          CRON=$(az containerapp job show --name hex-gig-knowledge-sync --resource-group healthsociety \
             --subscription "$SUBSCRIPTION" \
             --query "properties.configuration.scheduleTriggerConfig.cronExpression" \
             -o tsv 2>/dev/null) || CRON=""
@@ -50,7 +50,7 @@ jobs:
             --query "properties.template.scale.minReplicas" -o tsv 2>/dev/null) || MIN=""
           [ -n "$MIN" ] && [ "$MIN" != "null" ] || MIN="1"
 
-          echo "hex-gig-rss-refresh cron:      $CRON (paused marker: $PAUSED_CRON)"
+          echo "hex-gig-knowledge-sync cron:      $CRON (paused marker: $PAUSED_CRON)"
           echo "hex-gig-agent-api minReplicas: $MIN (paused marker: 0)"
 
           if [ "$CRON" != "$PAUSED_CRON" ] || [ "$MIN" != "0" ]; then

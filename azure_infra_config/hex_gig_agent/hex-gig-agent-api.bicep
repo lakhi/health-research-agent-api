@@ -3,12 +3,10 @@ param managedEnvironments_hex_gig_apps_env_externalid string = '/subscriptions/4
 
 // ── Secrets (passed at deploy time, never stored in repo) ────────────────────
 // Deploy with: az deployment group create ... \
-//   --parameters dbPassword='...' ucloudShareToken='...' azureOpenAiApiKey='...' azureEmbedderOpenAiApiKey='...' acrPassword='...'
+//   --parameters dbPassword='...' azureOpenAiApiKey='...' azureEmbedderOpenAiApiKey='...' acrPassword='...'
+// The u:Cloud share token belongs to the hex-gig-knowledge-sync job, the only reader of u:Cloud (#42).
 @secure()
 param dbPassword string
-
-@secure()
-param ucloudShareToken string
 
 @secure()
 param azureOpenAiApiKey string
@@ -40,10 +38,6 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
         {
           name: 'db-password'
           value: dbPassword
-        }
-        {
-          name: 'ucloud-share-token'
-          value: ucloudShareToken
         }
         {
           name: 'azure-openai-api-key'
@@ -171,36 +165,24 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
               name: 'MODEL_PRICING_OUTPUT_EUR'
               value: '7.70'
             }
-            // ── u:Cloud (Nextcloud) — research paper source ──────────────────
-            // Share token supplied as a deploy-time secret (never hard-coded in the
-            // repo, which is browsable by network members). Rotate the token in u:Cloud
-            // before deploying — the previously committed value is in git history.
-            {
-              name: 'UCLOUD_SHARE_TOKEN'
-              secretRef: 'ucloud-share-token'
-            }
-            // ── Knowledge loading ────────────────────────────────────────────
-            {
-              name: 'LOAD_HEX_GIG_KNOWLEDGE'
-              value: 'true'
-            }
           ]
           resources: {
             cpu: json('1.25')
             memory: '2.5Gi'
           }
           probes: [
-            // Knowledge loading from u:Cloud blocks port 8000 for ~10 min.
-            // initialDelaySeconds is capped at 60 by Container Apps.
-            // 60s delay + 90 × 10s = 960s (~16 min) total startup tolerance.
+            // Startup loads no knowledge — the hex-gig-knowledge-sync job does that (#42) — so the
+            // port binds within seconds. 10s delay + 30 × 10s = 310s of tolerance, which still
+            // covers a cold image pull. Azure replaces replicas every few days, so a fast,
+            // dependency-free start is what keeps those replacements invisible to users.
             {
               type: 'Startup'
               tcpSocket: {
                 port: 8000
               }
-              initialDelaySeconds: 60
+              initialDelaySeconds: 10
               periodSeconds: 10
-              failureThreshold: 90
+              failureThreshold: 30
               timeoutSeconds: 5
             }
           ]
@@ -208,7 +190,7 @@ resource containerapps_hex_gig_agent_api_name_resource 'Microsoft.App/containera
       ]
       scale: {
         minReplicas: 1
-        maxReplicas: 2
+        maxReplicas: 3
         cooldownPeriod: 300
         pollingInterval: 30
         rules: [

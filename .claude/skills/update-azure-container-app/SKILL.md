@@ -90,7 +90,7 @@ If the workflow **fails**: print the run URL (`https://github.com/lakhi/health-r
 ### Step 4 — Deploy the new image
 
 **hex-gig: handled by CI — do not run manual update commands.** The workflow's `deploy-hex-gig` job
-(after a green build) updates the Container App *and* bumps the SHA-pinned `hex-gig-rss-refresh`
+(after a green build) updates the Container App *and* bumps the SHA-pinned `hex-gig-knowledge-sync`
 job atomically, using the `hex-gig-deploy` service principal (Contributor on exactly the three
 container resources, stored as the `HEX_GIG_AZURE_CREDENTIALS` repo secret). Proceed to Step 5.
 
@@ -117,7 +117,7 @@ The `--revision-suffix` forces a new revision, causing Azure to pull a fresh cop
 ```sh
 SHA=$(gh run view <run-id> --json headSha --jq .headSha)
 az containerapp job update \
-  --name hex-gig-rss-refresh \
+  --name hex-gig-knowledge-sync \
   --resource-group healthsociety \
   --image "hexgigacr.azurecr.io/hex-gig-agent-api:$SHA"
 ```
@@ -145,11 +145,11 @@ revision bump will keep serving the old values.
 
 ### Step 5 — Verify startup and assert no drift
 
-**Drift assertion (hex-gig only, always run):** the RSS job must pin the exact commit the run built.
+**Drift assertion (hex-gig only, always run):** the knowledge-sync job must pin the exact commit the run built.
 
 ```sh
 BUILT=$(gh run view <run-id> --json headSha --jq .headSha)
-PINNED=$(az containerapp job show -n hex-gig-rss-refresh -g healthsociety \
+PINNED=$(az containerapp job show -n hex-gig-knowledge-sync -g healthsociety \
   --query "properties.template.containers[0].image" -o tsv | cut -d: -f2)
 [ "$BUILT" = "$PINNED" ] && echo "✅ job in sync ($BUILT)" || echo "❌ DRIFT: built $BUILT but job pins $PINNED"
 ```
@@ -170,7 +170,7 @@ Container App:   <app-name>
 Resource Group:  <rg>
 Image:           <image>
 GH Run:          https://github.com/lakhi/health-research-agent-api/actions/runs/<run-id>
-RSS job (hex):   ✅ pinned to <sha> (in sync)
+Sync job (hex):   ✅ pinned to <sha> (in sync)
 Status:          ✅ Deployment complete
 ```
 
