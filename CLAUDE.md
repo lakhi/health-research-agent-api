@@ -24,6 +24,11 @@ docker compose up -d                          # recommended
 uvicorn api.main:app --reload                 # local without Docker
 ```
 
+### Load / sync HeX knowledge
+```bash
+docker compose run --rm api python -m scripts.sync_hex_gig_knowledge   # local; Azure: job hex-gig-knowledge-sync
+```
+
 ### Test
 ```bash
 pytest tests/ -v
@@ -50,10 +55,12 @@ mypy . --config-file pyproject.toml
 
 ### Knowledge / RAG
 - **HeX-GiG**: CSV member profiles + u:Cloud research PDFs + RSS news (English and German feeds merged by `guid` into one bilingual document per article), semantic (vector) search via Agno + pgvector. (Was hybrid; agno's hybrid_search full-scans the table — see knowledge_base/hex_gig_knowledge_base.py.)
+  - **Ingestion runs only in the `hex-gig-knowledge-sync` job** (`scripts/sync_hex_gig_knowledge.py`, daily 12:00 UTC); the API loads nothing at startup. `knowledge_base/hex_gig_sync.py` diffs each source against what is stored and inserts, replaces or deletes only the difference, behind a deletion guard (>20% gone → nothing deleted). Per-file identity lives in the content row's `description`, never in `metadata` — every metadata key is offered to the model as a filter.
+  - **Vector layout is owned by code** (`knowledge_base/vector_store.py`): `halfvec(1536)` column, HNSW index built by the job, `ef_search=100` (agno's default of 5 cuts recall), `hnsw.iterative_scan` on the engine. The API logs an error at startup if the index is missing. Needs pgvector ≥ 0.8 (local compose pins 0.8.2, as on Azure). (#42)
 - **VAX**: PDF vaccine-information catalogs, semantic search via Agno + pgvector.
 - **SSC-PSYCH**: Web-scraped SSC website pages + downloaded PDF forms/regulations, semantic (vector) search via Agno + pgvector.
 
-Agno v3 folds an item's `metadata` into its content hash, so `skip_if_exists=True` no longer recognises an item whose metadata changed — it re-embeds it and leaves the old row behind as a duplicate. Editing the members CSV or a scraper's metadata therefore has a cost; drop and reload rather than relying on the skip.
+Agno v3 folds an item's `metadata` into its content hash, so `skip_if_exists=True` no longer recognises an item whose metadata changed — it re-embeds it and leaves the old row behind as a duplicate. Its skip path also rewrites the metadata of every chunk it skips, which fragments the table. HeX avoids both through its own sync (above); for SSC, editing a scraper's metadata still has that cost — drop and reload rather than relying on the skip.
 
 ### Budget enforcement
 `services/budget_service.py` enforces a daily EUR spend limit per deployment. Timezone is `Europe/Vienna`. Applies to projects with budget env vars configured (HeX-GiG, SSC-PSYCH).

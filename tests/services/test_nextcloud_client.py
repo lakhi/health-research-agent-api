@@ -150,3 +150,72 @@ async def test_download_file(tmp_path, monkeypatch):
 
     assert result == local_path
     assert local_path.read_bytes() == pdf_content.decode("latin-1").encode()
+
+
+PROPFIND_FILES_WITH_PROPS_XML = """\
+<?xml version="1.0"?>
+<d:multistatus xmlns:d="DAV:">
+  <d:response>
+    <d:href>/public.php/webdav/Ada%20Lovelace/</d:href>
+    <d:propstat>
+      <d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/public.php/webdav/Ada%20Lovelace/with-etag.pdf</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:resourcetype/>
+        <d:getetag>"5f1e2a9c"</d:getetag>
+        <d:getcontentlength>12345</d:getcontentlength>
+        <d:getlastmodified>Mon, 06 Oct 2026 09:00:00 GMT</d:getlastmodified>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/public.php/webdav/Ada%20Lovelace/no-etag.PDF</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:resourcetype/>
+        <d:getcontentlength>99</d:getcontentlength>
+        <d:getlastmodified>Tue, 07 Oct 2026 09:00:00 GMT</d:getlastmodified>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+"""
+
+
+@pytest.mark.asyncio
+async def test_list_pdf_entries_carries_what_changes_when_a_file_does(monkeypatch):
+    client = NextcloudClient("https://example.com/public.php/webdav", "token123")
+
+    async def mock_propfind(self, path):
+        return PROPFIND_FILES_WITH_PROPS_XML
+
+    monkeypatch.setattr(NextcloudClient, "_propfind", mock_propfind)
+
+    entries = {entry.name: entry for entry in await client.list_pdf_entries("/Ada Lovelace")}
+
+    assert set(entries) == {"with-etag.pdf", "no-etag.PDF"}
+    assert entries["with-etag.pdf"].etag == "5f1e2a9c"  # quotes stripped
+    assert entries["with-etag.pdf"].size == 12345
+    assert entries["with-etag.pdf"].fingerprint == "5f1e2a9c"
+    # Without an ETag, size and modification time still change when the file does.
+    assert entries["no-etag.PDF"].fingerprint == "99:Tue, 07 Oct 2026 09:00:00 GMT"
+
+
+@pytest.mark.asyncio
+async def test_a_failed_listing_raises_rather_than_looking_empty(monkeypatch):
+    """The sync reads a missing file as deleted, so a failed listing must never come back empty."""
+    client = NextcloudClient("https://example.com/public.php/webdav", "token123")
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: FakeClient([FakeResponse("", status_code=401)]))
+
+    with pytest.raises(Exception, match="401"):
+        await client.list_pdf_entries("/Ada Lovelace")

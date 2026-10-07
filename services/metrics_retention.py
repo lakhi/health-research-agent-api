@@ -2,7 +2,7 @@
 Retention enforcement for the anonymous agent_usage_metrics table.
 
 Kept deliberately separate from ``metrics_service`` so it can be imported by the
-lightweight scheduled job (scripts/refresh_hex_gig_rss.py) without pulling in
+lightweight scheduled job (scripts/sync_hex_gig_knowledge.py) without pulling in
 ``services.budget_service`` → ``api.settings`` (which validates budget env vars
 the job does not set). This module imports only the model and a DB session.
 """

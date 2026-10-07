@@ -124,6 +124,12 @@ definition of "the integration actually happened".
 
 ## BLOCKER — the local eval corpus load failed. Start here tomorrow.
 
+> **Superseded by #42 (7 Oct 2026).** The local database is now pgvector 0.8.2 on a fresh volume,
+> and HeX knowledge is loaded by the sync job instead of at app startup:
+> `docker compose run --rm api python -m scripts.sync_hex_gig_knowledge`. The sync re-does any
+> document whose ingestion did not complete, so the skip-path hazard below no longer applies.
+> Kept for the record.
+
 The evals need `ai.hex_gig_embeddings` in the local pgvector; it did not exist. A one-off
 loader was run at 22:55 on 2026-09-13 and **failed partway with embedding timeouts**.
 
@@ -163,18 +169,7 @@ hazard CLAUDE.md already records: *"drop and reload rather than relying on the s
    `/app/hex_gig_pdfs_cache` by `compose.yaml`, so no u:Cloud download happens. The
    `-e` overrides win over `.env` because `load_dotenv()` does not override real env vars.
    ```bash
-   docker compose run --rm \
-     -e PROJECT_NAME=hex-gig -e LOAD_HEX_GIG_KNOWLEDGE=true \
-     api python -c "$(cat <<'PY'
-   import asyncio
-   from dotenv import load_dotenv
-   load_dotenv()
-   from api.project_configs import get_project_config
-   config = get_project_config()
-   asyncio.run(config.load_knowledge(config.get_agents()))
-   print("HEX_LOAD_DONE", flush=True)
-   PY
-   )"
+   docker compose run --rm api python -m scripts.sync_hex_gig_knowledge   # since #42
    ```
 4. **Verify before trusting it**: 126 documents `completed`, 0 `failed`, ~39 distinct
    `HeX Research -` names, plus 42 news articles and 84 member profiles.

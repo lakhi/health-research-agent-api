@@ -8,7 +8,7 @@ Phase 2 (scoring): AccuracyEval with num_iterations=10 per (temp, question) → 
 
 Pre-requisites:
   - docker compose up pgvector -d
-  - HeX-GiG knowledge already loaded in pgvector (run the app once with LOAD_HEX_GIG_KNOWLEDGE=true)
+  - HeX-GiG knowledge already loaded in pgvector: docker compose run --rm api python -m scripts.sync_hex_gig_knowledge
   - Azure OpenAI credentials in environment
 
 Run all:

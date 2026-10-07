@@ -8,11 +8,14 @@ from pypdf import PdfReader as _PdfReader
 
 from agno.db.postgres import PostgresDb
 from agno.knowledge import Knowledge
-from agno.vectordb.pgvector import PgVector, SearchType
+from agno.knowledge.reader.pdf_reader import PDFReader
+from agno.vectordb.pgvector import HNSW, SearchType
 
 from db.session import get_db_url_cached
 from knowledge_base import get_azure_embedder
 from knowledge_base.rerankers import get_azure_reranker, get_search_max_results
+from knowledge_base.vector_store import HalfvecPgVector, create_vector_engine, hnsw_index_name
+from services.nextcloud_pdf_provider import RemotePDF
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +26,12 @@ _DOI_RE = re.compile(r"\b(10\.\d{4,9}/[^\s\],;:\'\"<>()]+)", re.IGNORECASE)
 # store can never point at different tables.
 HEX_GIG_VECTOR_SCHEMA = "ai"
 HEX_GIG_EMBEDDINGS_TABLE = "hex_gig_embeddings"
+
+# Candidates the HNSW search keeps per pass. agno's HNSW() default is 5, which it sets before
+# every query; at 5, recall@50 against an exact scan fell to 50% on the worst test query (#42).
+# It must be at least the 50-chunk rerank pool; cold latency barely moves with it (4.3 s at 5,
+# 4.5 s at 100), so it is purely a recall setting.
+HEX_GIG_HNSW_EF_SEARCH = 100
 
 HEX_GIG_KNOWLEDGE_DIR = Path(__file__).resolve().parent / "hex_gig_knowledge"
 HEX_GIG_MEMBERS_CSV = HEX_GIG_KNOWLEDGE_DIR / "hex_gig_members_list.csv"
@@ -93,22 +102,46 @@ def get_hex_gig_knowledge() -> Knowledge:
     hex_gig_knowledge = Knowledge(
         name="Health in Society Research Network Knowledge",
         max_results=get_search_max_results(reranker),
-        vector_db=PgVector(
+        vector_db=HalfvecPgVector(
+            # db_url is still passed so agno derives the same vector-db id from it as before;
+            # the engine is what actually connects (pre-ping, iterative scans).
             db_url=db_url,
+            db_engine=create_vector_engine(db_url),
             # SearchType.vector, not hybrid: agno's hybrid_search computes
             # ts_rank_cd(to_tsvector(content), ...) over every row with no WHERE
             # clause, so it full-scans the table on each query (~30s on the
-            # B1ms prod DB at 15k+ chunks). Vector search stays index-friendly.
+            # B1ms prod DB at 15k+ chunks). Vector search uses the HNSW index.
             search_type=SearchType.vector,
+            vector_index=HNSW(name=hnsw_index_name(HEX_GIG_EMBEDDINGS_TABLE), ef_search=HEX_GIG_HNSW_EF_SEARCH),
             table_name=HEX_GIG_EMBEDDINGS_TABLE,
             schema=HEX_GIG_VECTOR_SCHEMA,
-            embedder=get_azure_embedder(),
+            # Batched: the sync job embeds whole papers through this embedder.
+            embedder=get_azure_embedder(enable_batch=True),
             reranker=reranker,
         ),
         contents_db=get_hex_gig_contents_db(),
     )
 
     return hex_gig_knowledge
+
+
+def get_hex_gig_pdf_reader() -> PDFReader:
+    """The reader that chunks member papers.
+
+    Chunking embeds sentences with a local model (potion-base-32M) rather than the Azure embedder,
+    which made ~6,600 API calls per ingestion (45 min → 2-3 min, 7c8d4e1). Only the sync job reads
+    PDFs, so only the job loads that model.
+    """
+    from agno.knowledge.chunking.semantic import SemanticChunking
+
+    return PDFReader(
+        chunking_strategy=SemanticChunking(
+            embedder="minishlab/potion-base-32M",
+            chunk_size=2000,
+            similarity_threshold=0.5,
+            similarity_window=3,
+        )
+    )
 
 
 def get_hex_gig_contents_db():
@@ -260,21 +293,18 @@ def get_member_profiles_data() -> list[dict]:
     return profiles
 
 
-def get_research_articles_from_ucloud(discovered_pdfs: list) -> list[dict]:
-    """Match discovered PDFs from u:Cloud to network members and build knowledge base data.
+def match_member_papers(remote_pdfs: list[RemotePDF]) -> list[tuple[RemotePDF, dict[str, str]]]:
+    """Pair each u:Cloud PDF with the member whose folder it sits in.
 
-    Args:
-        discovered_pdfs: List of DiscoveredPDF objects from NextcloudPDFProvider.
-
-    Returns:
-        List of dicts with "path" (Path) and "metadata" (dict) keys.
+    Returns ``(pdf, member_metadata)`` pairs; ``member_metadata`` already carries
+    ``network_member_name``. A folder that matches no row of the members CSV is skipped with a
+    warning, so removing a member from the CSV also removes their papers from the knowledge base.
     """
     members_by_name = _build_member_name_index()
 
-    kb_data: list[dict] = []
-    for pdf in discovered_pdfs:
-        normalized_folder = _normalize_name(pdf.member_folder_name)
-        member_metadata = members_by_name.get(normalized_folder)
+    matched: list[tuple[RemotePDF, dict[str, str]]] = []
+    for pdf in remote_pdfs:
+        member_metadata = members_by_name.get(_normalize_name(pdf.member_folder_name))
 
         if member_metadata is None:
             logger.warning(
@@ -294,20 +324,21 @@ def get_research_articles_from_ucloud(discovered_pdfs: list) -> list[dict]:
             if part
         ).strip()
         member_metadata["network_member_name"] = member_name or "Unknown"
+        matched.append((pdf, member_metadata))
 
-        doi_url = _extract_doi_from_pdf(pdf.local_path)
-        metadata = {
-            **member_metadata,
-            "source_type": "research_paper",
-            **({"doi": doi_url} if doi_url else {}),
-        }
+    return matched
 
-        kb_data.append(
-            {
-                "path": pdf.local_path,
-                "name": f"HeX Research - {member_name}",
-                "metadata": metadata,
-            }
-        )
 
-    return kb_data
+def research_paper_name(member_metadata: dict[str, str]) -> str:
+    """The knowledge name of a member's papers; every PDF of one member shares it."""
+    return f"HeX Research - {member_metadata['network_member_name']}"
+
+
+def build_research_paper_metadata(member_metadata: dict[str, str], local_path: Path) -> dict[str, str]:
+    """Metadata stored with a downloaded paper: the member's CSV fields plus the paper's DOI."""
+    doi_url = _extract_doi_from_pdf(local_path)
+    return {
+        **member_metadata,
+        "source_type": "research_paper",
+        **({"doi": doi_url} if doi_url else {}),
+    }

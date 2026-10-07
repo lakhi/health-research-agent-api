@@ -1,16 +1,14 @@
+import asyncio
+import logging
 from typing import List
 
 from agno.agent import Agent
-from agno.knowledge.reader.pdf_reader import PDFReader
 
 from agents.hex_gig_agent import get_hex_gig_agent
 from api.project_configs.project_config import ProjectConfig, ProjectName, require_knowledge
-from knowledge_base.hex_gig_knowledge_base import get_member_profiles_data, get_research_articles_from_ucloud
-from knowledge_base.hex_gig_rss_knowledge import aload_rss_into_knowledge
-from services.nextcloud_client import NextcloudClient
-from services.nextcloud_pdf_provider import NextcloudPDFProvider
+from knowledge_base.vector_store import pgvector_of, vector_schema_problems
 
-UCLOUD_WEBDAV_URL = "https://ucloud.univie.ac.at/public.php/webdav/"
+logger = logging.getLogger(__name__)
 
 
 class HexGigConfig(ProjectConfig):
@@ -33,82 +31,24 @@ class HexGigConfig(ProjectConfig):
         return [get_hex_gig_agent()]
 
     async def load_knowledge(self, agents: List[Agent]) -> None:
-        """Load HeX-GiG knowledge from u:Cloud and RSS into the hex_gig agent."""
-        import os
+        """Check the knowledge base is searchable; loading it is the sync job's work, not startup's.
 
-        load_knowledge = os.environ.get("LOAD_HEX_GIG_KNOWLEDGE", "true").lower() == "true"
-        if not load_knowledge:
-            print("⏭️  Skipping HeX knowledge loading (LOAD_HEX_GIG_KNOWLEDGE=false)")
+        The ``hex-gig-knowledge-sync`` job (scripts/sync_hex_gig_knowledge.py) keeps the knowledge
+        base in step with u:Cloud, the members CSV and the news feed. Loading here used to take
+        ~4 min on every replica start, rewrite all ~26k chunk rows, and stop the API from starting
+        whenever u:Cloud or the embedder was down (#42) — and Azure replaces the replica every few
+        days, unannounced. Startup now takes seconds and depends only on the database.
+
+        A missing index is logged, not raised: the API still answers without it, just slowly.
+        """
+        knowledge = require_knowledge(agents[0])
+        try:
+            problems = await asyncio.to_thread(vector_schema_problems, pgvector_of(knowledge))
+        except Exception:
+            logger.exception("Could not check the HeX vector table")
             return
 
-        from knowledge_base import get_azure_embedder
-
-        embedder = get_azure_embedder()
-        try:
-            test_result = embedder.get_embedding("test")
-            if not test_result:
-                raise ValueError("Embedder returned empty result")
-            print("✅ Azure embedder verified")
-        except Exception as e:
-            print(f"❌ Azure embedder check failed — aborting knowledge load: {e}")
-            raise
-
-        from agno.knowledge.chunking.semantic import SemanticChunking
-
-        pdf_reader = PDFReader(
-            chunking_strategy=SemanticChunking(
-                embedder="minishlab/potion-base-32M",
-                chunk_size=2000,
-                similarity_threshold=0.5,
-                similarity_window=3,
-            )
-        )
-
-        try:
-            hex_gig_agent = agents[0]
-            knowledge = require_knowledge(hex_gig_agent)
-
-            # Load research papers from u:Cloud (Nextcloud)
-            share_token = os.environ.get("UCLOUD_SHARE_TOKEN", "")
-            share_password = os.environ.get("UCLOUD_SHARE_PASSWORD", "")
-
-            if not share_token:
-                raise ValueError("UCLOUD_SHARE_TOKEN environment variable is required for HeX-GiG project")
-
-            client = NextcloudClient(
-                webdav_public_url=UCLOUD_WEBDAV_URL,
-                share_token=share_token,
-                share_password=share_password,
-            )
-            provider = NextcloudPDFProvider(client)
-            discovered = await provider.discover_and_download()
-
-            kb_data = get_research_articles_from_ucloud(discovered)
-            for i, item in enumerate(kb_data, 1):
-                print(f"  [{i}/{len(kb_data)}] Embedding: {item['name']}")
-                await knowledge.ainsert(
-                    name=item["name"],
-                    path=str(item["path"]),
-                    reader=pdf_reader,
-                    metadata=item["metadata"],
-                    skip_if_exists=True,
-                )
-            print(f"✅ Knowledge loaded from u:Cloud ({len(kb_data)} documents)")
-
-            # Load RSS news
-            seen, _ = await aload_rss_into_knowledge(knowledge)
-            print(f"✅ RSS news loaded for hex_gig agent ({seen} articles processed)")
-
-            # Load member profiles from CSV
-            member_profiles = get_member_profiles_data()
-            for item in member_profiles:
-                await knowledge.ainsert(
-                    name=item["name"],
-                    text_content=item["text_content"],
-                    metadata=item["metadata"],
-                    skip_if_exists=True,
-                )
-            print(f"✅ Member profiles loaded ({len(member_profiles)} members)")
-        except Exception as e:
-            print(f"❌ Error loading HeX-GiG knowledge: {e}")
-            raise
+        for problem in problems:
+            logger.error("HeX vector search is not ready: %s", problem)
+        if not problems:
+            logger.info("HeX vector table is halfvec and HNSW-indexed")

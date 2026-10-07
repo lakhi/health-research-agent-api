@@ -7,8 +7,6 @@ from html.parser import HTMLParser
 from typing import Any
 from urllib.request import urlopen
 
-from agno.knowledge import Knowledge
-
 logger = logging.getLogger(__name__)
 
 # The site publishes every article in both languages, under the same <guid> in each feed, so the
@@ -157,9 +155,10 @@ def _build_news_item(en: dict[str, str] | None, de: dict[str, str] | None) -> di
     """Build one knowledge item from an article's English and/or German version.
 
     English is the primary language: it supplies ``title``, ``link``, the date and the item
-    ``name``. Keeping the name English is what lets items stored before the German feed was added
-    be recognised by name and replaced in place (their content_hash changes) instead of being
-    left behind as duplicates. ``title_de``/``link_de`` are set whenever a German version exists.
+    ``name``. The item's identity is its ``guid``, not its name, so a title that changes — or a
+    German-only article that later gains its English version — replaces the stored article
+    instead of being stored a second time (see ``knowledge_base.hex_gig_sync.sync_news``).
+    ``title_de``/``link_de`` are set whenever a German version exists.
 
     There is deliberately no ``language`` key: a merged item is both languages, and agno
     advertises every metadata key to the model as a filter — a ``language`` filter would drop
@@ -253,73 +252,8 @@ def get_rss_news_data() -> list[dict[str, Any]]:
 
     Either feed failing raises rather than storing English-only items: that would change every
     article's content_hash, re-embedding the whole feed now and again once the German feed is back.
+    Raising also keeps the sync from reading a missing feed as "every article was deleted".
     """
     articles_en = parse_rss_feed(fetch_rss_feed(RSS_FEED_URL))
     articles_de = parse_rss_feed(fetch_rss_feed(RSS_FEED_URL_DE))
     return build_news_items(articles_en, articles_de)
-
-
-async def _astored_news_fingerprints(knowledge: Knowledge) -> dict[str, tuple[str | None, str | None]]:
-    """Map ``name`` → ``(content_id, content_hash)`` for news articles already in *knowledge*.
-
-    Failure is deliberately non-fatal: an empty map means "treat every article as new", which
-    costs a re-embed of the whole feed but can never leave the knowledge base short of an article.
-    """
-    try:
-        contents, _ = await knowledge.aget_content()
-    except Exception:
-        logger.warning("Could not read stored knowledge contents — re-inserting every article", exc_info=True)
-        return {}
-
-    fingerprints: dict[str, tuple[str | None, str | None]] = {}
-    for content in contents:
-        metadata = content.metadata or {}
-        if metadata.get("source_type") != RSS_SOURCE_TYPE or not content.name:
-            continue
-        fingerprints[content.name] = (content.id, metadata.get("content_hash"))
-    return fingerprints
-
-
-async def aload_rss_into_knowledge(knowledge: Knowledge) -> tuple[int, int]:
-    """Fetch both RSS feeds and bring *knowledge* in line with them.
-
-    An article is (re)inserted only when its ``content_hash`` differs from what is stored, so a
-    steady-state run does no embedding work at all.
-
-    This deliberately does not use ``skip_if_exists=True``. Agno derives its own dedupe key from
-    the content *name* and type (``Knowledge._build_content_hash``), never the body — so under
-    ``skip_if_exists`` an article was keyed by its title alone and could never be updated once
-    stored. A feed that later filled in an empty article, fixed a typo, or expanded a stub was
-    invisible to us forever; two articles sat in the knowledge base with "<>" as their whole body
-    while the feed served a perfectly good description. Comparing hashes ourselves and replacing
-    the content on a mismatch makes the pipeline self-healing.
-
-    Returns ``(items_seen, items_written)`` for logging.
-    """
-    items = get_rss_news_data()
-    stored = await _astored_news_fingerprints(knowledge)
-
-    written = 0
-    for item in items:
-        name = item["name"]
-        content_id, stored_hash = stored.get(name, (None, None))
-
-        if stored_hash == item["metadata"]["content_hash"]:
-            continue
-
-        if content_id is not None:
-            logger.info("RSS article changed — replacing: %s", name)
-            await knowledge.aremove_content_by_id(content_id)
-        # Also clear vectors orphaned by an earlier run that left no contents-db row behind.
-        knowledge.remove_vectors_by_name(name)
-
-        await knowledge.ainsert(
-            name=name,
-            text_content=item["text_content"],
-            metadata=item["metadata"],
-            skip_if_exists=False,
-        )
-        written += 1
-
-    logger.info("RSS feed: %d items, %d written, %d unchanged", len(items), written, len(items) - written)
-    return len(items), written

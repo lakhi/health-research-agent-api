@@ -12,7 +12,7 @@ they are — comparison harnesses that write reports. This file is the regressio
 
 Pre-requisites:
   - docker compose up pgvector -d
-  - HeX-GiG knowledge loaded in that pgvector (run the app once with LOAD_HEX_GIG_KNOWLEDGE=true)
+  - HeX-GiG knowledge loaded in that pgvector: docker compose run --rm api python -m scripts.sync_hex_gig_knowledge
   - Azure OpenAI credentials in environment
 
 Run: pytest tests/evals/test_hex_gig_retrieval_evals.py -v -m "integration and evals"

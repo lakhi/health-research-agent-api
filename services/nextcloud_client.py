@@ -1,6 +1,7 @@
 """Async WebDAV client for Nextcloud public folder shares."""
 
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote, unquote
 
@@ -8,6 +9,22 @@ import httpx
 
 DAV_NS = "DAV:"
 _NS = {"d": DAV_NS}
+
+
+@dataclass(frozen=True)
+class RemoteEntry:
+    """One file or folder in a share listing, with the properties that change when a file does."""
+
+    name: str
+    is_dir: bool
+    etag: str = ""
+    size: int | None = None
+    last_modified: str = ""
+
+    @property
+    def fingerprint(self) -> str:
+        """Changes whenever the file's content does: the ETag, else size and modification time."""
+        return self.etag or f"{self.size}:{self.last_modified}"
 
 
 class NextcloudClient:
@@ -22,12 +39,17 @@ class NextcloudClient:
         self._base_url = webdav_public_url.rstrip("/")
         self._auth = httpx.BasicAuth(share_token, share_password)
 
-    async def list_folders(self, path: str = "/") -> list[str]:
-        """List sub-folder names at the given path via PROPFIND depth=1."""
+    async def list_entries(self, path: str = "/") -> list[RemoteEntry]:
+        """List the files and folders directly under a path via PROPFIND depth=1.
+
+        The listed folder itself is left out. Any HTTP error raises: a caller that compares this
+        listing against what it has stored must never mistake a failed listing for an empty one.
+        """
         xml_body = await self._propfind(path)
         root = ET.fromstring(xml_body)
+        own_name = path.strip("/").split("/")[-1] if path.strip("/") else "webdav"
 
-        folders: list[str] = []
+        entries: list[RemoteEntry] = []
         for response in root.findall("d:response", _NS):
             href = response.find("d:href", _NS)
             if href is None or href.text is None:
@@ -39,46 +61,42 @@ class NextcloudClient:
             prop = propstat.find("d:prop", _NS)
             if prop is None:
                 continue
-            resource_type = prop.find("d:resourcetype", _NS)
-            if resource_type is None:
-                continue
-            if resource_type.find("d:collection", _NS) is None:
-                continue
 
             name = unquote(href.text.rstrip("/").split("/")[-1])
-            if name and name != "webdav":
-                folders.append(name)
+            resource_type = prop.find("d:resourcetype", _NS)
+            is_dir = resource_type is not None and resource_type.find("d:collection", _NS) is not None
+            if not name or (is_dir and name == own_name):
+                continue
 
-        return folders
+            size_text = (prop.findtext("d:getcontentlength", default="", namespaces=_NS) or "").strip()
+            entries.append(
+                RemoteEntry(
+                    name=name,
+                    is_dir=is_dir,
+                    etag=(prop.findtext("d:getetag", default="", namespaces=_NS) or "").strip().strip('"'),
+                    size=int(size_text) if size_text.isdigit() else None,
+                    last_modified=(prop.findtext("d:getlastmodified", default="", namespaces=_NS) or "").strip(),
+                )
+            )
+
+        return entries
+
+    async def list_folders(self, path: str = "/") -> list[str]:
+        """List sub-folder names at the given path via PROPFIND depth=1."""
+        return [entry.name for entry in await self.list_entries(path) if entry.is_dir]
 
     async def list_files(self, path: str, extension: str = ".pdf") -> list[str]:
         """List filenames at the given path, filtered by extension."""
-        xml_body = await self._propfind(path)
-        root = ET.fromstring(xml_body)
+        return [entry.name for entry in await self.list_pdf_entries(path, extension)]
 
-        files: list[str] = []
+    async def list_pdf_entries(self, path: str, extension: str = ".pdf") -> list[RemoteEntry]:
+        """List the files at the given path whose names end with the extension."""
         ext_lower = extension.lower()
-        for response in root.findall("d:response", _NS):
-            href = response.find("d:href", _NS)
-            if href is None or href.text is None:
-                continue
-
-            propstat = response.find("d:propstat", _NS)
-            if propstat is None:
-                continue
-            prop = propstat.find("d:prop", _NS)
-            if prop is None:
-                continue
-            resource_type = prop.find("d:resourcetype", _NS)
-            # Skip collections (folders)
-            if resource_type is not None and resource_type.find("d:collection", _NS) is not None:
-                continue
-
-            name = unquote(href.text.rstrip("/").split("/")[-1])
-            if name and name.lower().endswith(ext_lower):
-                files.append(name)
-
-        return files
+        return [
+            entry
+            for entry in await self.list_entries(path)
+            if not entry.is_dir and entry.name.lower().endswith(ext_lower)
+        ]
 
     async def download_file(self, remote_path: str, local_path: Path) -> Path:
         """Download a file from the share to a local path."""

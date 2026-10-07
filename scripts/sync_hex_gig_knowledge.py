@@ -8,11 +8,12 @@ Each source is synced independently, so a u:Cloud outage doesn't stop the news f
 The run exits non-zero if any source failed or a deletion was held back by the guard, so the
 job execution shows as Failed in Azure.
 
-Usage:
-    python scripts/sync_hex_gig_knowledge.py
+Usage (from the repository root, which is the image's working directory, /app):
+    python -m scripts.sync_hex_gig_knowledge
 
-Locally, against the compose pgvector:
-    docker compose run --rm -e PROJECT_NAME=hex-gig api python scripts/sync_hex_gig_knowledge.py
+Run as a module so the repository root is on sys.path; ``python scripts/...`` would put only
+scripts/ there. Locally, against the compose pgvector:
+    docker compose run --rm api python -m scripts.sync_hex_gig_knowledge
 """
 
 import asyncio
@@ -22,12 +23,24 @@ import sys
 import time
 from collections.abc import Awaitable, Callable
 
-from knowledge_base import get_azure_embedder
-from knowledge_base.hex_gig_knowledge_base import get_hex_gig_knowledge, get_hex_gig_pdf_reader
-from knowledge_base.hex_gig_sync import SyncReport, sync_member_profiles, sync_news, sync_research_papers
-from knowledge_base.vector_store import ensure_vector_schema, pgvector_of
-from services.nextcloud_client import NextcloudClient
-from services.nextcloud_pdf_provider import NextcloudPDFProvider
+from dotenv import load_dotenv
+
+# Before the project imports: db.session reads the database URL at import time. Locally the
+# settings live in .env; Azure injects them as environment variables and has no .env, so this is
+# a no-op there. Existing variables win, so `docker compose run -e ...` overrides still apply.
+load_dotenv()
+
+from knowledge_base import get_azure_embedder  # noqa: E402
+from knowledge_base.hex_gig_knowledge_base import get_hex_gig_knowledge, get_hex_gig_pdf_reader  # noqa: E402
+from knowledge_base.hex_gig_sync import (  # noqa: E402
+    SyncReport,
+    sync_member_profiles,
+    sync_news,
+    sync_research_papers,
+)
+from knowledge_base.vector_store import ensure_vector_schema, pgvector_of  # noqa: E402
+from services.nextcloud_client import NextcloudClient  # noqa: E402
+from services.nextcloud_pdf_provider import NextcloudPDFProvider  # noqa: E402
 
 logger = logging.getLogger("hex_gig_knowledge_sync")
 
