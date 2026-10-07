@@ -1,11 +1,16 @@
 services:
   pgvector:
-    image: agnohq/pgvector:16
+    # Same pgvector release as the Azure servers (0.8.2). 0.7+ is needed for halfvec and 0.8+ for
+    # hnsw.iterative_scan, which filtered index searches rely on (#42); the old agnohq/pgvector:16
+    # image shipped 0.6.2.
+    image: pgvector/pgvector:0.8.2-pg16
     restart: unless-stopped
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # A new volume: agnohq's image kept its data in a pgdata/ subdirectory, which this image
+      # refuses to initialise over. The old health-research-agent-api_pgdata volume can be removed.
+      - pgvector_data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${DB_USER:-ai}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-ai}
@@ -51,4 +56,4 @@ networks:
   health-research-agent-api:
 
 volumes:
-  pgdata:
+  pgvector_data:
