@@ -31,10 +31,6 @@ class ApiSettings(BaseSettings):
     model_pricing_input_eur: Optional[float] = None
     model_pricing_output_eur: Optional[float] = None
 
-    # u:Cloud (Nextcloud) configuration for hex_gig project research papers
-    ucloud_share_token: Optional[str] = None
-    ucloud_share_password: str = ""
-
     @field_validator("cors_origin_list", mode="before")
     def set_cors_origin_list(cls, cors_origin_list, info: FieldValidationInfo):
         # Get project-specific CORS origins
@@ -72,10 +68,6 @@ class ApiSettings(BaseSettings):
             if missing_vars:
                 missing = ", ".join(missing_vars)
                 raise ValueError(f"Missing required budget environment variables for PROJECT_NAME={project}: {missing}")
-
-        # HeX-specific: u:Cloud token required for research paper downloads
-        if project == ProjectName.HEX_GIG.value and not self.ucloud_share_token:
-            raise ValueError("Missing required environment variable for PROJECT_NAME=hex-gig: UCLOUD_SHARE_TOKEN")
 
         return self
 

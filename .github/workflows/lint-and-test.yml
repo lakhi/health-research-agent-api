@@ -50,12 +50,12 @@ jobs:
       # Non-secret configuration. api/settings.py validates these at import time for
       # hex-gig, so the suite cannot even be collected without them. No real credentials
       # are involved: the tests marked `integration` are excluded and never open a
-      # database, a model endpoint or u:Cloud.
+      # database, a model endpoint or u:Cloud. Keep this to what the live API is given:
+      # a placeholder UCLOUD_SHARE_TOKEN here once hid that the API still demanded it (#42).
       PROJECT_NAME: hex-gig
       DAILY_BUDGET_EUR: "3.0"
       MODEL_PRICING_INPUT_EUR: "1.90"
       MODEL_PRICING_OUTPUT_EUR: "7.70"
-      UCLOUD_SHARE_TOKEN: ci-placeholder-not-a-real-token
       AGNO_TELEMETRY: "false"
       AGNO_MONITOR: "False"
     steps:
