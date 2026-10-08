@@ -1,12 +1,12 @@
 """Entrypoint for the HeX-GiG knowledge sync Container Apps Job (daily, and on demand).
 
-Brings the knowledge base in step with u:Cloud papers, the members CSV and the news feed, then
-makes sure the vector table is halfvec and HNSW-indexed, then enforces metrics retention. This is
+Enforces metrics retention, then brings the knowledge base in step with u:Cloud papers, the
+members CSV and the news feed, then makes sure the vector table is halfvec and HNSW-indexed. This is
 the only writer of the HeX knowledge tables; the API never loads knowledge (#42).
 
 Each source is synced independently, so a u:Cloud outage doesn't stop the news from updating.
-The run exits non-zero if any source failed or a deletion was held back by the guard, so the
-job execution shows as Failed in Azure.
+The run exits non-zero if any source failed, a document did not finish ingesting, or a deletion
+was held back by the guard, so the job execution shows as Failed in Azure.
 
 Usage (from the repository root, which is the image's working directory, /app):
     python -m scripts.sync_hex_gig_knowledge
@@ -90,6 +90,9 @@ async def _run(source: str, sync: Callable[[], Awaitable[SyncReport]]) -> SyncRe
 async def _main() -> int:
     started = time.monotonic()
 
+    # First, so an embedder outage or a load cut off by the job's timeout can't skip it.
+    _purge_old_metrics()
+
     # Fail fast with a clear message rather than marking every document failed one by one.
     if not get_azure_embedder().get_embedding("test"):
         logger.error("Azure embedder returned no embedding; aborting the sync")
@@ -112,8 +115,6 @@ async def _main() -> int:
     except Exception:
         schema_ok = False
         logger.exception("Could not make the HeX vector table halfvec and HNSW-indexed")
-
-    _purge_old_metrics()
 
     for report in reports:
         logger.info(report.summary())

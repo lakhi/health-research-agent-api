@@ -150,10 +150,14 @@ class FakeKnowledge:
     """Records what the sync does; stores what it inserts so a second run sees it."""
 
     def __init__(
-        self, contents: list[SimpleNamespace] | None = None, failing_removals: frozenset[str] | set[str] = frozenset()
+        self,
+        contents: list[SimpleNamespace] | None = None,
+        failing_removals: frozenset[str] | set[str] = frozenset(),
+        insert_status: str = "completed",
     ):
         self.contents = list(contents or [])
         self.failing_removals = set(failing_removals)
+        self.insert_status = insert_status
         self.inserted: list[dict[str, Any]] = []
         self.removed: list[str] = []
         self._next_id = 0
@@ -177,15 +181,15 @@ class FakeKnowledge:
                 kwargs["name"],
                 kwargs.get("metadata") or {},
                 description=kwargs.get("description"),
+                status=self.insert_status,
             )
         )
 
-    def remove_vectors_by_name(self, name: str) -> bool:
-        return True
-
 
 def content(content_id, name, metadata, description=None, status="completed") -> SimpleNamespace:
-    return SimpleNamespace(id=content_id, name=name, metadata=metadata, description=description, status=status)
+    return SimpleNamespace(
+        id=content_id, name=name, metadata=metadata, description=description, status=status, status_message=None
+    )
 
 
 def _run(coro):
@@ -321,6 +325,7 @@ def test_papers_download_only_what_changed(tmp_path, papers_env):
     assert report.unchanged == 9 and report.replaced == 1 and report.inserted == 1 and report.ok
     # Identity rides in the description, never in metadata the model could filter on.
     for call in knowledge.inserted:
+        assert call["upsert"] is False
         assert decode_sync_marker(call["description"])[0] in {"Ada Lovelace/new.pdf", "Ada Lovelace/p0.pdf"}
         assert "ucloud" not in " ".join(call["metadata"]).lower()
 
@@ -367,6 +372,44 @@ def test_a_failed_removal_skips_the_reinsert_and_fails_the_run(tmp_path, papers_
 
     assert knowledge.inserted == [] and provider.downloaded == []
     assert report.failed == 1 and not report.ok
+
+
+def test_a_removal_error_is_counted_and_the_rest_of_the_plan_still_runs(tmp_path, papers_env):
+    provider = FakeProvider({"Ada Lovelace/p.pdf": "e2", "Ada Lovelace/new.pdf": "e1"}, tmp_path)
+    knowledge = FakeKnowledge([_stored_paper("c", "Ada Lovelace/p.pdf", "e1")])
+
+    async def broken_remove(content_id: str) -> bool:
+        raise OSError("SSL connection has been closed unexpectedly")
+
+    knowledge.aremove_content_by_id = broken_remove  # type: ignore[method-assign]
+
+    report = _run(hex_gig_sync.sync_research_papers(_k(knowledge), _p(provider), reader=cast(Any, object())))
+
+    assert provider.downloaded == ["Ada Lovelace/new.pdf"]
+    assert report.failed == 1 and report.inserted == 1 and not report.ok
+
+
+def test_replace_removes_incomplete_copies_first_and_keeps_the_last_usable_one(tmp_path, papers_env):
+    provider = FakeProvider({"Ada Lovelace/p.pdf": "e2"}, tmp_path)
+    good = _stored_paper("good", "Ada Lovelace/p.pdf", "e1")
+    stub = _stored_paper("stub", "Ada Lovelace/p.pdf", "e1")
+    stub.status = "failed"
+    knowledge = FakeKnowledge([good, stub], failing_removals={"stub"})
+
+    report = _run(hex_gig_sync.sync_research_papers(_k(knowledge), _p(provider), reader=cast(Any, object())))
+
+    assert knowledge.removed == [] and knowledge.inserted == []
+    assert report.failed == 1 and not report.ok
+
+
+def test_an_insert_agno_marks_failed_fails_the_run(tmp_path, papers_env):
+    # agno records an embedding failure on the content row instead of raising.
+    provider = FakeProvider({"Ada Lovelace/p.pdf": "e1"}, tmp_path)
+    knowledge = FakeKnowledge(insert_status="failed")
+
+    report = _run(hex_gig_sync.sync_research_papers(_k(knowledge), _p(provider), reader=cast(Any, object())))
+
+    assert report.inserted == 1 and report.incomplete == 1 and not report.ok
 
 
 def test_a_second_run_with_no_changes_writes_nothing(tmp_path, papers_env):

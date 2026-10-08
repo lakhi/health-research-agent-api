@@ -26,6 +26,11 @@ empty feed — must not wipe the knowledge base. Deletions of items that vanishe
 held back, and the run is reported as failed, when they exceed ``MAX_DELETE_FRACTION`` of the
 stored items (with a floor of ``MIN_DELETE_ALLOWANCE`` so small collections can still lose one or
 two). A listing that fails outright raises before anything is compared, so it deletes nothing.
+
+**Writes.** Items are inserted with ``upsert=False``: every stored copy is removed first, and agno's
+upsert path embeds every chunk twice (``aembed_before_replace``, then again per batch). agno does
+not raise when embedding fails — it marks the content row FAILED or PARTIAL — so after writing,
+each source re-reads its rows and counts any that did not complete as a failure of the run.
 """
 
 import hashlib
@@ -104,17 +109,19 @@ class SyncReport:
     deleted: int = 0
     held_back: int = 0
     failed: int = 0
+    # Stored rows left FAILED, PARTIAL or still processing after the run; the next run redoes them.
+    incomplete: int = 0
     error: str | None = None
 
     @property
     def ok(self) -> bool:
-        return self.error is None and self.failed == 0 and self.held_back == 0
+        return self.error is None and self.failed == 0 and self.held_back == 0 and self.incomplete == 0
 
     def summary(self) -> str:
         return (
             f"{self.source}: {self.seen} in source, {self.unchanged} unchanged, {self.inserted} inserted, "
             f"{self.replaced} replaced, {self.deleted} deleted, {self.held_back} deletions held back, "
-            f"{self.failed} failed" + (f" — {self.error}" if self.error else "")
+            f"{self.failed} failed, {self.incomplete} incomplete" + (f" — {self.error}" if self.error else "")
         )
 
 
@@ -210,25 +217,36 @@ async def apply_plan(
     plan: SyncPlan,
     insert: Callable[[SourceItem], Awaitable[None]],
     report: SyncReport,
+    source_type: str,
 ) -> SyncReport:
     """Carry out a plan, item by item. One item failing never stops the rest."""
 
     async def remove(item: StoredItem) -> bool:
         # Deletes the chunks by content_id, then the content row; returns False (keeping the row
         # for the next run to retry) when the chunk delete fails.
-        if await knowledge.aremove_content_by_id(item.content_id):
-            return True
+        try:
+            if await knowledge.aremove_content_by_id(item.content_id):
+                return True
+        except Exception:
+            logger.exception("Error removing content %s", item.content_id)
         report.failed += 1
         logger.error("Could not remove content %s; it will be retried on the next run", item.content_id)
         return False
+
+    async def remove_all(copies: list[StoredItem]) -> bool:
+        # Incomplete copies go first and the first failure stops the rest, so an item never
+        # loses its last usable copy without the new version taking its place.
+        for copy in sorted(copies, key=lambda c: c.complete):
+            if not await remove(copy):
+                return False
+        return True
 
     for stored in plan.delete:
         if await remove(stored):
             report.deleted += 1
 
     for copies, item in plan.replace:
-        removed = [await remove(copy) for copy in copies]
-        if not all(removed):
+        if not await remove_all(copies):
             continue
         try:
             await insert(item)
@@ -247,6 +265,10 @@ async def apply_plan(
 
     report.unchanged = plan.unchanged
     report.held_back = len(plan.held_back)
+    incomplete = [c for _, c in await _stored_contents(knowledge, source_type) if not _is_complete(c)]
+    report.incomplete = len(incomplete)
+    for c in incomplete:
+        logger.error("%s: %r did not finish ingesting (%s)", report.source, c.name, c.status_message)
     if plan.held_back:
         logger.error(
             "%s: %d stored items are gone from the source, more than the deletion guard allows; none were "
@@ -299,9 +321,10 @@ async def sync_research_papers(knowledge: Knowledge, provider: NextcloudPDFProvi
             reader=reader,
             metadata=build_research_paper_metadata(member_metadata, local_path),
             skip_if_exists=False,
+            upsert=False,
         )
 
-    return await apply_plan(knowledge, plan_sync(source, stored), insert, report)
+    return await apply_plan(knowledge, plan_sync(source, stored), insert, report, RESEARCH_PAPER_SOURCE_TYPE)
 
 
 async def sync_member_profiles(knowledge: Knowledge) -> SyncReport:
@@ -335,9 +358,10 @@ async def sync_member_profiles(knowledge: Knowledge) -> SyncReport:
             text_content=profile["text_content"],
             metadata=profile["metadata"],
             skip_if_exists=False,
+            upsert=False,
         )
 
-    return await apply_plan(knowledge, plan_sync(source, stored), insert, report)
+    return await apply_plan(knowledge, plan_sync(source, stored), insert, report, MEMBER_PROFILE_SOURCE_TYPE)
 
 
 async def sync_news(knowledge: Knowledge) -> SyncReport:
@@ -370,13 +394,12 @@ async def sync_news(knowledge: Knowledge) -> SyncReport:
 
     async def insert(item: SourceItem) -> None:
         article = item.payload
-        # Clear chunks an interrupted earlier run left without a content row; news names are unique.
-        knowledge.remove_vectors_by_name(article["name"])
         await knowledge.ainsert(
             name=article["name"],
             text_content=article["text_content"],
             metadata=article["metadata"],
             skip_if_exists=False,
+            upsert=False,
         )
 
-    return await apply_plan(knowledge, plan_sync(source, stored), insert, report)
+    return await apply_plan(knowledge, plan_sync(source, stored), insert, report, RSS_SOURCE_TYPE)
