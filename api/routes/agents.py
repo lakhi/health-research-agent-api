@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 from logging import getLogger
@@ -6,6 +7,7 @@ from uuid import uuid4
 
 from agno.agent import Agent
 from agno.os.utils import format_sse_event
+from agno.run.agent import RunContentEvent
 from fastapi import APIRouter, Body, Form, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, field_validator
@@ -62,6 +64,17 @@ async def chat_response_streamer(
 
     try:
         async for chunk in run_response:
+            chunk_refs = getattr(chunk, "references", None)
+            if chunk_refs:
+                latest_references = chunk_refs
+
+            # agno attaches every search's references (~12 KB each for HeX) to every token
+            # event. The UI never reads them, and a long answer grew to tens of MB — past the
+            # ~4 MB the ingress buffers, the run then waits on a slow client's download (#42).
+            # RunCompleted still carries them once.
+            if isinstance(chunk, RunContentEvent):
+                chunk.references = None
+
             try:
                 # The stream yields RunOutputEvent objects plus a final RunOutput, which
                 # format_sse_event is not typed to take; the except below is what handles it.
@@ -84,19 +97,17 @@ async def chat_response_streamer(
                 if hasattr(chunk_metrics, "time_to_first_token") and chunk_metrics.time_to_first_token:
                     time_to_first_token = chunk_metrics.time_to_first_token
 
-            chunk_refs = getattr(chunk, "references", None)
-            if chunk_refs:
-                latest_references = chunk_refs
-
             # RunCompleted carries the full answer text — the claim anchor
             # for citation excerpts.
             if getattr(chunk, "event", None) == "RunCompleted":
                 chunk_content = getattr(chunk, "content", None)
                 if isinstance(chunk_content, str):
                     final_answer_text = chunk_content
-    except Exception:
+    except (Exception, asyncio.CancelledError, GeneratorExit) as exc:
         # Issue #27 — failed runs must still leave a metrics row, otherwise
-        # the reported error rate can never rise above zero.
+        # the reported error rate can never rise above zero. A client that goes away
+        # (closed tab, dropped connection) cancels the response instead of raising an
+        # Exception; record that as "cancelled", or abandoned runs never show up (#42).
         if has_budget:
             record_agent_metrics(
                 session_id=session_id,
@@ -106,7 +117,7 @@ async def chat_response_streamer(
                 total_tokens=total_tokens,
                 duration_seconds=time.monotonic() - start_time,
                 time_to_first_token=time_to_first_token,
-                response_status="error",
+                response_status="error" if isinstance(exc, Exception) else "cancelled",
             )
         raise
 

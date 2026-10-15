@@ -42,7 +42,7 @@ def record_agent_metrics(
         duration_seconds: Total run duration in seconds
         time_to_first_token: Latency until first token generated
         cost_eur: Pre-calculated cost in EUR (if None, calculated from tokens)
-        response_status: One of: "success", "error", "budget_exceeded"
+        response_status: One of: "success", "error", "budget_exceeded", "cancelled"
     """
     try:
         today = get_today_vienna()

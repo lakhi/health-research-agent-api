@@ -76,7 +76,8 @@ SELECT
     COUNT(DISTINCT anonymous_session_id) AS unique_sessions,
     COUNT(*) FILTER (WHERE response_status = 'success') AS successful,
     COUNT(*) FILTER (WHERE response_status = 'error') AS errors,
-    COUNT(*) FILTER (WHERE response_status = 'budget_exceeded') AS budget_exceeded
+    COUNT(*) FILTER (WHERE response_status = 'budget_exceeded') AS budget_exceeded,
+    COUNT(*) FILTER (WHERE response_status = 'cancelled') AS cancelled
 FROM agent_usage_metrics
 WHERE date BETWEEN :from_date AND :to_date
 GROUP BY date
@@ -121,13 +122,14 @@ ORDER BY date;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 6. Non-success rate by date, split into genuine errors and budget blocks
+-- 6. Non-success rate by date, split into genuine errors, budget blocks and abandoned runs
 -- ─────────────────────────────────────────────────────────────────────────────
 SELECT
     TO_CHAR(date, 'DD-Mon-YYYY') AS date,
     COUNT(*) AS total_requests,
     COUNT(*) FILTER (WHERE response_status = 'error') AS errors,
     COUNT(*) FILTER (WHERE response_status = 'budget_exceeded') AS budget_exceeded,
+    COUNT(*) FILTER (WHERE response_status = 'cancelled') AS cancelled,
     ROUND(
         (COUNT(*) FILTER (WHERE response_status != 'success'))::numeric / NULLIF(COUNT(*), 0) * 100,
         1

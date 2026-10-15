@@ -37,7 +37,7 @@ class AgentUsageMetrics(Base):
         duration_seconds: Total run duration in seconds
         time_to_first_token: Latency until first token generated (streaming)
         cost_eur: Calculated cost in EUR for this request
-        response_status: One of: success, error, budget_exceeded
+        response_status: One of: success, error, budget_exceeded, cancelled (client went away mid-run)
         created_at: Timestamp when the record was created (UTC)
     """
 

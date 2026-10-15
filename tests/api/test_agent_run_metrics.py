@@ -6,11 +6,14 @@ so no app startup or database is required.
 Run with: pytest tests/api/test_agent_run_metrics.py -v
 """
 
+import asyncio
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from agno.models.message import MessageReferences
+from agno.run.agent import RunCompletedEvent, RunContentEvent
 
 from api.routes.agents import RunRequest, chat_response_streamer, create_agent_run
 from api.settings import api_settings
@@ -86,6 +89,60 @@ class TestStreamingMetrics:
                     pass
 
         mock_record.assert_not_called()
+
+    async def test_client_disconnect_mid_stream_records_cancelled(self):
+        """Starlette cancels the response when the client goes away; that must leave a row too."""
+        agent = make_streaming_agent([make_chunk()], error=asyncio.CancelledError())
+
+        with patch("api.routes.agents.record_agent_metrics") as mock_record:
+            with pytest.raises(asyncio.CancelledError):
+                async for _ in chat_response_streamer(agent, "msg", has_budget=True, session_id="sess-1"):
+                    pass
+
+        assert mock_record.call_args.kwargs["response_status"] == "cancelled"
+
+    async def test_stream_closed_by_server_records_cancelled(self):
+        """A generator closed at a yield (the response task torn down) also counts as cancelled."""
+        agent = make_streaming_agent([make_chunk(), make_chunk()])
+
+        with patch("api.routes.agents.record_agent_metrics") as mock_record:
+            stream = chat_response_streamer(agent, "msg", has_budget=True, session_id="sess-1")
+            await stream.__anext__()
+            await stream.aclose()
+
+        mock_record.assert_called_once()
+        assert mock_record.call_args.kwargs["response_status"] == "cancelled"
+
+
+class TestStreamPayload:
+    """Token events must not carry the run's knowledge references (#42)."""
+
+    async def test_references_leave_token_events_but_stay_on_run_completed(self):
+        refs = [MessageReferences(query="AMR", references=[{"content": "x" * 5000}], time=0.1)]
+        chunks = [
+            RunContentEvent(content="Some", references=refs),
+            RunContentEvent(content=" answer", references=refs),
+            RunCompletedEvent(content="Some answer", references=refs),
+        ]
+
+        with (
+            patch("api.routes.agents.record_agent_metrics"),
+            patch("api.routes.agents.build_citations", return_value=[]) as mock_citations,
+            patch("api.routes.agents.format_citations_sse", return_value=""),
+        ):
+            frames = [
+                frame
+                async for frame in chat_response_streamer(
+                    make_streaming_agent(chunks), "msg", has_budget=False, agent_id="ssc"
+                )
+            ]
+
+        token_frames = [f for f in frames if f.startswith("event: RunContent\n")]
+        completed = [f for f in frames if f.startswith("event: RunCompleted\n")]
+        assert len(token_frames) == 2 and all('"references"' not in f for f in token_frames)
+        assert len(completed) == 1 and '"references"' in completed[0]
+        # SSC citations are built from the references the token events no longer carry.
+        assert mock_citations.call_args.args[0] == refs
 
 
 class TestNonStreamingMetrics:

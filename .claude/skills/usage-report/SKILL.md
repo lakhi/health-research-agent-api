@@ -117,7 +117,7 @@ Use these headings (in order):
 5. **How fast is the agent responding each day?**
    Add one explanatory line under the heading: *avg_time_to_first_token_s is how long users wait before the answer starts appearing; max_response_duration_s is the slowest single run that day. Successful runs only.*
 6. **How often do requests fail, and why?**
-   Add one explanatory line: *errors are failed agent runs; budget_exceeded are requests refused because the daily EUR budget was already spent.*
+   Add one explanatory line: *errors are failed agent runs; budget_exceeded are requests refused because the daily EUR budget was already spent; cancelled are runs the user's browser abandoned mid-answer (closed tab, dropped connection).*
 7. **What does the weekly rollup look like?**
 8. **How many unique users were there, and how engaged were they?**
 9. **How many users each week were new vs returning?**
@@ -131,7 +131,7 @@ Then write a **Summary & Analysis** section (prose) covering:
 - Per-user engagement — unique users, sessions per user, average time spent per user, new vs returning trend
 - Token consumption, EUR cost, and daily budget utilization
 - Response latency (avg, TTFT, max — and what they suggest about retrieval performance)
-- Error / budget_exceeded rates
+- Error / budget_exceeded / cancelled rates
 
 **All dates and timestamps in the rendered output (markdown and HTML) use `DD-MMM-YYYY` / `DD-MMM-YYYY HH:MM` format (e.g. `02-Jul-2026 14:30`) — never ISO.**
 
